@@ -184,6 +184,7 @@ private fun PlayerActionControls(
         game.currentHand?.let {
             ActionButtons(
                 availableActions = game.availableActions().toList(),
+                currentChips = game.player?.chips,
                 onAction = onAction
             )
         }
@@ -196,8 +197,17 @@ private fun DealerTurnControls(
 ) {
     Button(
         onClick = onPlayDealerTurn,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        )
     ) {
-        Text("Play Dealer Turn")
+        Text(
+            text = "Play Dealer Turn",
+            style = MaterialTheme.typography.labelLarge
+        )
     }
 }

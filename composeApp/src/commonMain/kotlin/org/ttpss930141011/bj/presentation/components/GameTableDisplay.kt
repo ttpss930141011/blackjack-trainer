@@ -23,19 +23,20 @@ fun GameTableDisplay(
 ) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp)) {
-            val phaseTitle = when (game.phase) {
-                GamePhase.WAITING_FOR_BETS -> "Place Your Bet"
-                GamePhase.PLAYER_ACTIONS -> "Player Actions"
-                GamePhase.DEALER_TURN -> "Dealer's Turn"
-                GamePhase.SETTLEMENT -> "Round Results"
-                else -> "Game Table"
+            if (game.phase != GamePhase.WAITING_FOR_BETS) {
+                val phaseTitle = when (game.phase) {
+                    GamePhase.PLAYER_ACTIONS -> "Player Actions"
+                    GamePhase.DEALER_TURN -> "Dealer's Turn"
+                    GamePhase.SETTLEMENT -> "Round Results"
+                    else -> "Game Table"
+                }
+                
+                Text(
+                    text = phaseTitle,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
             }
-            
-            Text(
-                text = phaseTitle,
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
             
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -67,12 +68,6 @@ fun GameTableDisplay(
                         phase = game.phase
                     )
                 }
-            } else if (game.hasPlayer) {
-                Text(
-                    text = "${game.player!!.id} - Ready to play",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

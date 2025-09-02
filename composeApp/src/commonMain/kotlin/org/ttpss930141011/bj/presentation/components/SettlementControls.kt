@@ -30,9 +30,18 @@ fun SettlementControls(
             if (!isSettled) {
                 Button(
                     onClick = onSettle,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
-                    Text("Calculate Results")
+                    Text(
+                        text = "Calculate Results",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             } else {
                 feedback?.let { fb ->
@@ -77,9 +86,18 @@ fun SettlementControls(
                 
                 Button(
                     onClick = onNextRound,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
-                    Text("Next Round")
+                    Text(
+                        text = "Next Round",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
         }
