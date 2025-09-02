@@ -123,6 +123,7 @@ private fun DealerDisplay(
                             hand.cards.forEach { card ->
                                 CardImageDisplay(card = card, size = CardSize.MEDIUM)
                             }
+                            HoleCardDisplay(size = CardSize.MEDIUM)
                         }
                         Text("Value: ${hand.bestValue}${if (hand.isSoft) " (soft)" else ""}")
                         if (hand.isBusted) {
