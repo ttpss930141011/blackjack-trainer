@@ -1,0 +1,88 @@
+# Kotlin Multiplatform
+.gradle/
+build/
+out/
+local.properties
+gradle.properties.local
+*.iml
+*.ipr
+*.iws
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Platform specific builds
+.kotlin/
+kotlin-js-store/
+node_modules/
+
+# Platform specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+proguard/
+*.pro
+
+# iOS
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+
+# Windows
+*.exe
+*.msi
+*.msm
+*.msp
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+debug/
+temp/
+crash-reports/
+
+# Test results
+test-results/
+reports/
+jacoco/
+
+# Personal development memory (should not be shared)
+CLAUDE.local.md
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Package manager lock files
+package-lock.json
+yarn.lock
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# Claude Code specific
+.claude/cache/
