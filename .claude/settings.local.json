@@ -54,7 +54,14 @@
       "Bash(for:*)",
       "Bash(do mv \"$file\" \"$file%.backup\")",
       "Bash(git add:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git remote add:*)",
+      "Bash(dir:*)",
+      "Bash(copy:*)",
+      "Bash(git checkout:*)",
+      "Bash(gradlew:*)"
     ],
     "deny": [],
     "ask": []

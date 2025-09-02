@@ -52,7 +52,7 @@ fun ChipImageDisplay(
 }
 
 enum class ChipSize(val diameter: Dp) {
-    SMALL(50.dp),
-    MEDIUM(70.dp), 
-    LARGE(90.dp)
+    SMALL(60.dp),
+    MEDIUM(85.dp), 
+    LARGE(110.dp)
 }

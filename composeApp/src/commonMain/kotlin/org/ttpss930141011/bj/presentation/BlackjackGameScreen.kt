@@ -274,11 +274,6 @@ private fun NewRoundControls(
                 text = "Place Your Bet",
                 style = MaterialTheme.typography.titleMedium
             )
-            Text(
-                text = "Available: $currentChips",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
             
             Spacer(modifier = Modifier.height(12.dp))
             
@@ -509,11 +504,16 @@ private fun UniversalFullGameLayout(
             )
             
             // Dealer區域
-            UniversalDealerDisplayForGame(
-                dealerHand = game.dealer.hand,
-                dealerUpCard = game.dealer.upCard,
-                phase = game.phase
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                UniversalDealerDisplayForGame(
+                    dealerHand = game.dealer.hand,
+                    dealerUpCard = game.dealer.upCard,
+                    phase = game.phase
+                )
+            }
             
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -527,11 +527,16 @@ private fun UniversalFullGameLayout(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
-                PlayerHandsDisplay(
-                    playerHands = game.playerHands,
-                    currentHandIndex = game.currentHandIndex,
-                    phase = game.phase
-                )
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    PlayerHandsDisplay(
+                        playerHands = game.playerHands,
+                        currentHandIndex = game.currentHandIndex,
+                        phase = game.phase
+                    )
+                }
             } else if (game.hasPlayer) {
                 println("DEBUG: Showing Ready to play text - playerHands should be empty")
                 Text(

@@ -37,7 +37,7 @@ fun HoleCardDisplay(
 }
 
 enum class CardSize(val width: Dp, val height: Dp) {
-    SMALL(40.dp, 56.dp),
-    MEDIUM(60.dp, 84.dp), 
-    LARGE(80.dp, 112.dp)
+    SMALL(50.dp, 70.dp),
+    MEDIUM(80.dp, 112.dp), 
+    LARGE(100.dp, 140.dp)
 }
