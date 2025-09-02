@@ -17,20 +17,38 @@ import org.ttpss930141011.bj.domain.SessionStats
 
 @Composable
 fun GameStatusDisplay(player: Player, stats: SessionStats) {
-    if (stats.hasSignificantData) {
-        Card(
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // Chips display (always show)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Text(
+                    text = "$${player.chips}",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Chips",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            if (stats.hasSignificantData) {
                 // Rounds counter
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally

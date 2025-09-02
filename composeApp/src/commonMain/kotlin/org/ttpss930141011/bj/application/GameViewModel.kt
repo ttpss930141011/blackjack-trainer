@@ -84,7 +84,7 @@ class GameViewModel(
         try {
             _game = gameService.settleRound(currentGame)
             
-            val outcome = sessionService.determineRoundOutcome(currentGame)
+            val outcome = sessionService.determineRoundOutcome(_game!!)
             _sessionStats = sessionService.updateSessionStats(_sessionStats, _roundDecisions, outcome)
             _errorMessage = null
             
