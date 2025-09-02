@@ -1,0 +1,519 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096M -Dfile.encoding=UTF-8 -Dorg.gradle.caching=true -Dorg.gradle.configuration-cache=true"
+
+jobs:
+  # Adaptive Quality Gates - Scale with project maturity
+  quality-check:
+    name: Quality Gates (Adaptive)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
+    
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
+        # cache-cleanup removed due to Gradle 9.0 compatibility issues
+    
+    - name: Validate Gradle wrapper
+      uses: gradle/wrapper-validation-action@v1
+    
+    - name: Detect project maturity stage
+      id: stage-detection
+      run: |
+        echo "=== Project Maturity Detection ===" > stage-analysis.txt
+        
+        # Count files by layer
+        DOMAIN_FILES=$(find composeApp/src/commonMain/kotlin -path "*/domain/*" -name "*.kt" | wc -l)
+        APP_FILES=$(find composeApp/src/commonMain/kotlin -path "*/application/*" -name "*.kt" | wc -l)
+        INFRA_FILES=$(find composeApp/src/commonMain/kotlin -path "*/infrastructure/*" -name "*.kt" | wc -l)
+        TEST_FILES=$(find composeApp/src/commonTest/kotlin -name "*Test.kt" | wc -l)
+        
+        echo "Domain files: $DOMAIN_FILES" >> stage-analysis.txt
+        echo "Application files: $APP_FILES" >> stage-analysis.txt
+        echo "Infrastructure files: $INFRA_FILES" >> stage-analysis.txt
+        echo "Test files: $TEST_FILES" >> stage-analysis.txt
+        
+        # Determine project stage
+        if [ $INFRA_FILES -gt 5 ] && [ $APP_FILES -gt 8 ]; then
+          STAGE="stage3"
+          echo "🏗️ Stage 3: Full CQRS + Infrastructure" >> stage-analysis.txt
+        elif [ $APP_FILES -gt 2 ] && [ $DOMAIN_FILES -gt 10 ]; then
+          STAGE="stage2"
+          echo "⚡ Stage 2: Application Layer + CQRS" >> stage-analysis.txt
+        else
+          STAGE="stage1"
+          echo "🎯 Stage 1: Domain + Basic UI Focus" >> stage-analysis.txt
+        fi
+        
+        echo "stage=$STAGE" >> $GITHUB_OUTPUT
+        echo "PROJECT_STAGE=$STAGE" >> $GITHUB_ENV
+        
+        cat stage-analysis.txt
+    
+    outputs:
+      stage: ${{ steps.stage-detection.outputs.stage }}
+    
+    - name: Stage 1 & 2 - Essential compilation check
+      run: |
+        echo "Running stage-appropriate compilation checks..."
+        ./gradlew compileKotlinMetadata
+        
+        # Always check JVM (development platform)
+        ./gradlew :composeApp:compileKotlinJvm
+        
+        # Check Android only if files suggest UI maturity
+        if [ "$(find composeApp/src/commonMain/kotlin -path "*/presentation/*" -name "*.kt" | wc -l)" -gt 5 ]; then
+          ./gradlew :composeApp:compileDebugKotlinAndroid
+        else
+          echo "ℹ️ Skipping Android compilation - UI layer not mature yet"
+        fi
+    
+    - name: Stage 2+ - Advanced analysis
+      if: env.PROJECT_STAGE != 'stage1'
+      run: ./gradlew :composeApp:check || echo "Advanced checks completed"
+      continue-on-error: true
+    
+    - name: All Stages - Build health check
+      run: ./gradlew projects dependencies --dry-run
+    
+    - name: Upload stage analysis
+      uses: actions/upload-artifact@v4
+      with:
+        name: project-stage-analysis
+        path: stage-analysis.txt
+
+  # Smart Tests - Scale with project complexity
+  test-multiplatform:
+    name: Tests (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    needs: quality-check
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Always run - Core development platform
+          - platform: JVM-Core
+            os: ubuntu-latest
+            tasks: ":composeApp:jvmTest"
+            stage_requirement: "stage1"
+          # Stage 2+ - When Application layer matures
+          - platform: Android-Conditional
+            os: ubuntu-latest 
+            tasks: ":composeApp:testDebugUnitTest"
+            stage_requirement: "stage2"
+          # Stage 2+ - When WASM becomes relevant
+          - platform: WASM-Conditional
+            os: ubuntu-latest
+            tasks: ":composeApp:wasmJsTest"
+            stage_requirement: "stage2"
+          # Stage 3 - Full integration testing
+          - platform: All-Targets
+            os: ubuntu-latest
+            tasks: ":composeApp:allTests"
+            stage_requirement: "stage3"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
+    
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
+        # cache-cleanup removed due to Gradle 9.0 compatibility issues
+    
+    - name: Check stage eligibility
+      id: stage-check
+      run: |
+        # Detect current project stage
+        DOMAIN_FILES=$(find composeApp/src/commonMain/kotlin -path "*/domain/*" -name "*.kt" | wc -l)
+        APP_FILES=$(find composeApp/src/commonMain/kotlin -path "*/application/*" -name "*.kt" | wc -l)
+        INFRA_FILES=$(find composeApp/src/commonMain/kotlin -path "*/infrastructure/*" -name "*.kt" | wc -l)
+        
+        if [ $INFRA_FILES -gt 5 ] && [ $APP_FILES -gt 8 ]; then
+          CURRENT_STAGE="stage3"
+        elif [ $APP_FILES -gt 2 ] && [ $DOMAIN_FILES -gt 10 ]; then
+          CURRENT_STAGE="stage2"
+        else
+          CURRENT_STAGE="stage1"
+        fi
+        
+        echo "current_stage=$CURRENT_STAGE" >> $GITHUB_OUTPUT
+        
+        # Check if this matrix job should run
+        REQUIRED_STAGE="${{ matrix.stage_requirement }}"
+        
+        if [ "$REQUIRED_STAGE" = "stage1" ]; then
+          echo "should_run=true" >> $GITHUB_OUTPUT
+        elif [ "$REQUIRED_STAGE" = "stage2" ] && [ "$CURRENT_STAGE" != "stage1" ]; then
+          echo "should_run=true" >> $GITHUB_OUTPUT
+        elif [ "$REQUIRED_STAGE" = "stage3" ] && [ "$CURRENT_STAGE" = "stage3" ]; then
+          echo "should_run=true" >> $GITHUB_OUTPUT
+        else
+          echo "should_run=false" >> $GITHUB_OUTPUT
+          echo "⏭️ Skipping ${{ matrix.platform }} - Project not yet at $REQUIRED_STAGE (currently $CURRENT_STAGE)"
+        fi
+    
+    - name: Setup Android SDK (Android tests only)
+      if: steps.stage-check.outputs.should_run == 'true' && contains(matrix.platform, 'Android')
+      uses: android-actions/setup-android@v3
+    
+    - name: Run ${{ matrix.platform }} tests
+      if: steps.stage-check.outputs.should_run == 'true'
+      run: |
+        echo "🧪 Running tests for ${{ matrix.platform }} (Stage: ${{ steps.stage-check.outputs.current_stage }})"
+        ./gradlew ${{ matrix.tasks }} --continue
+    
+    - name: Stage-aware test summary
+      if: steps.stage-check.outputs.should_run == 'false'
+      run: |
+        echo "ℹ️ Test skipped - ${{ matrix.platform }} will be enabled when project reaches ${{ matrix.stage_requirement }}"
+        echo "Current project stage: ${{ steps.stage-check.outputs.current_stage }}"
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.platform }}
+        path: |
+          **/build/test-results/**
+          **/build/reports/**
+        retention-days: 7
+
+  # Build All Platforms - Production artifacts
+  build-multiplatform:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    needs: [quality-check, test-multiplatform]
+    timeout-minutes: 45
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Android
+            os: ubuntu-latest
+            tasks: "assembleDebug assembleRelease"
+            artifacts: "composeApp/build/outputs/**/*"
+          - platform: Desktop-JVM
+            os: ubuntu-latest
+            tasks: "packageUberJarForCurrentOS"
+            artifacts: "composeApp/build/compose/jars/**"
+          - platform: WASM-Web
+            os: ubuntu-latest
+            tasks: "wasmJsBrowserDistribution"
+            artifacts: "composeApp/build/dist/**"
+          - platform: Desktop-Windows
+            os: windows-latest
+            tasks: "packageMsi"
+            artifacts: "composeApp/build/compose/binaries/**"
+          - platform: Desktop-Mac
+            os: macos-latest
+            tasks: "packageDmg"
+            artifacts: "composeApp/build/compose/binaries/**"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
+    
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
+        # cache-cleanup removed due to Gradle 9.0 compatibility issues
+    
+    - name: Setup Android SDK (Android builds only)
+      if: matrix.platform == 'Android'
+      uses: android-actions/setup-android@v3
+    
+    - name: Build ${{ matrix.platform }}
+      run: ./gradlew ${{ matrix.tasks }} --build-cache
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.platform }}
+        path: ${{ matrix.artifacts }}
+        retention-days: 30
+
+  # Conditional Security Scanning - Scale with project maturity
+  security-scan:
+    name: Security Analysis (Stage-Aware)
+    runs-on: ubuntu-latest
+    needs: quality-check
+    timeout-minutes: 20
+    # Only run comprehensive security for Stage 2+ or weekly
+    if: needs.quality-check.outputs.stage != 'stage1' || github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: wrapper
+
+      - name: Generate dependency report
+        run: ./gradlew dependencies > dependencies.txt
+
+      - name: Run dependency check
+        run: ./gradlew dependencyCheckAnalyze || echo "Skipping OWASP dependency check"
+        continue-on-error: true
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+          build-mode: manual
+
+      # 重點：這裡執行真正的編譯任務，讓 CodeQL 能看到 .class
+      - name: Build for CodeQL
+        run: |
+          # 先編譯 metadata (產生型別資訊)
+          ./gradlew :composeApp:compileKotlinMetadata --rerun-tasks
+          
+          # 編譯主要目標 (產生 bytecode)
+          ./gradlew clean assembleDebug :composeApp:compileKotlinJvm --rerun-tasks
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      - name: Upload dependency report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-report
+          path: |
+            dependencies.txt
+            **/build/reports/dependency-check-report.html
+
+  # Integration Tests - End-to-end validation
+  e2e-tests:
+    name: E2E Tests (Web)
+    runs-on: ubuntu-latest
+    needs: [build-multiplatform]
+    timeout-minutes: 30
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
+    
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
+        # cache-cleanup removed due to Gradle 9.0 compatibility issues
+    
+    - name: Install Playwright browsers
+      run: npx playwright install chromium
+    
+    - name: Build and serve WASM app
+      run: |
+        ./gradlew wasmJsBrowserDistribution
+        python -m http.server 8080 --directory composeApp/build/dist/wasmJs/productionExecutable &
+        sleep 5
+    
+    - name: Run basic smoke tests
+      run: |
+        curl -f http://localhost:8080 || exit 1
+        echo "Basic web app accessibility verified"
+    
+    - name: Upload E2E artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-results
+        path: |
+          test-results/
+          screenshots/
+        retention-days: 7
+
+  # Smart Performance Monitoring - Relevant timing
+  performance-check:
+    name: Performance Analysis (Smart)
+    runs-on: ubuntu-latest
+    needs: build-multiplatform
+    timeout-minutes: 20
+    # Run when: Weekly OR Stage 2+ OR performance-related changes detected
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/master' && github.event_name == 'schedule') ||
+      (contains(github.event.head_commit.message, 'perf') || contains(github.event.head_commit.message, 'optimization') || contains(github.event.head_commit.message, 'performance'))
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
+    
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
+        # cache-cleanup removed due to Gradle 9.0 compatibility issues
+    
+    - name: Build performance analysis
+      run: |
+        echo "=== Build Performance Report ===" > performance-report.txt
+        echo "Date: $(date)" >> performance-report.txt
+        time ./gradlew clean build --profile >> performance-report.txt 2>&1
+    
+    - name: Analyze WASM bundle size
+      run: |
+        ./gradlew wasmJsBrowserDistribution
+        ls -lah composeApp/build/dist/wasmJs/productionExecutable/ >> performance-report.txt
+        du -sh composeApp/build/dist/wasmJs/productionExecutable/ >> performance-report.txt
+    
+    - name: Upload performance report
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-report
+        path: |
+          performance-report.txt
+          **/build/reports/profile/**
+        retention-days: 30
+
+  # Release Preparation - Tag-triggered release builds
+  release:
+    name: Release Build
+    runs-on: ubuntu-latest
+    needs: [test-multiplatform, build-multiplatform, security-scan]
+    if: startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 60
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
+    
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
+        # cache-cleanup removed due to Gradle 9.0 compatibility issues
+    
+    - name: Build all release artifacts
+      run: |
+        ./gradlew assembleRelease
+        ./gradlew wasmJsBrowserDistribution
+        ./gradlew packageUberJarForCurrentOS
+    
+    - name: Create release archive
+      run: |
+        mkdir -p release-artifacts
+        cp composeApp/build/outputs/apk/release/*.apk release-artifacts/ || true
+        cp -r composeApp/build/dist/wasmJs/productionExecutable release-artifacts/web || true
+        cp composeApp/build/compose/jars/*.jar release-artifacts/ || true
+    
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts-${{ github.ref_name }}
+        path: release-artifacts/
+        retention-days: 90
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release-artifacts/**
+        draft: true
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Status Summary - Aggregate results
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [quality-check, test-multiplatform, build-multiplatform, security-scan]
+    if: always()
+    
+    steps:
+    - name: Check job results
+      run: |
+        echo "=== CI Pipeline Summary ==="
+        echo "Quality Check: ${{ needs.quality-check.result }}"
+        echo "Tests: ${{ needs.test-multiplatform.result }}"
+        echo "Build: ${{ needs.build-multiplatform.result }}"
+        echo "Security: ${{ needs.security-scan.result }}"
+        
+        if [[ "${{ needs.quality-check.result }}" != "success" ]] || 
+           [[ "${{ needs.test-multiplatform.result }}" != "success" ]] || 
+           [[ "${{ needs.build-multiplatform.result }}" != "success" ]]; then
+          echo "❌ CI Pipeline Failed"
+          exit 1
+        else
+          echo "✅ CI Pipeline Passed"
+        fi

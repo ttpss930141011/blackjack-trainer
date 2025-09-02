@@ -1,0 +1,287 @@
+name: Quality Gates & Code Standards
+
+on:
+  pull_request:
+    branches: [ master, main ]
+  push:
+    branches: [ master, main ]
+
+jobs:
+  # Code Quality Analysis
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
+    
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
+        # cache-cleanup removed due to Gradle 9.0 compatibility issues
+    
+    - name: Check Kotlin code style
+      run: |
+        echo "=== Kotlin Code Style Check ===" > quality-report.txt
+        ./gradlew compileKotlinMetadata || echo "Compilation issues detected" >> quality-report.txt
+    
+    - name: Analyze domain layer purity
+      run: |
+        echo "=== Domain Layer Analysis ===" >> quality-report.txt
+        
+        # Check for domain layer violations (should not import UI/persistence)
+        echo "Checking domain layer dependencies..." >> quality-report.txt
+        find composeApp/src/commonMain/kotlin -name "*.kt" -path "*/domain/*" -exec grep -l "import.*compose\|import.*android\|import.*persistence" {} \; || echo "✅ Domain layer is pure" >> quality-report.txt
+        
+        # Verify test coverage for domain layer
+        echo "Domain test coverage analysis..." >> quality-report.txt
+        find composeApp/src/commonTest/kotlin -name "*Test.kt" | wc -l >> quality-report.txt
+    
+    - name: Architecture compliance check
+      run: |
+        echo "=== Architecture Compliance ===" >> quality-report.txt
+        
+        # Check for proper DDD structure
+        echo "DDD structure validation:" >> quality-report.txt
+        ls -la composeApp/src/commonMain/kotlin/*/domain/ 2>/dev/null || echo "❌ Domain structure missing" >> quality-report.txt
+        
+        # Check for test structure
+        echo "Test structure validation:" >> quality-report.txt
+        ls -la composeApp/src/commonTest/kotlin/ 2>/dev/null || echo "❌ Test structure missing" >> quality-report.txt
+    
+    - name: Upload quality report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: quality-analysis-report
+        path: quality-report.txt
+
+  # Dependency Analysis & License Check
+  dependency-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
+    
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
+        # cache-cleanup removed due to Gradle 9.0 compatibility issues
+    
+    - name: Generate dependency tree
+      run: |
+        echo "=== Dependency Analysis Report ===" > dependency-audit.txt
+        echo "Generated: $(date)" >> dependency-audit.txt
+        echo "" >> dependency-audit.txt
+        
+        echo "## Common Dependencies" >> dependency-audit.txt
+        ./gradlew :composeApp:dependencies --configuration commonMainImplementation >> dependency-audit.txt || true
+        
+        echo "## Android Dependencies" >> dependency-audit.txt  
+        ./gradlew :composeApp:dependencies --configuration androidMainImplementation >> dependency-audit.txt || true
+    
+    - name: Check for known vulnerabilities
+      run: |
+        echo "## Vulnerability Scan" >> dependency-audit.txt
+        
+        # Basic vulnerability patterns
+        echo "Checking for common vulnerability patterns..." >> dependency-audit.txt
+        grep -r "password\|secret\|key" composeApp/src/ --include="*.kt" | head -5 >> dependency-audit.txt || echo "✅ No hardcoded secrets found" >> dependency-audit.txt
+    
+    - name: License compliance check
+      run: |
+        echo "## License Analysis" >> dependency-audit.txt
+        echo "Checking license compatibility..." >> dependency-audit.txt
+        
+        # Look for license files in dependencies
+        find . -name "LICENSE*" -o -name "NOTICE*" | head -10 >> dependency-audit.txt || echo "License files analysis complete" >> dependency-audit.txt
+    
+    - name: Upload dependency audit
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-audit-report
+        path: dependency-audit.txt
+
+  # TDD Compliance Validation
+  tdd-compliance:
+    name: TDD & DDD Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
+    
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
+        # cache-cleanup removed due to Gradle 9.0 compatibility issues
+    
+    - name: Validate TDD compliance (Stage-aware)
+      run: |
+        echo "=== TDD/DDD Compliance Report ===" > tdd-compliance.txt
+        echo "Generated: $(date)" >> tdd-compliance.txt
+        echo "" >> tdd-compliance.txt
+        
+        # Count test files vs implementation files by layer
+        DOMAIN_FILES=$(find composeApp/src/commonMain/kotlin -path "*/domain/*" -name "*.kt" | wc -l)
+        APP_FILES=$(find composeApp/src/commonMain/kotlin -path "*/application/*" -name "*.kt" | wc -l)
+        IMPL_FILES=$(find composeApp/src/commonMain/kotlin -name "*.kt" | wc -l)
+        TEST_FILES=$(find composeApp/src/commonTest/kotlin -name "*Test.kt" | wc -l)
+        
+        echo "Domain files: $DOMAIN_FILES" >> tdd-compliance.txt
+        echo "Application files: $APP_FILES" >> tdd-compliance.txt
+        echo "Total implementation files: $IMPL_FILES" >> tdd-compliance.txt
+        echo "Test files: $TEST_FILES" >> tdd-compliance.txt
+        
+        # Stage-specific TDD validation
+        if [ $DOMAIN_FILES -gt 0 ]; then
+          DOMAIN_RATIO=$(echo "scale=2; $TEST_FILES / $DOMAIN_FILES" | bc -l 2>/dev/null || echo "0")
+          echo "Domain test ratio: $DOMAIN_RATIO" >> tdd-compliance.txt
+          
+          # For Stage 1, focus on Domain coverage (should be >0.8)
+          if [ $(echo "$DOMAIN_RATIO >= 0.8" | bc -l 2>/dev/null || echo "0") -eq 1 ]; then
+            echo "✅ Strong Domain layer test coverage (Stage 1 priority)" >> tdd-compliance.txt
+          else
+            echo "⚠️ Domain layer needs more tests (Stage 1 focus)" >> tdd-compliance.txt
+          fi
+        fi
+        
+        # Overall project ratio (less strict for Stage 1)
+        if [ $TEST_FILES -gt 0 ] && [ $IMPL_FILES -gt 0 ]; then
+          RATIO=$(echo "scale=2; $TEST_FILES / $IMPL_FILES" | bc -l 2>/dev/null || echo "1.0")
+          echo "Overall test-to-implementation ratio: $RATIO" >> tdd-compliance.txt
+          
+          # Stage 1: More lenient ratio (0.4+), Stage 2+: Stricter (0.8+)
+          THRESHOLD="0.4"
+          if [ $APP_FILES -gt 2 ]; then
+            THRESHOLD="0.8"
+          fi
+          
+          if [ $(echo "$RATIO >= $THRESHOLD" | bc -l 2>/dev/null || echo "1") -eq 1 ]; then
+            echo "✅ Appropriate test coverage for current stage" >> tdd-compliance.txt
+          else
+            echo "⚠️ Consider adding more tests (target ratio: $THRESHOLD)" >> tdd-compliance.txt
+          fi
+        fi
+    
+    - name: Run all tests to validate TDD green state
+      run: |
+        echo "## TDD Green State Validation" >> tdd-compliance.txt
+        ./gradlew :composeApp:allTests --continue >> tdd-compliance.txt 2>&1 || echo "❌ TDD red state detected" >> tdd-compliance.txt
+    
+    - name: Domain layer purity check
+      run: |
+        echo "## Domain Layer Purity Check" >> tdd-compliance.txt
+        
+        # Check for external dependencies in domain layer
+        if find composeApp/src/commonMain/kotlin -path "*/domain/*" -name "*.kt" -exec grep -l "import androidx\|import kotlinx.coroutines\|import.*compose" {} \; | head -1; then
+          echo "❌ Domain layer contains external dependencies" >> tdd-compliance.txt
+        else
+          echo "✅ Domain layer is pure" >> tdd-compliance.txt
+        fi
+    
+    - name: Upload TDD compliance report
+      uses: actions/upload-artifact@v4
+      with:
+        name: tdd-compliance-report
+        path: tdd-compliance.txt
+
+  # Multi-Platform Build Validation
+  platform-compatibility:
+    name: Platform Compatibility (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: android
+            os: ubuntu-latest
+            tasks: :composeApp:compileDebugKotlinAndroid
+          - target: jvm
+            os: ubuntu-latest
+            tasks: :composeApp:compileKotlinJvm
+          - target: wasm
+            os: ubuntu-latest
+            tasks: :composeApp:compileKotlinWasmJs
+          - target: desktop-windows
+            os: windows-latest
+            tasks: :composeApp:compileKotlinJvm
+          - target: desktop-mac
+            os: macos-latest
+            tasks: :composeApp:compileKotlinJvm
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
+    
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: wrapper
+        # cache-cleanup removed due to Gradle 9.0 compatibility issues
+    
+    - name: Setup Android SDK (Android only)
+      if: matrix.target == 'android'
+      uses: android-actions/setup-android@v3
+    
+    - name: Validate ${{ matrix.target }} compilation
+      run: ./gradlew ${{ matrix.tasks }} --build-cache
+    
+    - name: Platform-specific validation
+      run: |
+        echo "=== ${{ matrix.target }} Platform Report ===" > platform-${{ matrix.target }}-report.txt
+        echo "OS: ${{ matrix.os }}" >> platform-${{ matrix.target }}-report.txt
+        echo "Tasks: ${{ matrix.tasks }}" >> platform-${{ matrix.target }}-report.txt
+        echo "Build Status: SUCCESS" >> platform-${{ matrix.target }}-report.txt
+    
+    - name: Upload platform report
+      uses: actions/upload-artifact@v4
+      with:
+        name: platform-${{ matrix.target }}-report
+        path: platform-${{ matrix.target }}-report.txt

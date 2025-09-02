@@ -1,0 +1,145 @@
+name: Project Stage Evolution Monitor
+
+on:
+  push:
+    branches: [ master, main ]
+  schedule:
+    - cron: '0 12 * * 0'  # Weekly Sunday at noon
+
+jobs:
+  # Monitor project evolution and suggest next steps
+  stage-monitor:
+    name: Project Evolution Monitor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Analyze project evolution
+      run: |
+        echo "# 🚀 Blackjack Strategy Trainer - Project Evolution Report" > evolution-report.md
+        echo "**Generated:** $(date)" >> evolution-report.md
+        echo "" >> evolution-report.md
+        
+        # Current architecture metrics
+        DOMAIN_FILES=$(find composeApp/src/commonMain/kotlin -path "*/domain/*" -name "*.kt" | wc -l)
+        APP_FILES=$(find composeApp/src/commonMain/kotlin -path "*/application/*" -name "*.kt" | wc -l)
+        INFRA_FILES=$(find composeApp/src/commonMain/kotlin -path "*/infrastructure/*" -name "*.kt" | wc -l)
+        UI_FILES=$(find composeApp/src/commonMain/kotlin -path "*/presentation/*" -name "*.kt" | wc -l)
+        TEST_FILES=$(find composeApp/src/commonTest/kotlin -name "*Test.kt" | wc -l)
+        
+        echo "## 📊 Current Architecture State" >> evolution-report.md
+        echo "| Layer | File Count | Status |" >> evolution-report.md
+        echo "|-------|------------|--------|" >> evolution-report.md
+        echo "| Domain | $DOMAIN_FILES | ✅ Core layer established |" >> evolution-report.md
+        echo "| Application | $APP_FILES | $([ $APP_FILES -gt 2 ] && echo "⚡ Growing" || echo "🎯 Early stage") |" >> evolution-report.md
+        echo "| Infrastructure | $INFRA_FILES | $([ $INFRA_FILES -gt 0 ] && echo "🏗️ Present" || echo "⏳ Not yet") |" >> evolution-report.md
+        echo "| Presentation | $UI_FILES | $([ $UI_FILES -gt 5 ] && echo "🎨 Mature" || echo "📱 Basic") |" >> evolution-report.md
+        echo "| Tests | $TEST_FILES | $([ $TEST_FILES -gt 10 ] && echo "🧪 Strong" || echo "🔬 Building") |" >> evolution-report.md
+        echo "" >> evolution-report.md
+        
+        # Determine current stage
+        if [ $INFRA_FILES -gt 5 ] && [ $APP_FILES -gt 8 ]; then
+          CURRENT_STAGE="Stage 3: Full CQRS + Infrastructure"
+          NEXT_STEPS="🎯 Focus on: Performance optimization, advanced features, deployment automation"
+        elif [ $APP_FILES -gt 2 ] && [ $DOMAIN_FILES -gt 10 ]; then
+          CURRENT_STAGE="Stage 2: Application Layer + CQRS"
+          NEXT_STEPS="🎯 Next: Infrastructure layer, persistence, complex use cases"
+        else
+          CURRENT_STAGE="Stage 1: Domain + Basic UI"
+          NEXT_STEPS="🎯 Next: Application layer, use cases, command/query separation"
+        fi
+        
+        echo "## 🎯 Project Stage Assessment" >> evolution-report.md
+        echo "**Current Stage:** $CURRENT_STAGE" >> evolution-report.md
+        echo "" >> evolution-report.md
+        echo "**$NEXT_STEPS**" >> evolution-report.md
+        echo "" >> evolution-report.md
+        
+        # Stage transition recommendations
+        echo "## 📈 Stage Transition Indicators" >> evolution-report.md
+        echo "### Stage 1 → Stage 2 Triggers:" >> evolution-report.md
+        echo "- [ ] Domain layer has >15 classes (currently: $DOMAIN_FILES)" >> evolution-report.md
+        echo "- [ ] UI becomes complex (currently: $UI_FILES presentation files)" >> evolution-report.md
+        echo "- [ ] Need for command/query separation" >> evolution-report.md
+        echo "- [ ] Statistics and persistence requirements emerge" >> evolution-report.md
+        echo "" >> evolution-report.md
+        
+        echo "### Stage 2 → Stage 3 Triggers:" >> evolution-report.md
+        echo "- [ ] Application layer has >8 classes (currently: $APP_FILES)" >> evolution-report.md
+        echo "- [ ] Multiple bounded contexts needed" >> evolution-report.md
+        echo "- [ ] Event sourcing requirements" >> evolution-report.md
+        echo "- [ ] Multi-user or real-time features" >> evolution-report.md
+        echo "" >> evolution-report.md
+        
+        # CI adaptation status
+        echo "## 🔧 CI Pipeline Adaptation Status" >> evolution-report.md
+        echo "Your CI pipeline now adapts automatically:" >> evolution-report.md
+        echo "- ✅ **Stage 1 (Current)**: Essential Domain tests, JVM compilation, architecture validation" >> evolution-report.md
+        echo "- ⏳ **Stage 2**: Android/WASM testing, integration tests, enhanced security" >> evolution-report.md
+        echo "- ⏳ **Stage 3**: Full platform matrix, comprehensive security, performance monitoring" >> evolution-report.md
+        echo "" >> evolution-report.md
+        
+        # Learning progress assessment
+        echo "## 📚 DDD/TDD Learning Progress" >> evolution-report.md
+        if [ $TEST_FILES -gt 0 ] && [ $DOMAIN_FILES -gt 0 ]; then
+          DOMAIN_RATIO=$(echo "scale=2; $TEST_FILES / $DOMAIN_FILES" | bc -l 2>/dev/null || echo "0")
+          echo "- **Domain Test Coverage**: ${DOMAIN_RATIO} (Target: >0.8 for Stage 1)" >> evolution-report.md
+          
+          if [ $(echo "$DOMAIN_RATIO >= 0.8" | bc -l 2>/dev/null || echo "0") -eq 1 ]; then
+            echo "- ✅ **TDD Mastery**: Strong test-first development habits" >> evolution-report.md
+          else
+            echo "- 🎯 **TDD Focus**: Continue building test-first habits" >> evolution-report.md
+          fi
+        fi
+        
+        # Architecture quality indicators
+        echo "- **DDD Implementation**: Domain layer established with $(grep -r "class\|data class\|enum class" composeApp/src/commonMain/kotlin/*/domain/ --include="*.kt" | wc -l) core entities" >> evolution-report.md
+        
+        # Check for domain purity
+        if find composeApp/src/commonMain/kotlin -path "*/domain/*" -name "*.kt" -exec grep -l "import.*compose\|import.*android" {} \; | head -1 >/dev/null 2>&1; then
+          echo "- ⚠️ **Domain Purity**: Some domain files have UI dependencies" >> evolution-report.md
+        else
+          echo "- ✅ **Domain Purity**: Clean separation maintained" >> evolution-report.md
+        fi
+        
+        cat evolution-report.md
+    
+    - name: Upload evolution report
+      uses: actions/upload-artifact@v4
+      with:
+        name: project-evolution-report
+        path: evolution-report.md
+    
+    - name: Create evolution issue (Monthly)
+      if: github.event_name == 'schedule'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          if (fs.existsSync('evolution-report.md')) {
+            const report = fs.readFileSync('evolution-report.md', 'utf8');
+            
+            // Check if similar issue exists in last 30 days
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'evolution-report',
+              state: 'all',
+              since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+            });
+            
+            if (issues.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `📈 Monthly Project Evolution Report - ${new Date().toISOString().split('T')[0]}`,
+                body: report,
+                labels: ['evolution-report', 'architecture', 'monitoring']
+              });
+            }
+          }
