@@ -263,45 +263,73 @@ private fun NewRoundControls(
     onStartRound: (Int) -> Unit
 ) {
     var betAmount by remember { mutableStateOf(25) }
+    val availableChips = ChipImageMapper.standardChipValues.filter { it <= currentChips }
     
     Card {
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Place Your Bet")
-            Text("Available Chips: $currentChips")
+            Text(
+                text = "Place Your Bet",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Available: $currentChips",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
+            // 當前賭注顯示
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(
-                    onClick = { if (betAmount > 5) betAmount -= 5 },
-                    enabled = betAmount > 5
-                ) {
-                    Text("-5")
-                }
-                
-                Text("$$betAmount")
-                
-                Button(
-                    onClick = { betAmount += 5 },
-                    enabled = betAmount < currentChips
-                ) {
-                    Text("+5")
+                Text(
+                    text = "Bet:",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "$$betAmount",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // 籌碼選擇區域
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                items(availableChips) { chipValue ->
+                    ChipImageDisplay(
+                        value = chipValue,
+                        onClick = { betAmount += chipValue }
+                    )
                 }
             }
             
             Spacer(modifier = Modifier.height(8.dp))
             
+            // Clear按鈕
+            TextButton(
+                onClick = { betAmount = 0 }
+            ) {
+                Text("Clear")
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
             Button(
                 onClick = { onStartRound(betAmount) },
-                enabled = betAmount <= currentChips
+                enabled = betAmount <= currentChips && betAmount > 0,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Deal Cards")
+                Text("Deal Cards ($$betAmount)")
             }
         }
     }
