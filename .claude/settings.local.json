@@ -73,7 +73,8 @@
       "Bash(rm:*)",
       "Bash(git rm:*)",
       "Bash(move:*)",
-      "mcp__filesystem__edit_file"
+      "mcp__filesystem__edit_file",
+      "WebFetch(domain:www.jetbrains.com)"
     ],
     "deny": [],
     "ask": []

@@ -3,7 +3,6 @@ package org.ttpss930141011.bj.presentation.components.game
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -75,7 +74,6 @@ private fun PlayerHandsDisplay(
                     handIndex = index,
                     isActive = currentHandIndex == index,
                     phase = phase,
-                    modifier = Modifier.width(200.dp)
                 )
             }
         }
@@ -127,8 +125,8 @@ private fun PlayerHandCard(
             )
             
             // Cards
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                items(hand.cards) { card ->
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                hand.cards.forEach { card ->
                     CardImageDisplay(card = card, size = CardSize.MEDIUM)
                 }
             }
@@ -149,24 +147,32 @@ private fun PlayerHandCard(
                 fontSize = 14.sp
             )
             
-            // Settlement status
-            if (phase == GamePhase.SETTLEMENT) {
-                Text(
-                    text = hand.status.name,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = GameStatusColors.getHandStatusColor(hand.status),
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            
-            // Busted indicator
-            if (hand.isBusted) {
-                Text(
-                    text = "Busted!",
-                    color = GameStatusColors.bustColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                )
+            // Status area - fixed height to prevent jumping
+            Box(
+                modifier = Modifier.height(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                val statusText = when {
+                    hand.isBusted -> "Busted!"
+                    phase == GamePhase.SETTLEMENT -> hand.status.name
+                    else -> ""
+                }
+                
+                val statusColor = when {
+                    hand.isBusted -> GameStatusColors.bustColor
+                    phase == GamePhase.SETTLEMENT -> GameStatusColors.getHandStatusColor(hand.status)
+                    else -> Color.Transparent
+                }
+                
+                if (statusText.isNotEmpty()) {
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = statusColor,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
     }

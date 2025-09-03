@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.domain.*
@@ -20,8 +21,12 @@ import org.ttpss930141011.bj.presentation.shared.GameStatusColors
 @Composable
 fun CasinoGameScreen(
     gameRules: GameRules = GameRules(),
-    onShowSettings: () -> Unit = {}
+    onShowSettings: () -> Unit = {},
+    onRulesChanged: (GameRules) -> Unit = {}
 ) {
+    val configuration = LocalConfiguration.current
+    val isCompact = configuration.screenWidthDp < 600
+    var showSettingsSheet by remember { mutableStateOf(false) }
     val viewModel = remember { GameViewModel() }
     val notificationState = rememberNotificationState()
     
@@ -40,6 +45,62 @@ fun CasinoGameScreen(
     val game = viewModel.game
     val currentPlayer = game?.player ?: Player(id = "player1", chips = 1000)
     
+    if (isCompact) {
+        // Mobile: BottomSheetScaffold
+        val bottomSheetState = rememberBottomSheetScaffoldState()
+        
+        LaunchedEffect(showSettingsSheet) {
+            if (showSettingsSheet) {
+                bottomSheetState.bottomSheetState.expand()
+            } else {
+                bottomSheetState.bottomSheetState.partialExpand()
+            }
+        }
+        
+        BottomSheetScaffold(
+            scaffoldState = bottomSheetState,
+            sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            sheetContainerColor = GameStatusColors.casinoGreen,
+            sheetPeekHeight = 0.dp,
+            sheetContent = {
+                SettingsSheetContent(
+                    currentRules = gameRules,
+                    onRulesChanged = { newRules -> 
+                        onRulesChanged(newRules)
+                        showSettingsSheet = false 
+                    },
+                    onClose = { showSettingsSheet = false }
+                )
+            }
+        ) {
+            CasinoGameContent(
+                game = game,
+                viewModel = viewModel,
+                currentPlayer = currentPlayer,
+                notificationState = notificationState,
+                onShowSettings = { showSettingsSheet = true }
+            )
+        }
+    } else {
+        // Desktop: Full screen
+        CasinoGameContent(
+            game = game,
+            viewModel = viewModel,
+            currentPlayer = currentPlayer,
+            notificationState = notificationState,
+            onShowSettings = onShowSettings
+        )
+    }
+}
+
+@Composable
+private fun CasinoGameContent(
+    game: Game?,
+    viewModel: GameViewModel,
+    currentPlayer: Player,
+    notificationState: NotificationState,
+    onShowSettings: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
