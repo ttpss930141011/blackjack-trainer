@@ -1,0 +1,234 @@
+package org.ttpss930141011.bj.presentation.components.game
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import org.ttpss930141011.bj.application.GameViewModel
+import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
+import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
+import org.ttpss930141011.bj.presentation.shared.ChipSize
+import org.ttpss930141011.bj.presentation.shared.GameStatusColors
+
+/**
+ * Action area component that handles phase-specific user actions
+ * Shows different interfaces for betting, playing, dealer turn, and settlement
+ */
+
+@Composable
+fun ActionArea(
+    game: Game,
+    viewModel: GameViewModel,
+    modifier: Modifier = Modifier
+) {
+    when (game.phase) {
+        GamePhase.WAITING_FOR_BETS -> {
+            ChipSelection(
+                availableChips = ChipImageMapper.standardChipValues,
+                playerChips = game.player?.chips ?: 0,
+                currentBet = viewModel.bettingTableState?.currentBet ?: 0,
+                onChipSelected = { chipValue ->
+                    ChipValue.fromValue(chipValue)?.let { viewModel.addChipToBet(it) }
+                },
+                onDealCards = {
+                    viewModel.dealCards()
+                },
+                modifier = modifier
+            )
+        }
+        GamePhase.PLAYER_ACTIONS -> {
+            ActionButtons(
+                availableActions = game.availableActions().toList(),
+                onAction = { action ->
+                    viewModel.playerAction(action)
+                },
+                modifier = modifier
+            )
+        }
+        GamePhase.DEALER_TURN -> {
+            DealerTurnButton(
+                onPlayDealerTurn = {
+                    viewModel.dealerTurn()
+                },
+                modifier = modifier
+            )
+        }
+        GamePhase.SETTLEMENT -> {
+            NextRoundButton(
+                onNextRound = { viewModel.nextRound() },
+                modifier = modifier
+            )
+        }
+        else -> {
+            Text(
+                text = "Preparing...",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = modifier
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChipSelection(
+    availableChips: List<Int>,
+    playerChips: Int,
+    currentBet: Int,
+    onChipSelected: (Int) -> Unit,
+    onDealCards: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Player balance
+        Text(
+            text = "Balance: $$playerChips",
+            style = MaterialTheme.typography.titleMedium,
+            color = GameStatusColors.casinoGold,
+            fontWeight = FontWeight.Bold
+        )
+        
+        // Chip selection
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            items(availableChips) { chipValue ->
+                ChipImageDisplay(
+                    value = chipValue,
+                    size = ChipSize.LARGE,
+                    onClick = {
+                        if (currentBet + chipValue <= playerChips) {
+                            onChipSelected(chipValue)
+                        }
+                    }
+                )
+            }
+        }
+        
+        // Deal button
+        Button(
+            onClick = onDealCards,
+            enabled = currentBet > 0,
+            modifier = Modifier
+                .fillMaxWidth(0.8f)
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = GameStatusColors.casinoGold,
+                contentColor = Color.Black
+            ),
+            shape = RoundedCornerShape(16.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+        ) {
+            Text(
+                text = if (currentBet > 0) "Deal Cards ($$currentBet)" else "Deal Cards",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionButtons(
+    availableActions: List<Action>,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        modifier = modifier
+    ) {
+        items(availableActions) { action ->
+            Button(
+                onClick = { onAction(action) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GameStatusColors.casinoGold,
+                    contentColor = Color.Black
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .height(48.dp)
+                    .widthIn(min = 80.dp)
+            ) {
+                Text(
+                    text = action.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DealerTurnButton(
+    onPlayDealerTurn: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Button(
+            onClick = onPlayDealerTurn,
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = GameStatusColors.casinoGold,
+                contentColor = Color.Black
+            ),
+            shape = RoundedCornerShape(16.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+        ) {
+            Text(
+                text = "Play Dealer Turn",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun NextRoundButton(
+    onNextRound: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Button(
+            onClick = onNextRound,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = GameStatusColors.casinoGreen,
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .height(56.dp)
+                .fillMaxWidth(0.6f)
+        ) {
+            Text(
+                text = "Next Round",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+        }
+    }
+}

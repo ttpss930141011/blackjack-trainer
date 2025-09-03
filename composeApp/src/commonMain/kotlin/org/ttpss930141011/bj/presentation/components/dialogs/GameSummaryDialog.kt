@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.presentation.components
+package org.ttpss930141011.bj.presentation.components.dialogs
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

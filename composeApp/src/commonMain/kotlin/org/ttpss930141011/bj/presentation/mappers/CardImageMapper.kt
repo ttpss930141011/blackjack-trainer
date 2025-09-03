@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.presentation
+package org.ttpss930141011.bj.presentation.mappers
 
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.painterResource
@@ -10,7 +10,10 @@ import androidx.compose.ui.graphics.painter.Painter
 import blackjack_strategy_trainer.composeapp.generated.resources.Res
 import blackjack_strategy_trainer.composeapp.generated.resources.*
 
-// UI層橋接組件 - Domain Card → Painter 映射
+/**
+ * Domain-to-UI mapping for card images
+ * Maps domain Card objects to Compose Painter resources
+ */
 object CardImageMapper {
     
     @Composable
@@ -21,7 +24,6 @@ object CardImageMapper {
     
     @Composable
     fun getCardBackPainter(): Painter {
-        // 使用專用卡背圖片
         return painterResource(Res.drawable.card_back)
     }
     

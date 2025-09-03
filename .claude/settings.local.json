@@ -72,7 +72,8 @@
       "Bash(if exist \".todo\" del \".todo\")",
       "Bash(rm:*)",
       "Bash(git rm:*)",
-      "Bash(move:*)"
+      "Bash(move:*)",
+      "mcp__filesystem__edit_file"
     ],
     "deny": [],
     "ask": []

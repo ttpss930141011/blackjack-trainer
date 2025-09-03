@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.presentation.components
+package org.ttpss930141011.bj.presentation.components.feedback
 
 import androidx.compose.runtime.*
 import org.ttpss930141011.bj.domain.DecisionFeedback

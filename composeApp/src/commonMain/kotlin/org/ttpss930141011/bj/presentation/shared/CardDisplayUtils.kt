@@ -14,8 +14,8 @@ import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.domain.Card
 import org.ttpss930141011.bj.domain.Hand
 import org.ttpss930141011.bj.domain.PlayerHand
-import org.ttpss930141011.bj.presentation.CardImageDisplay
-import org.ttpss930141011.bj.presentation.CardSize
+import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
+import org.ttpss930141011.bj.presentation.shared.CardSize
 
 /**
  * Shared utilities for card display components.

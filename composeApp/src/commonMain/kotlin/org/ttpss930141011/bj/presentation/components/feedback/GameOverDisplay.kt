@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.presentation.components
+package org.ttpss930141011.bj.presentation.components.feedback
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding

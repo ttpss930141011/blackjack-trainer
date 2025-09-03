@@ -1,23 +1,21 @@
-package org.ttpss930141011.bj.presentation
+package org.ttpss930141011.bj.presentation.components.displays
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
+import org.ttpss930141011.bj.presentation.shared.ChipSize
+
+/**
+ * Display component for showing chip images with animation
+ * Handles click interactions and visual feedback
+ */
 
 @Composable
 fun ChipImageDisplay(
@@ -49,10 +47,4 @@ fun ChipImageDisplay(
             ),
         contentScale = ContentScale.Fit
     )
-}
-
-enum class ChipSize(val diameter: Dp) {
-    SMALL(60.dp),
-    MEDIUM(85.dp), 
-    LARGE(110.dp)
 }

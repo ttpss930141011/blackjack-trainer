@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.presentation.components
+package org.ttpss930141011.bj.presentation.components.dialogs
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +10,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.presentation.components.GameTable
+import org.ttpss930141011.bj.presentation.components.feedback.GameOverDisplay
 
 /**
  * Simple phase manager that delegates to unified GameTable component.

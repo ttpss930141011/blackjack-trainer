@@ -1,13 +1,18 @@
-package org.ttpss930141011.bj.presentation
+package org.ttpss930141011.bj.presentation.components.displays
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.domain.Card
+import org.ttpss930141011.bj.presentation.mappers.CardImageMapper
+import org.ttpss930141011.bj.presentation.shared.CardSize
+
+/**
+ * Display component for showing card images
+ * Handles both regular cards and hole cards
+ */
 
 @Composable
 fun CardImageDisplay(
@@ -34,10 +39,4 @@ fun HoleCardDisplay(
         modifier = modifier.size(size.width, size.height),
         contentScale = ContentScale.Fit
     )
-}
-
-enum class CardSize(val width: Dp, val height: Dp) {
-    SMALL(50.dp, 70.dp),
-    MEDIUM(80.dp, 112.dp), 
-    LARGE(100.dp, 140.dp)
 }

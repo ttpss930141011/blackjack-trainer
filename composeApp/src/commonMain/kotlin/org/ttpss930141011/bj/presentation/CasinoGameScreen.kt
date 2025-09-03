@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.domain.*
 import org.ttpss930141011.bj.presentation.components.*
+import org.ttpss930141011.bj.presentation.components.feedback.*
+import org.ttpss930141011.bj.presentation.components.dialogs.*
 import org.ttpss930141011.bj.presentation.shared.GameStatusColors
 
 @Composable
