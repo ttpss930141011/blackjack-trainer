@@ -99,6 +99,7 @@ class GameViewModel(
         _feedback = null
         _roundDecisions = emptyList()
         _errorMessage = null
+        initializeBettingTableState()
     }
     
     fun showGameSummary() {
@@ -111,5 +112,86 @@ class GameViewModel(
     
     fun clearError() {
         _errorMessage = null
+    }
+    
+    fun clearFeedback() {
+        _feedback = null
+    }
+    
+    // New betting table methods for chip-by-chip betting
+    private var _bettingTableState by mutableStateOf<BettingTableState?>(null)
+    val bettingTableState: BettingTableState? get() = _bettingTableState
+    
+    fun addChipToBet(chipValue: ChipValue) {
+        val currentGame = _game ?: return
+        if (currentGame.phase != GamePhase.WAITING_FOR_BETS) return
+        
+        try {
+            val currentTable = _bettingTableState ?: BettingTableState.fromGame(currentGame)
+            val result = currentTable.tryAddChip(chipValue)
+            
+            if (result.success) {
+                _bettingTableState = result.bettingTable
+                // Update the game state with the new bet
+                _game = result.bettingTable.toGameBet(currentGame)
+                _errorMessage = null
+            } else {
+                _errorMessage = result.errorMessage
+            }
+        } catch (e: Exception) {
+            _errorMessage = e.message
+        }
+    }
+    
+    fun clearBet() {
+        val currentGame = _game ?: return
+        if (currentGame.phase != GamePhase.WAITING_FOR_BETS) return
+        
+        try {
+            val currentTable = _bettingTableState ?: BettingTableState.fromGame(currentGame)
+            val clearedTable = currentTable.clearBet()
+            _bettingTableState = clearedTable
+            
+            // Restore player's chips and clear bet in game
+            val restoredPlayer = currentGame.player!!.copy(chips = clearedTable.availableBalance + clearedTable.currentBet)
+            _game = currentGame.copy(
+                player = restoredPlayer,
+                currentBet = 0
+            )
+            _errorMessage = null
+            
+        } catch (e: Exception) {
+            _errorMessage = e.message
+        }
+    }
+    
+    fun dealCards() {
+        val currentGame = _game ?: return
+        val currentTable = _bettingTableState ?: return
+        
+        if (currentGame.phase != GamePhase.WAITING_FOR_BETS || !currentTable.canDeal) {
+            _errorMessage = "Cannot deal cards at this time"
+            return
+        }
+        
+        try {
+            // Convert betting table state to final game bet and deal
+            val gameWithBet = currentTable.toGameBet(currentGame)
+            _game = gameService.dealRound(gameWithBet)
+            _bettingTableState = null // Clear betting state
+            _feedback = null
+            _errorMessage = null
+            
+        } catch (e: Exception) {
+            _errorMessage = e.message
+        }
+    }
+    
+    // Initialize betting table state when entering betting phase
+    private fun initializeBettingTableState() {
+        val currentGame = _game
+        if (currentGame?.phase == GamePhase.WAITING_FOR_BETS) {
+            _bettingTableState = BettingTableState.fromGame(currentGame)
+        }
     }
 }

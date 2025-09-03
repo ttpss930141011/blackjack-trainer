@@ -7,30 +7,22 @@ import org.ttpss930141011.bj.domain.GameRules
 import org.ttpss930141011.bj.presentation.*
 
 enum class AppScreen {
-    MAIN_MENU,
-    GAME,
+    CASINO,
     SETTINGS
 }
 
 @Composable
 @Preview
 fun App() {
-    var currentScreen by remember { mutableStateOf(AppScreen.MAIN_MENU) }
+    var currentScreen by remember { mutableStateOf(AppScreen.CASINO) }
     var gameRules by remember { mutableStateOf(GameRules()) }
     
     MaterialTheme {
         when (currentScreen) {
-            AppScreen.MAIN_MENU -> {
-                MainMenuScreen(
-                    onStartGame = { currentScreen = AppScreen.GAME },
-                    onViewSettings = { currentScreen = AppScreen.SETTINGS }
-                )
-            }
-            
-            AppScreen.GAME -> {
-                BlackjackGameScreen(
+            AppScreen.CASINO -> {
+                CasinoGameScreen(
                     gameRules = gameRules,
-                    onBackToMenu = { currentScreen = AppScreen.MAIN_MENU }
+                    onShowSettings = { currentScreen = AppScreen.SETTINGS }
                 )
             }
             
@@ -39,9 +31,9 @@ fun App() {
                     currentRules = gameRules,
                     onRulesChanged = { newRules ->
                         gameRules = newRules
-                        currentScreen = AppScreen.MAIN_MENU
+                        currentScreen = AppScreen.CASINO
                     },
-                    onBack = { currentScreen = AppScreen.MAIN_MENU }
+                    onBack = { currentScreen = AppScreen.CASINO }
                 )
             }
         }

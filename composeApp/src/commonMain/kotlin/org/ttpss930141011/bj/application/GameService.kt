@@ -12,6 +12,11 @@ class GameService {
         return game.placeBet(betAmount).dealRound()
     }
     
+    fun dealRound(game: Game): Game {
+        require(game.hasBet) { "No bet placed" }
+        return game.dealRound()
+    }
+    
     fun executePlayerAction(game: Game, action: Action): GameActionResult {
         require(game.phase == GamePhase.PLAYER_ACTIONS) { "Not in player action phase" }
         require(game.canAct) { "Player cannot act" }
