@@ -61,7 +61,17 @@
       "Bash(dir:*)",
       "Bash(copy:*)",
       "Bash(git checkout:*)",
-      "Bash(gradlew:*)"
+      "Bash(gradlew:*)",
+      "Read(C:\\Users\\user\\Desktop/**)",
+      "Read(C:\\Users\\user\\Desktop/**)",
+      "Bash(timeout:*)",
+      "mcp__filesystem__read_multiple_files",
+      "Bash(if exist \"hs_err_pid13884.log\" del \"hs_err_pid13884.log\")",
+      "Bash(if exist \"replay_pid13884.log\" del \"replay_pid13884.log\")",
+      "Bash(if exist \"nul\" del \"nul\")",
+      "Bash(if exist \".todo\" del \".todo\")",
+      "Bash(rm:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
