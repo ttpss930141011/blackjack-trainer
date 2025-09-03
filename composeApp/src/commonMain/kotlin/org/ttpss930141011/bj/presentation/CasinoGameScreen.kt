@@ -54,7 +54,7 @@ fun CasinoGameScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ResponsiveCasinoHeader(
+            CasinoHeader(
                 balance = currentPlayer.chips,
                 onShowSettings = onShowSettings,
                 hasStats = viewModel.sessionStats.totalRounds > 0,
@@ -103,8 +103,8 @@ fun CasinoGameScreen(
             }
         }
         
-        // Adaptive Notification System
-        AdaptiveNotificationSystem(
+        // Notification System
+        NotificationSystem(
             notifications = notificationState.notifications,
             onDismiss = { id -> notificationState.dismissNotification(id) }
         )

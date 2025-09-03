@@ -37,7 +37,7 @@ data class WindowInfo(
 )
 
 /**
- * Responsive container that provides window information to content
+ * Layout container that provides window information to content
  */
 @Composable
 fun ResponsiveLayout(
@@ -71,18 +71,18 @@ fun ResponsiveLayout(
 }
 
 /**
- * Get responsive padding based on screen size
+ * Get padding based on screen size
  */
-fun WindowInfo.getResponsivePadding(): Dp = when (screenSize) {
+fun WindowInfo.getPadding(): Dp = when (screenSize) {
     ScreenSize.COMPACT -> 8.dp
     ScreenSize.MEDIUM -> 16.dp
     ScreenSize.EXPANDED -> 24.dp
 }
 
 /**
- * Get responsive spacing based on screen size
+ * Get spacing based on screen size
  */
-fun WindowInfo.getResponsiveSpacing(): Dp = when (screenSize) {
+fun WindowInfo.getSpacing(): Dp = when (screenSize) {
     ScreenSize.COMPACT -> 8.dp
     ScreenSize.MEDIUM -> 12.dp
     ScreenSize.EXPANDED -> 16.dp

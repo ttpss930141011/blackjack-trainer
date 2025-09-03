@@ -29,7 +29,7 @@ data class BettingTableState(
             
             val chipComposition = if (game.currentBet > 0) {
                 // Convert bet amount to optimal chip composition
-                calculateOptimalChipComposition(game.currentBet)
+                BettingTableState.calculateOptimalChipComposition(game.currentBet)
             } else {
                 emptyList()
             }
@@ -47,7 +47,7 @@ data class BettingTableState(
          * Calculate optimal chip composition for a given amount
          * Uses greedy algorithm with largest chips first
          */
-        private fun calculateOptimalChipComposition(amount: Int): List<ChipInSpot> {
+        fun calculateOptimalChipComposition(amount: Int): List<ChipInSpot> {
             val chipValues = ChipValue.standardCasinoChips().reversed() // Largest first
             val composition = mutableListOf<ChipInSpot>()
             var remaining = amount
@@ -75,8 +75,8 @@ data class BettingTableState(
         val newBet = currentBet + chipValue.value
         val newBalance = availableBalance - chipValue.value
         
-        // Update chip composition
-        val newComposition = addChipToComposition(chipComposition, chipValue)
+        // Always recalculate optimal composition for consolidation
+        val newComposition = BettingTableState.calculateOptimalChipComposition(newBet)
         
         return copy(
             currentBet = newBet,
@@ -132,24 +132,6 @@ data class BettingTableState(
         }
     }
     
-    private fun addChipToComposition(
-        currentComposition: List<ChipInSpot>, 
-        newChip: ChipValue
-    ): List<ChipInSpot> {
-        val existingChipIndex = currentComposition.indexOfFirst { it.value == newChip }
-        
-        return if (existingChipIndex >= 0) {
-            // Stack existing chip
-            val updatedChip = currentComposition[existingChipIndex]
-                .copy(count = currentComposition[existingChipIndex].count + 1)
-            currentComposition.toMutableList().apply {
-                this[existingChipIndex] = updatedChip
-            }
-        } else {
-            // Add new chip stack
-            currentComposition + ChipInSpot(newChip, 1)
-        }
-    }
 }
 
 /**
@@ -194,5 +176,7 @@ enum class ChipValue(val value: Int) {
         fun standardCasinoChips(): List<ChipValue> = listOf(
             FIVE, TEN, TWENTY_FIVE, FIFTY, ONE_HUNDRED, FIVE_HUNDRED
         )
+        
+        fun fromValue(value: Int): ChipValue? = entries.find { it.value == value }
     }
 }

@@ -1,7 +1,6 @@
 package org.ttpss930141011.bj.presentation.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,8 +13,13 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.ttpss930141011.bj.presentation.responsive.ResponsiveLayout
+import org.ttpss930141011.bj.presentation.responsive.WindowInfo
+import org.ttpss930141011.bj.presentation.responsive.getPadding
+import org.ttpss930141011.bj.presentation.responsive.getCardCornerRadius
 
 @Composable
 fun CasinoHeader(
@@ -24,14 +28,223 @@ fun CasinoHeader(
     hasStats: Boolean,
     onShowSummary: () -> Unit
 ) {
+    ResponsiveLayout { windowInfo ->
+        when {
+            windowInfo.isCompact -> CompactHeader(
+                balance = balance,
+                onShowSettings = onShowSettings,
+                hasStats = hasStats,
+                onShowSummary = onShowSummary,
+                windowInfo = windowInfo
+            )
+            windowInfo.isMedium -> MediumHeader(
+                balance = balance,
+                onShowSettings = onShowSettings,
+                hasStats = hasStats,
+                onShowSummary = onShowSummary,
+                windowInfo = windowInfo
+            )
+            else -> ExpandedHeader(
+                balance = balance,
+                onShowSettings = onShowSettings,
+                hasStats = hasStats,
+                onShowSummary = onShowSummary,
+                windowInfo = windowInfo
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactHeader(
+    balance: Int,
+    onShowSettings: () -> Unit,
+    hasStats: Boolean,
+    onShowSummary: () -> Unit,
+    windowInfo: WindowInfo
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = windowInfo.getPadding())
+    ) {
+        // First row: Title and Settings
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "BJ Strategy Trainer",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Master basic strategy",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFA5D6A7),
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (hasStats) {
+                    CompactIconButton(
+                        icon = "📊",
+                        onClick = onShowSummary,
+                        color = Color(0xFF4CAF50)
+                    )
+                }
+                CompactIconButton(
+                    icon = "⚙️",
+                    onClick = onShowSettings,
+                    color = Color.White.copy(alpha = 0.2f)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Second row: Balance badge
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFFFC107)
+            ),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Balance: ",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "$$balance",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MediumHeader(
+    balance: Int,
+    onShowSettings: () -> Unit,
+    hasStats: Boolean,
+    onShowSummary: () -> Unit,
+    windowInfo: WindowInfo
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = windowInfo.getPadding()),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Casino Title
+        Column {
+            Text(
+                text = "Blackjack Strategy Trainer",
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+            Text(
+                text = "Master optimal basic strategy",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFFA5D6A7),
+                fontSize = 13.sp
+            )
+        }
+        
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFFFC107)
+                ),
+                shape = RoundedCornerShape(14.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "Balance:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "$$balance",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+            
+            if (hasStats) {
+                MediumIconButton(
+                    icon = "📊",
+                    onClick = onShowSummary,
+                    color = Color(0xFF4CAF50)
+                )
+            }
+            
+            MediumIconButton(
+                icon = "⚙️",
+                onClick = onShowSettings,
+                color = Color.White.copy(alpha = 0.2f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpandedHeader(
+    balance: Int,
+    onShowSettings: () -> Unit,
+    hasStats: Boolean,
+    onShowSummary: () -> Unit,
+    windowInfo: WindowInfo
+) {
+    // Use the original desktop header for expanded screens
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = windowInfo.getPadding()),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Column {
             Text(
                 text = "Blackjack Strategy Trainer",
@@ -43,24 +256,22 @@ fun CasinoHeader(
             Text(
                 text = "Master optimal basic strategy",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFFA5D6A7), // Light green
+                color = Color(0xFFA5D6A7),
                 fontSize = 14.sp
             )
         }
         
-        // Right side controls
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Balance Badge
             Card(
                 modifier = Modifier.shadow(
                     elevation = 8.dp,
                     shape = RoundedCornerShape(16.dp)
                 ),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFFFC107) // Casino gold
+                    containerColor = Color(0xFFFFC107)
                 ),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -85,59 +296,94 @@ fun CasinoHeader(
                 }
             }
             
-            // Stats Button (if has stats)
             if (hasStats) {
-                IconButton(
+                ExpandedIconButton(
+                    icon = "📊",
                     onClick = onShowSummary,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    Color(0xFF4CAF50),
-                                    Color(0xFF2E7D32)
-                                )
-                            )
-                        )
-                        .shadow(
-                            elevation = 6.dp,
-                            shape = CircleShape
-                        )
-                ) {
-                    Text(
-                        text = "📊",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White
-                    )
-                }
-            }
-            
-            // Settings Button
-            IconButton(
-                onClick = onShowSettings,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.2f),
-                                Color.White.copy(alpha = 0.1f)
-                            )
-                        )
-                    )
-                    .shadow(
-                        elevation = 6.dp,
-                        shape = CircleShape
-                    )
-            ) {
-                Text(
-                    text = "⚙️",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White
+                    color = Color(0xFF4CAF50)
                 )
             }
+            
+            ExpandedIconButton(
+                icon = "⚙️",
+                onClick = onShowSettings,
+                color = Color.White.copy(alpha = 0.2f)
+            )
         }
+    }
+}
+
+@Composable
+private fun CompactIconButton(
+    icon: String,
+    onClick: () -> Unit,
+    color: Color
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(color)
+    ) {
+        Text(
+            text = icon,
+            style = MaterialTheme.typography.titleSmall,
+            color = Color.White
+        )
+    }
+}
+
+@Composable
+private fun MediumIconButton(
+    icon: String,
+    onClick: () -> Unit,
+    color: Color
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(color)
+            .shadow(
+                elevation = 4.dp,
+                shape = CircleShape
+            )
+    ) {
+        Text(
+            text = icon,
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White
+        )
+    }
+}
+
+@Composable
+private fun ExpandedIconButton(
+    icon: String,
+    onClick: () -> Unit,
+    color: Color
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(
+                brush = Brush.radialGradient(
+                    colors = listOf(color, color.copy(alpha = 0.8f))
+                )
+            )
+            .shadow(
+                elevation = 6.dp,
+                shape = CircleShape
+            )
+    ) {
+        Text(
+            text = icon,
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White
+        )
     }
 }

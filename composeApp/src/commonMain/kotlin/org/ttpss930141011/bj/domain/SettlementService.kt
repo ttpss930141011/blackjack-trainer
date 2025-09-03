@@ -10,6 +10,7 @@ class SettlementService {
         require(game.phase == GamePhase.SETTLEMENT) { "Not in settlement phase" }
         require(game.dealer.hand != null) { "Dealer hand required for settlement" }
         require(game.hasPlayer) { "No player to settle" }
+        require(!game.isSettled) { "Round already settled - cannot settle again" }
         
         val dealerHand = game.dealer.hand!!
         var totalWinnings = 0
@@ -32,7 +33,8 @@ class SettlementService {
         // Domain layer calculates settlement results only - UI/Application layer controls workflow
         return game.copy(
             player = updatedPlayer,
-            playerHands = settledHands
+            playerHands = settledHands,
+            isSettled = true
             // phase remains SETTLEMENT - let Application layer control transitions
         )
     }

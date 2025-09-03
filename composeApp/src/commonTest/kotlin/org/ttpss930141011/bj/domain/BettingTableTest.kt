@@ -80,11 +80,11 @@ class BettingTableTest {
             .addChip(ChipValue.TEN)
             .addChip(ChipValue.TEN)
         
-        // Then - should stack chips of same value
+        // Then - should consolidate to optimal composition (25+5)
         assertEquals(30, updatedTable.currentBet)
-        assertEquals(1, updatedTable.chipComposition.size) // One stack
-        assertEquals(ChipValue.TEN, updatedTable.chipComposition[0].value)
-        assertEquals(3, updatedTable.chipComposition[0].count) // Three chips stacked
+        assertEquals(2, updatedTable.chipComposition.size) // Optimal: one 25 + one 5
+        assertEquals(ChipValue.TWENTY_FIVE, updatedTable.chipComposition[0].value)
+        assertEquals(ChipValue.FIVE, updatedTable.chipComposition[1].value)
     }
     
     @Test

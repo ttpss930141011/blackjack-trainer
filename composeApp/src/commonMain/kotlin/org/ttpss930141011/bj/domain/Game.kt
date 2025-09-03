@@ -9,7 +9,8 @@ data class Game(
     val dealer: Dealer,
     val deck: Deck,
     val rules: GameRules,
-    val phase: GamePhase = GamePhase.WAITING_FOR_BETS
+    val phase: GamePhase = GamePhase.WAITING_FOR_BETS,
+    val isSettled: Boolean = false
 ) {
     
     companion object {
@@ -80,7 +81,8 @@ data class Game(
             currentBet = 0,                      // 清空賭注
             dealer = Dealer(),                   // 重設dealer (清空hand)
             deck = Deck.shuffled(),              // 新牌組
-            phase = GamePhase.WAITING_FOR_BETS  // 回到下注階段
+            phase = GamePhase.WAITING_FOR_BETS, // 回到下注階段
+            isSettled = false                   // 重設結算狀態
             // player = player (保持不變，透過copy的預設行為)
         )
     }

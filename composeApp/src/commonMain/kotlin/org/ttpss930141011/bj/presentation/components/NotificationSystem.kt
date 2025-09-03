@@ -18,11 +18,11 @@ import kotlinx.coroutines.delay
 import org.ttpss930141011.bj.domain.DecisionFeedback
 import org.ttpss930141011.bj.presentation.responsive.ResponsiveLayout
 import org.ttpss930141011.bj.presentation.responsive.WindowInfo
-import org.ttpss930141011.bj.presentation.responsive.getResponsivePadding
+import org.ttpss930141011.bj.presentation.responsive.getPadding
 import org.ttpss930141011.bj.presentation.responsive.getCardCornerRadius
 
 @Composable
-fun AdaptiveNotificationSystem(
+fun NotificationSystem(
     notifications: List<NotificationItem>,
     onDismiss: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -99,7 +99,7 @@ private fun TabletNotifications(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(windowInfo.getResponsivePadding()),
+            .padding(windowInfo.getPadding()),
         contentAlignment = Alignment.BottomEnd
     ) {
         Column(
@@ -146,7 +146,7 @@ private fun DesktopNotifications(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(windowInfo.getResponsivePadding()),
+            .padding(windowInfo.getPadding()),
         contentAlignment = Alignment.BottomEnd
     ) {
         Column(
@@ -205,7 +205,7 @@ private fun MobileNotificationCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = windowInfo.getResponsivePadding()),
+            .padding(horizontal = windowInfo.getPadding()),
         colors = CardDefaults.cardColors(
             containerColor = if (feedback.isCorrect) {
                 Color(0xFF4CAF50).copy(alpha = 0.95f)
@@ -219,7 +219,7 @@ private fun MobileNotificationCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(windowInfo.getResponsivePadding()),
+                .padding(windowInfo.getPadding()),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Top
         ) {

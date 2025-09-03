@@ -287,13 +287,13 @@ class GameTest {
             .playerAction(Action.STAND)
             .dealerPlayAutomated()
         
-        // When - settling the round
-        val settledGame = game.settleRound()
+        // When - dealer finishes (auto-settles)
+        // No additional settlement needed - dealerPlayAutomated() already settled
         
         // Then - player should win and get bet back + winnings (25 + 25 = 50 total)
-        assertEquals(525, settledGame.player!!.chips) // 500 - 25 (bet) + 50 (return + win) = 525
-        assertEquals(HandStatus.WIN, settledGame.playerHands[0].status)
+        assertEquals(525, game.player!!.chips) // 500 - 25 (bet) + 50 (return + win) = 525
+        assertEquals(HandStatus.WIN, game.playerHands[0].status)
         // Domain layer should NOT control workflow - phase remains SETTLEMENT
-        assertEquals(GamePhase.SETTLEMENT, settledGame.phase)
+        assertEquals(GamePhase.SETTLEMENT, game.phase)
     }
 }

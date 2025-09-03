@@ -31,7 +31,6 @@ class CasinoGameArchitectureTest {
             .dealRound()
             .playerAction(Action.STAND)
             .dealerPlayAutomated()
-            .settleRound()
         
         // When: Reset for new round
         val resetGame = game.resetForNewRound()
@@ -124,15 +123,15 @@ class CasinoGameArchitectureTest {
         // When: In settlement phase
         assertEquals(GamePhase.SETTLEMENT, game.phase)
         
-        // Then: Should be able to settle without Table dependencies
-        val settledGame = game.settleRound()
+        // Then: Should be auto-settled without Table dependencies
+        // Already settled by dealerPlayAutomated()
         
         // Verify settlement results are visible in Game
-        val playerHand = settledGame.playerHands[0]
+        val playerHand = game.playerHands[0]
         assertEquals(HandStatus.WIN, playerHand.status) // Player 19 beats dealer 17
-        assertEquals(125, settledGame.player!!.chips) // 100 - 25 bet + 50 winnings
+        assertEquals(125, game.player!!.chips) // 100 - 25 bet + 50 winnings
         // Domain layer should NOT control workflow - phase remains SETTLEMENT
-        assertEquals(GamePhase.SETTLEMENT, settledGame.phase)
+        assertEquals(GamePhase.SETTLEMENT, game.phase)
     }
 
     @Test
@@ -205,7 +204,6 @@ class CasinoGameArchitectureTest {
             .playerAction(Action.STAND) // First hand: 8+3=11, stands
             .playerAction(Action.STAND) // Second hand: 8+10=18, stands  
             .dealerPlayAutomated()      // Dealer busts
-            .settleRound()
         
         // Then: Both hands should win
         assertEquals(2, game.playerHands.size)
@@ -245,8 +243,7 @@ class CasinoGameArchitectureTest {
         game = game.dealerPlayAutomated()
         assertEquals(GamePhase.SETTLEMENT, game.phase)
         
-        game = game.settleRound()
-        // Domain layer should NOT control workflow - Application layer will handle phase transitions
+        // Auto-settled by dealerPlayAutomated() - already in SETTLEMENT
         assertEquals(GamePhase.SETTLEMENT, game.phase)
         
         // Application layer workflow control (simulated)
@@ -282,7 +279,7 @@ class CasinoGameArchitectureTest {
         } else {
             game
         }
-        val finalGame = gameAfterPlayerTurn.dealerPlayAutomated().settleRound()
+        val finalGame = gameAfterPlayerTurn.dealerPlayAutomated() // Auto-settles
         
         // Then: Should handle blackjack payout correctly
         val playerHand = finalGame.playerHands[0]

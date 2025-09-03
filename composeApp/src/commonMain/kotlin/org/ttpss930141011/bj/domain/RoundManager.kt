@@ -70,7 +70,9 @@ class RoundManager {
             )
         }
         
-        return currentGame.copy(phase = GamePhase.SETTLEMENT)
+        // Auto-settlement for better UX - no manual intervention needed
+        val settledGame = currentGame.copy(phase = GamePhase.SETTLEMENT).settleRound()
+        return settledGame
     }
     
     private fun handleSplit(game: Game, hand: PlayerHand): Triple<List<PlayerHand>, Deck, Int> {
