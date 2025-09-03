@@ -148,7 +148,7 @@ jobs:
     
     steps:
     - name: Download all test artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
     
     - name: Generate comprehensive test summary
       run: |
