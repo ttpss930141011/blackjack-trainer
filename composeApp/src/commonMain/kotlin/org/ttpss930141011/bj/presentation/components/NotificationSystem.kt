@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
-import org.ttpss930141011.bj.domain.DecisionFeedback
 import org.ttpss930141011.bj.presentation.responsive.ResponsiveLayout
 import org.ttpss930141011.bj.presentation.responsive.WindowInfo
 import org.ttpss930141011.bj.presentation.responsive.getPadding
