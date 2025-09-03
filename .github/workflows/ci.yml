@@ -30,7 +30,7 @@ jobs:
         distribution: 'temurin'
     
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
       with:
         gradle-home-cache-cleanup: true
     
@@ -82,7 +82,7 @@ jobs:
         distribution: 'temurin'
     
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
     
     - name: Setup Android SDK (Android tests only)
       if: matrix.platform == 'Android'
@@ -144,7 +144,7 @@ jobs:
         distribution: 'temurin'
     
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
     
     - name: Setup Android SDK (Android builds only)
       if: matrix.platform == 'Android'
@@ -178,7 +178,7 @@ jobs:
         distribution: 'temurin'
     
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
     
     - name: Generate dependency report
       run: ./gradlew dependencies > dependencies.txt
@@ -226,7 +226,7 @@ jobs:
         distribution: 'temurin'
     
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
     
     - name: Install Playwright browsers
       run: npx playwright install chromium
@@ -271,7 +271,7 @@ jobs:
         distribution: 'temurin'
     
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
     
     - name: Build performance analysis
       run: |
@@ -313,7 +313,7 @@ jobs:
         distribution: 'temurin'
     
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
     
     - name: Build all release artifacts
       run: |
