@@ -14,8 +14,6 @@ data class BettingTableState(
     
     // Domain queries
     val canDeal: Boolean = currentBet > 0
-    val isEmpty: Boolean = chipComposition.isEmpty()
-    val totalChipsInSpot: Int = chipComposition.sumOf { it.count }
     
     companion object {
         /**
@@ -144,8 +142,6 @@ data class ChipInSpot(
     init {
         require(count > 0) { "Chip count must be positive" }
     }
-    
-    val totalValue: Int = value.value * count
 }
 
 /**
@@ -174,7 +170,7 @@ enum class ChipValue(val value: Int) {
          * Standard casino chip denominations
          */
         fun standardCasinoChips(): List<ChipValue> = listOf(
-            FIVE, TEN, TWENTY_FIVE, FIFTY, ONE_HUNDRED, FIVE_HUNDRED
+            FIVE, TEN, TWENTY_FIVE, FIFTY, ONE_HUNDRED, TWO_HUNDRED, FIVE_HUNDRED
         )
         
         fun fromValue(value: Int): ChipValue? = entries.find { it.value == value }

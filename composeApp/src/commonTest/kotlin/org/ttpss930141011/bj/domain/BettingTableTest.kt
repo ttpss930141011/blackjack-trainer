@@ -128,7 +128,7 @@ class BettingTableTest {
         // Then - should return standard denominations
         val expected = listOf(
             ChipValue.FIVE, ChipValue.TEN, ChipValue.TWENTY_FIVE,
-            ChipValue.FIFTY, ChipValue.ONE_HUNDRED, ChipValue.FIVE_HUNDRED
+            ChipValue.FIFTY, ChipValue.ONE_HUNDRED, ChipValue.TWO_HUNDRED, ChipValue.FIVE_HUNDRED
         )
         assertEquals(expected, availableChips)
     }
