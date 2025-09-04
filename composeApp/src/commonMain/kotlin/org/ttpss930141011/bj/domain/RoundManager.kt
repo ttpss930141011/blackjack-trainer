@@ -94,6 +94,13 @@ class RoundManager {
         hand: PlayerHand, 
         action: Action
     ): Triple<List<PlayerHand>, Deck, Int> {
+        // Validate double action requires sufficient balance
+        if (action == Action.DOUBLE) {
+            require((game.player?.chips ?: 0) >= hand.bet) { 
+                "Insufficient balance for double down" 
+            }
+        }
+        
         val actionResult = when (action) {
             Action.HIT -> hand.hit(game.deck)
             Action.STAND -> PlayerHandActionResult(hand.stand(), game.deck)

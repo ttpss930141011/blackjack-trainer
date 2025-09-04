@@ -21,6 +21,7 @@ class SettlementService {
             
             val newStatus = when (result) {
                 RoundResult.PLAYER_WIN, RoundResult.PLAYER_BLACKJACK -> HandStatus.WIN
+                RoundResult.SURRENDER -> HandStatus.SURRENDERED // Keep surrendered status for UI
                 RoundResult.DEALER_WIN -> HandStatus.LOSS
                 RoundResult.PUSH -> HandStatus.PUSH
             }
@@ -46,7 +47,7 @@ class SettlementService {
         val dealerBlackjack = dealerHand.isBlackjack
         
         return when {
-            playerHand.status == HandStatus.SURRENDERED -> RoundResult.DEALER_WIN
+            playerHand.status == HandStatus.SURRENDERED -> RoundResult.SURRENDER
             playerHand.status == HandStatus.BUSTED -> RoundResult.DEALER_WIN
             dealerHand.isBusted -> RoundResult.PLAYER_WIN
             playerBlackjack && dealerBlackjack -> RoundResult.PUSH
@@ -62,6 +63,7 @@ class SettlementService {
         return when (result) {
             RoundResult.PLAYER_WIN -> bet * 2 // Return bet + win equal amount
             RoundResult.PLAYER_BLACKJACK -> (bet * (1 + rules.blackjackPayout)).toInt() // Return bet + win at payout rate
+            RoundResult.SURRENDER -> bet / 2 // Return half bet (surrender rule)
             RoundResult.PUSH -> bet // Return bet only
             RoundResult.DEALER_WIN -> 0 // Lose bet (already deducted)
         }

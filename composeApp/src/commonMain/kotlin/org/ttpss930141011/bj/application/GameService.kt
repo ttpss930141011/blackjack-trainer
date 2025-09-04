@@ -22,7 +22,19 @@ class GameService {
         require(game.canAct) { "Player cannot act" }
         
         val handBeforeAction = game.currentHand!!
-        val updatedGame = game.playerAction(action)
+        
+        // Handle double down payment - deduct additional bet from player balance
+        val gameWithPayment = if (action == Action.DOUBLE) {
+            val additionalBet = handBeforeAction.bet
+            require((game.player?.chips ?: 0) >= additionalBet) { 
+                "Insufficient balance for double down" 
+            }
+            game.copy(player = game.player?.deductChips(additionalBet))
+        } else {
+            game
+        }
+        
+        val updatedGame = gameWithPayment.playerAction(action)
         
         return GameActionResult(
             game = updatedGame,

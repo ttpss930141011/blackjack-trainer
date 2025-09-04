@@ -69,6 +69,7 @@ data class GameSession(
             RoundResult.PLAYER_WIN -> bet * 2
             RoundResult.PLAYER_BLACKJACK -> (bet * (1 + rules.blackjackPayout)).toInt()
             RoundResult.PUSH -> bet  // 退還賭注
+            RoundResult.SURRENDER -> bet / 2  // 投降退回一半賭注
             RoundResult.DEALER_WIN -> 0  // 輸掉賭注
         }
     }

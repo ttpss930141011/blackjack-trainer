@@ -251,6 +251,7 @@ enum class RoundResult {
     PLAYER_WIN,       // 玩家勝利
     PLAYER_BLACKJACK, // 玩家21點
     DEALER_WIN,       // 莊家勝利
+    SURRENDER,        // 投降 - 退回一半賭注
     PUSH              // 平手
 }
 

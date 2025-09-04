@@ -296,4 +296,51 @@ class GameTest {
         // Domain layer should NOT control workflow - phase remains SETTLEMENT
         assertEquals(GamePhase.SETTLEMENT, game.phase)
     }
+    
+    @Test
+    fun `given insufficient balance when attempting double then should not include double action`() {
+        // Given - Player with only 10 chips tries to double a 20 bet
+        val player = Player("test", 30) // Only 30 total
+        val testDeck = Deck.createTestDeck(listOf(
+            Card(Suit.HEARTS, Rank.FIVE), Card(Suit.SPADES, Rank.SIX),     // Player: 11 (good for double)
+            Card(Suit.DIAMONDS, Rank.TEN), Card(Suit.CLUBS, Rank.EIGHT)    // Dealer
+        ))
+        
+        val game = Game.createForTest(GameRules(), testDeck)
+            .addPlayer(player)
+            .placeBet(20)  // Player now has 10 chips remaining
+            .dealRound()
+        
+        // When - Check available actions
+        val availableActions = game.availableActions()
+        
+        // Then - Double should not be available due to insufficient balance
+        assertFalse(availableActions.contains(Action.DOUBLE))
+        assertTrue(availableActions.contains(Action.HIT))
+        assertTrue(availableActions.contains(Action.STAND))
+    }
+    
+    @Test 
+    fun `given exact balance when player doubles then should deduct correct amount`() {
+        // Given - Player with exactly enough for double
+        val player = Player("test", 40)
+        val testDeck = Deck.createTestDeck(listOf(
+            Card(Suit.HEARTS, Rank.FIVE), Card(Suit.SPADES, Rank.SIX),     // Player: 11
+            Card(Suit.DIAMONDS, Rank.SIX), Card(Suit.CLUBS, Rank.EIGHT),   // Dealer
+            Card(Suit.HEARTS, Rank.TEN)  // Double card makes 21
+        ))
+        
+        val game = Game.createForTest(GameRules(), testDeck)
+            .addPlayer(player)
+            .placeBet(20)  // Player now has 20 chips remaining (exactly enough for double)
+            .dealRound()
+        
+        // When - Player doubles down
+        val doubleGame = game.playerAction(Action.DOUBLE)
+        
+        // Then - Should double the bet and complete hand with one more card
+        assertEquals(40, doubleGame.playerHands[0].bet) // 20 * 2 = 40
+        assertEquals(21, doubleGame.playerHands[0].bestValue) // 11 + 10 = 21
+        assertTrue(doubleGame.playerHands[0].isCompleted) // Double completes hand
+    }
 }

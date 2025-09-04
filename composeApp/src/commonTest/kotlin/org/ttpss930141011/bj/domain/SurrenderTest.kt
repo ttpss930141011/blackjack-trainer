@@ -236,6 +236,52 @@ class SurrenderTest {
         assertEquals(Action.HIT, action)  // Soft 17 vs A should hit, not surrender
     }
     
+    // === Surrender Settlement Tests ===
+    
+    @Test
+    fun `given surrendered hand when settlement then should refund half bet`() {
+        // Given - Player with 20 bet surrenders
+        val settlementService = SettlementService()
+        val playerHand = PlayerHand(
+            cards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+            bet = 20,
+            status = HandStatus.SURRENDERED
+        )
+        val dealerHand = Hand(listOf(Card(Suit.DIAMONDS, Rank.NINE), Card(Suit.CLUBS, Rank.EIGHT)))
+        
+        // When - Settlement calculation
+        val result = settlementService.determineResult(playerHand, dealerHand)
+        val winnings = settlementService.calculateWinnings(20, result, standardRules)
+        
+        // Then - Should get half bet back (10)
+        assertEquals(RoundResult.SURRENDER, result)
+        assertEquals(10, winnings)
+    }
+    
+    @Test
+    fun `given surrender integration test when player surrenders then balance should reflect half bet refund`() {
+        // Given - Game setup with surrender scenario
+        val player = Player("test", 100)
+        val testDeck = Deck.createTestDeck(listOf(
+            Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX),     // Player: hard 16
+            Card(Suit.DIAMONDS, Rank.NINE), Card(Suit.CLUBS, Rank.EIGHT)  // Dealer
+        ))
+        
+        val game = Game.createForTest(standardRules, testDeck)
+            .addPlayer(player)
+            .placeBet(20)  // Player now has 80 chips
+            .dealRound()   // Deal cards
+        
+        // When - Player surrenders and game settles
+        val afterSurrender = game.playerAction(Action.SURRENDER)
+            .copy(phase = GamePhase.SETTLEMENT)
+            .settleRound()
+        
+        // Then - Player should have 80 + 10 = 90 chips (half bet refunded)
+        assertEquals(90, afterSurrender.player!!.chips)
+        assertEquals(HandStatus.SURRENDERED, afterSurrender.playerHands[0].status)
+    }
+    
     @Test
     fun `given already hit once when hard 16 vs dealer 9 then should not include surrender`() {
         // Given - Three cards (already hit), cannot surrender

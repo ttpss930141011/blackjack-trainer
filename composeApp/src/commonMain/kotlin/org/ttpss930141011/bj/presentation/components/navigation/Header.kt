@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -53,10 +54,16 @@ private fun CompactLayout(
             Title(compact = true)
             
             Row(
-                horizontalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth)),
+                horizontalArrangement = Arrangement.spacedBy(
+                    when (screenWidth) {
+                        org.ttpss930141011.bj.presentation.layout.ScreenWidth.COMPACT -> 14.dp
+                        org.ttpss930141011.bj.presentation.layout.ScreenWidth.MEDIUM -> 16.dp
+                        else -> 20.dp
+                    }
+                ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CompactBalanceBadge(balance)
+                CompactBalanceBadge(balance, screenWidth)
                 Actions(hasStats, onShowSummary, onShowSettings, screenWidth)
             }
         }
@@ -118,16 +125,75 @@ private fun Title(
 }
 
 @Composable
-private fun CompactBalanceBadge(balance: Int) {
-    Badge(
-        containerColor = Color(0xFFFFC107),
-        contentColor = Color.Black
+private fun CompactBalanceBadge(
+    balance: Int, 
+    screenWidth: org.ttpss930141011.bj.presentation.layout.ScreenWidth
+) {
+    val badgeHeight = when (screenWidth) {
+        org.ttpss930141011.bj.presentation.layout.ScreenWidth.COMPACT -> 40.dp
+        org.ttpss930141011.bj.presentation.layout.ScreenWidth.MEDIUM -> 44.dp
+        else -> 48.dp
+    }
+    
+    val cornerRadius = when (screenWidth) {
+        org.ttpss930141011.bj.presentation.layout.ScreenWidth.COMPACT -> 20.dp
+        org.ttpss930141011.bj.presentation.layout.ScreenWidth.MEDIUM -> 22.dp
+        else -> 24.dp
+    }
+    
+    val fontSize = when (screenWidth) {
+        org.ttpss930141011.bj.presentation.layout.ScreenWidth.COMPACT -> 16.sp
+        org.ttpss930141011.bj.presentation.layout.ScreenWidth.MEDIUM -> 17.sp
+        else -> 18.sp
+    }
+    
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFFC107)
+        ),
+        shape = RoundedCornerShape(cornerRadius),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        modifier = Modifier
+            .height(badgeHeight)
+            .shadow(
+                elevation = 3.dp,
+                shape = RoundedCornerShape(cornerRadius),
+                ambientColor = Color.Black.copy(alpha = 0.12f),
+                spotColor = Color.Black.copy(alpha = 0.25f)
+            )
     ) {
-        Text(
-            text = "$$balance",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            modifier = Modifier
+                .padding(
+                    horizontal = when (screenWidth) {
+                        org.ttpss930141011.bj.presentation.layout.ScreenWidth.COMPACT -> 12.dp
+                        org.ttpss930141011.bj.presentation.layout.ScreenWidth.MEDIUM -> 16.dp
+                        else -> 20.dp
+                    },
+                    vertical = 6.dp
+                )
+                .fillMaxHeight(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (screenWidth != org.ttpss930141011.bj.presentation.layout.ScreenWidth.COMPACT) {
+                Text(
+                    text = "💰",
+                    fontSize = (fontSize.value - 1).sp,
+                    color = Color.Black.copy(alpha = 0.8f)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+            }
+            Text(
+                text = "$$balance",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = fontSize,
+                color = Color.Black,
+                letterSpacing = if (screenWidth == org.ttpss930141011.bj.presentation.layout.ScreenWidth.COMPACT) 
+                    0.3.sp else 0.5.sp
+            )
+        }
     }
 }
 

@@ -93,13 +93,22 @@ data class Game(
         
         val baseActions = currentHand!!.availableActions(rules)
         
-        // Additional game-level constraints for split
-        return if (baseActions.contains(Action.SPLIT) && 
-                   playerHands.size >= rules.maxSplits + 1) {
-            baseActions - Action.SPLIT // Remove split if max splits reached
-        } else {
-            baseActions
+        // Additional game-level constraints
+        val constrainedActions = baseActions.toMutableSet()
+        
+        // Remove split if max splits reached
+        if (baseActions.contains(Action.SPLIT) && 
+            playerHands.size >= rules.maxSplits + 1) {
+            constrainedActions.remove(Action.SPLIT)
         }
+        
+        // Remove double if player cannot afford it
+        if (baseActions.contains(Action.DOUBLE) && 
+            (player?.chips ?: 0) < (currentHand?.bet ?: 0)) {
+            constrainedActions.remove(Action.DOUBLE)
+        }
+        
+        return constrainedActions
     }
 }
 
