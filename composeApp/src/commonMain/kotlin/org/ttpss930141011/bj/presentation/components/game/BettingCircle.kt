@@ -19,6 +19,7 @@ import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.domain.ChipInSpot
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.layout.Layout
 
 /**
  * Betting circle component for placing and displaying bets
@@ -31,10 +32,11 @@ fun BettingCircle(
     onClearBet: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier.size(Tokens.bettingCircleSize()),
-        contentAlignment = Alignment.Center
-    ) {
+    Layout { screenWidth ->
+        Box(
+            modifier = modifier.size(Tokens.bettingCircleSize(screenWidth)),
+            contentAlignment = Alignment.Center
+        ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -68,21 +70,22 @@ fun BettingCircle(
         
         // Clear button when bet is placed
         if ((bettingTableState?.currentBet ?: 0) > 0) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(Tokens.Size.iconLarge)
-                    .clip(CircleShape)
-                    .background(Color.Gray.copy(alpha = 0.7f))
-                    .clickable { onClearBet() },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "×",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(Tokens.Size.iconLarge)
+                        .clip(CircleShape)
+                        .background(Color.Gray.copy(alpha = 0.7f))
+                        .clickable { onClearBet() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "×",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
         }
     }

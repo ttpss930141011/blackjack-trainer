@@ -19,7 +19,9 @@ import org.ttpss930141011.bj.presentation.layout.isCompact
 import org.ttpss930141011.bj.presentation.components.*
 import org.ttpss930141011.bj.presentation.components.feedback.*
 import org.ttpss930141011.bj.presentation.components.dialogs.*
+import org.ttpss930141011.bj.presentation.components.navigation.Header
 import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.AppConstants
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +35,7 @@ fun CasinoGameScreen(
     val notificationState = rememberNotificationState()
     
     LaunchedEffect(gameRules) {
-        viewModel.initializeGame(gameRules, Player(id = "player1", chips = 1000))
+        viewModel.initializeGame(gameRules, Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS))
     }
     
     // Handle feedback notifications
@@ -45,7 +47,7 @@ fun CasinoGameScreen(
     }
     
     val game = viewModel.game
-    val currentPlayer = game?.player ?: Player(id = "player1", chips = 1000)
+    val currentPlayer = game?.player ?: Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS)
     
     Layout { screenWidth ->
         if (screenWidth.isCompact) {
@@ -62,7 +64,7 @@ fun CasinoGameScreen(
             
             BottomSheetScaffold(
                 scaffoldState = bottomSheetState,
-                sheetShape = RoundedCornerShape(topStart = Tokens.cornerRadius(), topEnd = Tokens.cornerRadius()),
+                sheetShape = RoundedCornerShape(topStart = Tokens.cornerRadius(screenWidth), topEnd = Tokens.cornerRadius(screenWidth)),
                 sheetContainerColor = GameStatusColors.casinoGreen,
                 sheetPeekHeight = 0.dp,
                 sheetContent = {
@@ -114,13 +116,14 @@ private fun CasinoGameContent(
                 )
             )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(Tokens.padding()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CasinoHeader(
+        Layout { contentScreenWidth ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(Tokens.padding(contentScreenWidth)),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+            Header(
                 balance = currentPlayer.chips,
                 onShowSettings = onShowSettings,
                 hasStats = viewModel.sessionStats.totalRounds > 0,
@@ -137,13 +140,13 @@ private fun CasinoGameContent(
                 colors = CardDefaults.cardColors(
                     containerColor = GameStatusColors.casinoGreen
                 ),
-                shape = RoundedCornerShape(Tokens.cornerRadius()),
+                shape = RoundedCornerShape(Tokens.cornerRadius(contentScreenWidth)),
                 elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.m)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(Tokens.cornerRadius()))
+                        .clip(RoundedCornerShape(Tokens.cornerRadius(contentScreenWidth)))
                         .background(
                             brush = Brush.radialGradient(
                                 colors = GameStatusColors.casinoTableGradient,
@@ -166,6 +169,7 @@ private fun CasinoGameContent(
                         }
                     }
                 }
+            }
             }
         }
         

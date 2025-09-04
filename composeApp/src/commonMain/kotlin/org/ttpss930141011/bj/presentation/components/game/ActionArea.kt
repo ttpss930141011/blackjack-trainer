@@ -117,7 +117,7 @@ private fun ChipSelection(
                     availableChips.forEach { chipValue ->
                         ChipImageDisplay(
                             value = chipValue,
-                            size = Tokens.chipSize(),
+                            size = Tokens.Size.chipDiameter,
                             onClick = {
                                 if (currentBet + chipValue <= playerChips) {
                                     onChipSelected(chipValue)

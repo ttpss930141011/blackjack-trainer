@@ -67,7 +67,14 @@ data class Round(
             Action.SPLIT -> error("Split should be handled above") // 不應該到這裡
         }
         
-        val newDecision = PlayerDecision(action, true) // TODO: 實際正確性計算
+        // Calculate correct strategy decision using StrategyEngine
+        val strategyEngine = StrategyEngine(rules)
+        val recommendedAction = strategyEngine.recommend(
+            playerHand = currentHand,
+            dealerUpCard = dealerHand.cards.firstOrNull() ?: error("Dealer must have up card")
+        )
+        val isCorrect = action == recommendedAction
+        val newDecision = PlayerDecision(action, isCorrect)
         val newDecisions = decisions + newDecision
         
         // 更新手牌（split或一般情況）

@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
+import org.ttpss930141011.bj.presentation.layout.Layout
 import org.ttpss930141011.bj.presentation.design.Tokens
 
 /**
@@ -41,21 +42,23 @@ private fun CompactLayout(
     hasStats: Boolean,
     onShowSummary: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Tokens.padding()),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Title(compact = true)
-        
+    Layout { screenWidth ->
         Row(
-            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing()),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Tokens.padding(screenWidth)),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CompactBalanceBadge(balance)
-            Actions(hasStats, onShowSummary, onShowSettings)
+            Title(compact = true)
+            
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth)),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CompactBalanceBadge(balance)
+                Actions(hasStats, onShowSummary, onShowSettings, screenWidth)
+            }
         }
     }
 }
@@ -67,21 +70,23 @@ private fun ExpandedLayout(
     hasStats: Boolean,
     onShowSummary: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Tokens.padding()),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Title(compact = false)
-        
+    Layout { screenWidth ->
         Row(
-            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing()),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Tokens.padding(screenWidth)),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BalanceCard(balance, fullWidth = false)
-            Actions(hasStats, onShowSummary, onShowSettings)
+            Title(compact = false)
+            
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth)),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BalanceCard(balance, fullWidth = false, screenWidth = screenWidth)
+                Actions(hasStats, onShowSummary, onShowSettings, screenWidth)
+            }
         }
     }
 }
@@ -129,14 +134,15 @@ private fun CompactBalanceBadge(balance: Int) {
 @Composable
 private fun BalanceCard(
     balance: Int,
-    fullWidth: Boolean
+    fullWidth: Boolean,
+    screenWidth: org.ttpss930141011.bj.presentation.layout.ScreenWidth
 ) {
     Card(
         modifier = Modifier.let {
             if (fullWidth) Modifier.fillMaxWidth() else Modifier
         },
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFFC107)),
-        shape = RoundedCornerShape(Tokens.cornerRadius())
+        shape = RoundedCornerShape(Tokens.cornerRadius(screenWidth))
     ) {
         BreakpointLayout(
             compact = {
@@ -162,8 +168,8 @@ private fun BalanceCard(
                 // Expanded: Show full text
                 Row(
                     modifier = Modifier.padding(
-                        horizontal = Tokens.padding(),
-                        vertical = Tokens.spacing()
+                        horizontal = Tokens.padding(screenWidth),
+                        vertical = Tokens.spacing(screenWidth)
                     ),
                     horizontalArrangement = if (fullWidth) {
                         Arrangement.Center
@@ -195,23 +201,26 @@ private fun BalanceCard(
 private fun Actions(
     hasStats: Boolean,
     onShowSummary: () -> Unit,
-    onShowSettings: () -> Unit
+    onShowSettings: () -> Unit,
+    screenWidth: org.ttpss930141011.bj.presentation.layout.ScreenWidth
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(Tokens.spacing()),
+        horizontalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (hasStats) {
             ActionButton(
                 icon = "📊",
                 onClick = onShowSummary,
-                color = Color(0xFF4CAF50)
+                color = Color(0xFF4CAF50),
+                screenWidth = screenWidth
             )
         }
         ActionButton(
             icon = "⚙️",
             onClick = onShowSettings,
-            color = Color.White.copy(alpha = 0.2f)
+            color = Color.White.copy(alpha = 0.2f),
+            screenWidth = screenWidth
         )
     }
 }
@@ -220,12 +229,13 @@ private fun Actions(
 private fun ActionButton(
     icon: String,
     onClick: () -> Unit,
-    color: Color
+    color: Color,
+    screenWidth: org.ttpss930141011.bj.presentation.layout.ScreenWidth
 ) {
     IconButton(
         onClick = onClick,
         modifier = Modifier
-            .size(Tokens.iconSize())
+            .size(Tokens.iconSize(screenWidth))
             .clip(CircleShape)
             .background(
                 Brush.radialGradient(colors = listOf(color, color.copy(alpha = 0.8f)))

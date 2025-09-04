@@ -20,6 +20,7 @@ import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 import org.ttpss930141011.bj.presentation.layout.isCompact
 import org.ttpss930141011.bj.presentation.layout.isMedium
 import org.ttpss930141011.bj.presentation.design.Tokens
+import org.ttpss930141011.bj.presentation.design.AppConstants
 
 @Composable
 fun NotificationSystem(
@@ -32,17 +33,20 @@ fun NotificationSystem(
             screenWidth.isCompact -> MobileNotifications(
                 notifications = notifications,
                 onDismiss = onDismiss,
-                modifier = modifier
+                modifier = modifier,
+                screenWidth = screenWidth
             )
             screenWidth.isMedium -> TabletNotifications(
                 notifications = notifications,
                 onDismiss = onDismiss,
-                modifier = modifier
+                modifier = modifier,
+                screenWidth = screenWidth
             )
             else -> DesktopNotifications(
                 notifications = notifications,
                 onDismiss = onDismiss,
-                modifier = modifier
+                modifier = modifier,
+                screenWidth = screenWidth
             )
         }
     }
@@ -52,7 +56,8 @@ fun NotificationSystem(
 private fun MobileNotifications(
     notifications: List<NotificationItem>,
     onDismiss: (String) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
+    screenWidth: ScreenWidth
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -70,12 +75,13 @@ private fun MobileNotifications(
                 ) + fadeIn(),
                 exit = slideOutVertically(
                     targetOffsetY = { it },
-                    animationSpec = tween(300)
+                    animationSpec = tween(AppConstants.Animation.FAST.toInt())
                 ) + fadeOut()
             ) {
                 MobileNotificationCard(
                     notification = notification,
-                    onDismiss = { onDismiss(notification.id) }
+                    onDismiss = { onDismiss(notification.id) },
+                    screenWidth = screenWidth
                 )
             }
         }
@@ -86,16 +92,17 @@ private fun MobileNotifications(
 private fun TabletNotifications(
     notifications: List<NotificationItem>,
     onDismiss: (String) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
+    screenWidth: ScreenWidth
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(Tokens.padding()),
+            .padding(Tokens.padding(screenWidth)),
         contentAlignment = Alignment.BottomEnd
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(Tokens.spacing()),
+            verticalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth)),
             horizontalAlignment = Alignment.End
         ) {
             notifications.takeLast(2).forEachIndexed { index, notification ->
@@ -112,13 +119,14 @@ private fun TabletNotifications(
                     ) + fadeIn(),
                     exit = slideOutHorizontally(
                         targetOffsetX = { it },
-                        animationSpec = tween(300)
+                        animationSpec = tween(AppConstants.Animation.FAST.toInt())
                     ) + fadeOut()
                 ) {
                     TabletNotificationCard(
                         notification = notification,
                         onDismiss = { onDismiss(notification.id) },
-                        isTop = isTop
+                        isTop = isTop,
+                        screenWidth = screenWidth
                     )
                 }
             }
@@ -130,22 +138,23 @@ private fun TabletNotifications(
 private fun DesktopNotifications(
     notifications: List<NotificationItem>,
     onDismiss: (String) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
+    screenWidth: ScreenWidth
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(Tokens.padding()),
+            .padding(Tokens.padding(screenWidth)),
         contentAlignment = Alignment.BottomEnd
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy((-Tokens.spacing())),
+            verticalArrangement = Arrangement.spacedBy((-Tokens.spacing(screenWidth))),
             horizontalAlignment = Alignment.End
         ) {
             notifications.takeLast(3).forEachIndexed { index, notification ->
                 val isTop = index == notifications.takeLast(3).size - 1
                 val zIndex = (index + 1).toFloat()
-                val alpha = if (index == 0 && notifications.size > 1) 0.7f else 1f
+                val alpha = if (index == 0 && notifications.size > 1) AppConstants.Alpha.SEMI_TRANSPARENT else 1f
                 
                 AnimatedVisibility(
                     visible = true,
@@ -158,7 +167,7 @@ private fun DesktopNotifications(
                     ) + fadeIn(),
                     exit = slideOutHorizontally(
                         targetOffsetX = { it },
-                        animationSpec = tween(300)
+                        animationSpec = tween(AppConstants.Animation.FAST.toInt())
                     ) + fadeOut(),
                     modifier = Modifier.zIndex(zIndex)
                 ) {
@@ -166,7 +175,8 @@ private fun DesktopNotifications(
                         notification = notification,
                         isTop = isTop,
                         alpha = alpha,
-                        onDismiss = { onDismiss(notification.id) }
+                        onDismiss = { onDismiss(notification.id) },
+                        screenWidth = screenWidth
                     )
                 }
             }
@@ -177,34 +187,35 @@ private fun DesktopNotifications(
 @Composable
 private fun MobileNotificationCard(
     notification: NotificationItem,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    screenWidth: ScreenWidth
 ) {
     val feedback = notification.feedback
     
     LaunchedEffect(notification.id) {
-        delay(3000)
+        delay(AppConstants.Animation.NOTIFICATION_TIMEOUT_MOBILE)
         onDismiss()
     }
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Tokens.padding()),
+            .padding(horizontal = Tokens.padding(screenWidth)),
         colors = CardDefaults.cardColors(
             containerColor = if (feedback.isCorrect) {
-                Color(0xFF4CAF50).copy(alpha = 0.95f)
+                Color(0xFF4CAF50).copy(alpha = AppConstants.Alpha.NOTIFICATION_BACKGROUND)
             } else {
-                Color(0xFFF44336).copy(alpha = 0.95f)
+                Color(0xFFF44336).copy(alpha = AppConstants.Alpha.NOTIFICATION_BACKGROUND)
             }
         ),
-        shape = RoundedCornerShape(Tokens.cornerRadius()),
+        shape = RoundedCornerShape(Tokens.cornerRadius(screenWidth)),
         elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.s)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(Tokens.padding()),
-            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing()),
+                .padding(Tokens.padding(screenWidth)),
+            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth)),
             verticalAlignment = Alignment.Top
         ) {
             Text(
@@ -225,7 +236,7 @@ private fun MobileNotificationCard(
                 
                 Text(
                     text = feedback.explanation,
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = Color.White.copy(alpha = AppConstants.Alpha.HIGHLIGHTED),
                     fontSize = 14.sp,
                     lineHeight = 18.sp
                 )
@@ -251,34 +262,35 @@ private fun MobileNotificationCard(
 private fun TabletNotificationCard(
     notification: NotificationItem,
     onDismiss: () -> Unit,
-    isTop: Boolean
+    isTop: Boolean,
+    screenWidth: ScreenWidth
 ) {
     val feedback = notification.feedback
     
     if (isTop) {
         LaunchedEffect(notification.id) {
-            delay(4000)
+            delay(AppConstants.Animation.NOTIFICATION_TIMEOUT_DESKTOP)
             onDismiss()
         }
     }
     
     Card(
-        modifier = Modifier.width(Tokens.notificationWidth() ?: 350.dp),
+        modifier = Modifier.width(Tokens.notificationWidth(screenWidth) ?: 350.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (feedback.isCorrect) {
-                Color(0xFF4CAF50).copy(alpha = 0.95f)
+                Color(0xFF4CAF50).copy(alpha = AppConstants.Alpha.NOTIFICATION_BACKGROUND)
             } else {
-                Color(0xFFF44336).copy(alpha = 0.95f)
+                Color(0xFFF44336).copy(alpha = AppConstants.Alpha.NOTIFICATION_BACKGROUND)
             }
         ),
-        shape = RoundedCornerShape(Tokens.cornerRadius()),
+        shape = RoundedCornerShape(Tokens.cornerRadius(screenWidth)),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isTop) Tokens.Space.s else Tokens.Space.xs)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(Tokens.Space.l),
-            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing()),
+            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth)),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -299,7 +311,7 @@ private fun TabletNotificationCard(
                 if (isTop) {
                     Text(
                         text = feedback.explanation,
-                        color = Color.White.copy(alpha = 0.9f),
+                        color = Color.White.copy(alpha = AppConstants.Alpha.HIGHLIGHTED),
                         fontSize = 13.sp,
                         lineHeight = 16.sp
                     )
@@ -329,40 +341,41 @@ private fun DesktopNotificationCard(
     notification: NotificationItem,
     isTop: Boolean,
     alpha: Float,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    screenWidth: ScreenWidth
 ) {
     val feedback = notification.feedback
     
     if (isTop) {
         LaunchedEffect(notification.id) {
-            delay(4000)
+            delay(AppConstants.Animation.NOTIFICATION_TIMEOUT_DESKTOP)
             onDismiss()
         }
     }
     
     Card(
         modifier = Modifier
-            .width(Tokens.notificationWidth() ?: 300.dp)
+            .width(Tokens.notificationWidth(screenWidth) ?: 300.dp)
             .shadow(
                 elevation = Tokens.Space.s,
-                shape = RoundedCornerShape(Tokens.cornerRadius())
+                shape = RoundedCornerShape(Tokens.cornerRadius(screenWidth))
             )
             .animateContentSize(),
         colors = CardDefaults.cardColors(
             containerColor = if (feedback.isCorrect) {
-                Color(0xFF4CAF50).copy(alpha = 0.95f)
+                Color(0xFF4CAF50).copy(alpha = AppConstants.Alpha.NOTIFICATION_BACKGROUND)
             } else {
-                Color(0xFFF44336).copy(alpha = 0.95f)
+                Color(0xFFF44336).copy(alpha = AppConstants.Alpha.NOTIFICATION_BACKGROUND)
             }
         ),
-        shape = RoundedCornerShape(Tokens.cornerRadius()),
+        shape = RoundedCornerShape(Tokens.cornerRadius(screenWidth)),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isTop) Tokens.Space.s else Tokens.Space.xs)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(Tokens.Space.l),
-            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing()),
+            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth)),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -383,7 +396,7 @@ private fun DesktopNotificationCard(
                 if (isTop) {
                     Text(
                         text = feedback.explanation,
-                        color = Color.White.copy(alpha = 0.9f),
+                        color = Color.White.copy(alpha = AppConstants.Alpha.HIGHLIGHTED),
                         fontSize = 12.sp,
                         lineHeight = 14.sp
                     )

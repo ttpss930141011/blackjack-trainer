@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.domain.GameRules
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.layout.Layout
 
 @Composable
 fun SettingsScreen(
@@ -20,20 +21,21 @@ fun SettingsScreen(
     onRulesChanged: (GameRules) -> Unit,
     onBack: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = GameStatusColors.casinoBackgroundGradient
-                )
-            )
-    ) {
-        Column(
+    Layout { screenWidth ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(Tokens.padding())
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = GameStatusColors.casinoBackgroundGradient
+                    )
+                )
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(Tokens.padding(screenWidth))
+            ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -55,10 +57,12 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(Tokens.Space.xl))
             
-            SettingsContent(
-                currentRules = currentRules,
-                onRulesChanged = onRulesChanged
-            )
+                SettingsContent(
+                    currentRules = currentRules,
+                    onRulesChanged = onRulesChanged,
+                    screenWidth = screenWidth
+                )
+            }
         }
     }
 }
@@ -97,7 +101,8 @@ fun SettingsSheetContent(
         
         SettingsContent(
             currentRules = currentRules,
-            onRulesChanged = onRulesChanged
+            onRulesChanged = onRulesChanged,
+            screenWidth = org.ttpss930141011.bj.presentation.layout.ScreenWidth.MEDIUM
         )
     }
 }
@@ -105,7 +110,8 @@ fun SettingsSheetContent(
 @Composable
 private fun SettingsContent(
     currentRules: GameRules,
-    onRulesChanged: (GameRules) -> Unit
+    onRulesChanged: (GameRules) -> Unit,
+    screenWidth: org.ttpss930141011.bj.presentation.layout.ScreenWidth
 ) {
     var rules by remember { mutableStateOf(currentRules) }
     
@@ -113,13 +119,13 @@ private fun SettingsContent(
         colors = CardDefaults.cardColors(
             containerColor = GameStatusColors.casinoGreen
         ),
-        shape = RoundedCornerShape(Tokens.cornerRadius()),
+        shape = RoundedCornerShape(Tokens.cornerRadius(screenWidth)),
         elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.m)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(Tokens.cornerRadius()))
+                .clip(RoundedCornerShape(Tokens.cornerRadius(screenWidth)))
                 .background(
                     brush = Brush.radialGradient(
                         colors = GameStatusColors.casinoTableGradient,

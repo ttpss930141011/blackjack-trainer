@@ -1,6 +1,10 @@
 package org.ttpss930141011.bj.domain
 
-class StrategyEngine {
+class StrategyEngine(private val rules: GameRules = GameRules()) {
+    
+    fun recommend(playerHand: Hand, dealerUpCard: Card): Action {
+        return getOptimalAction(playerHand, dealerUpCard, rules)
+    }
     
     fun getOptimalAction(
         playerHand: Hand, 

@@ -1,9 +1,8 @@
 package org.ttpss930141011.bj.presentation.design
 
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 
 /**
  * Unified design system - single source of truth for all sizing and spacing
@@ -31,9 +30,9 @@ object Tokens {
         val touchTarget = 48.dp
         val chipDiameter = 80.dp
         
-        // Notification widths
-        val notificationTablet = 350.dp
-        val notificationDesktop = 300.dp
+        // Notification widths (moved to AppConstants)
+        val notificationTablet = AppConstants.Dimensions.NOTIFICATION_TABLET_WIDTH.dp
+        val notificationDesktop = AppConstants.Dimensions.NOTIFICATION_DESKTOP_WIDTH.dp
     }
     
     // Card dimensions
@@ -53,95 +52,46 @@ object Tokens {
         val xlarge = 24.dp
     }
     
-    // Adaptive functions
-    @Composable
-    fun padding(): Dp {
-        var result = Space.xxl
-        BoxWithConstraints {
-            result = when {
-                maxWidth < 600.dp -> Space.l
-                maxWidth < 840.dp -> Space.xl
-                else -> Space.xxl
-            }
-        }
-        return result
+    // Adaptive functions - optimized single-source approach
+    fun padding(screenWidth: ScreenWidth): Dp = when (screenWidth) {
+        ScreenWidth.COMPACT -> Space.l
+        ScreenWidth.MEDIUM -> Space.xl
+        ScreenWidth.EXPANDED -> Space.xxl
     }
     
-    @Composable
-    fun spacing(): Dp {
-        var result = Space.l
-        BoxWithConstraints {
-            result = when {
-                maxWidth < 600.dp -> Space.s
-                maxWidth < 840.dp -> Space.m
-                else -> Space.l
-            }
-        }
-        return result
+    fun spacing(screenWidth: ScreenWidth): Dp = when (screenWidth) {
+        ScreenWidth.COMPACT -> Space.s
+        ScreenWidth.MEDIUM -> Space.m
+        ScreenWidth.EXPANDED -> Space.l
     }
     
-    @Composable
-    fun iconSize(): Dp {
-        var result = Size.iconLarge
-        BoxWithConstraints {
-            result = when {
-                maxWidth < 600.dp -> Size.iconSmall
-                maxWidth < 840.dp -> Size.iconMedium
-                else -> Size.iconLarge
-            }
-        }
-        return result
+    fun iconSize(screenWidth: ScreenWidth): Dp = when (screenWidth) {
+        ScreenWidth.COMPACT -> Size.iconSmall
+        ScreenWidth.MEDIUM -> Size.iconMedium
+        ScreenWidth.EXPANDED -> Size.iconLarge
     }
     
-    @Composable
-    fun cornerRadius(): Dp {
-        var result = Radius.xlarge
-        BoxWithConstraints {
-            result = when {
-                maxWidth < 600.dp -> Radius.medium
-                maxWidth < 840.dp -> Radius.large
-                else -> Radius.xlarge
-            }
-        }
-        return result
+    fun cornerRadius(screenWidth: ScreenWidth): Dp = when (screenWidth) {
+        ScreenWidth.COMPACT -> Radius.medium
+        ScreenWidth.MEDIUM -> Radius.large
+        ScreenWidth.EXPANDED -> Radius.xlarge
     }
     
-    @Composable
-    fun notificationWidth(): Dp? {
-        var result: Dp? = Size.notificationDesktop
-        BoxWithConstraints {
-            result = when {
-                maxWidth < 600.dp -> null // fillMaxWidth
-                maxWidth < 840.dp -> Size.notificationTablet
-                else -> Size.notificationDesktop
-            }
-        }
-        return result
+    fun notificationWidth(screenWidth: ScreenWidth): Dp? = when (screenWidth) {
+        ScreenWidth.COMPACT -> null // fillMaxWidth
+        ScreenWidth.MEDIUM -> AppConstants.Dimensions.NOTIFICATION_TABLET_WIDTH.dp
+        ScreenWidth.EXPANDED -> AppConstants.Dimensions.NOTIFICATION_DESKTOP_WIDTH.dp
     }
     
-    @Composable
-    fun bettingCircleSize(): Dp {
-        var result = 160.dp
-        BoxWithConstraints {
-            result = when {
-                maxWidth < 600.dp -> 120.dp  // Smaller on compact screens
-                maxWidth < 840.dp -> 140.dp
-                else -> 160.dp
-            }
-        }
-        return result
+    fun bettingCircleSize(screenWidth: ScreenWidth): Dp = when (screenWidth) {
+        ScreenWidth.COMPACT -> AppConstants.Dimensions.BETTING_CIRCLE_COMPACT.dp
+        ScreenWidth.MEDIUM -> AppConstants.Dimensions.BETTING_CIRCLE_MEDIUM.dp
+        ScreenWidth.EXPANDED -> AppConstants.Dimensions.BETTING_CIRCLE_EXPANDED.dp
     }
     
-    @Composable
-    fun chipSize(): Dp {
-        var result = Size.chipDiameter
-        BoxWithConstraints {
-            result = when {
-                maxWidth < 600.dp -> 60.dp    // Smaller chips on compact
-                maxWidth < 840.dp -> 70.dp
-                else -> Size.chipDiameter     // 80.dp
-            }
-        }
-        return result
+    fun chipSize(screenWidth: ScreenWidth): Dp = when (screenWidth) {
+        ScreenWidth.COMPACT -> AppConstants.Dimensions.CHIP_SIZE_COMPACT.dp
+        ScreenWidth.MEDIUM -> AppConstants.Dimensions.CHIP_SIZE_MEDIUM.dp
+        ScreenWidth.EXPANDED -> Size.chipDiameter
     }
 }
