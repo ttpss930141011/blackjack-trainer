@@ -1,6 +1,7 @@
 package org.ttpss930141011.bj.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -9,23 +10,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.presentation.design.Tokens
+import org.ttpss930141011.bj.presentation.layout.Layout
+import org.ttpss930141011.bj.presentation.layout.isCompact
 import org.ttpss930141011.bj.presentation.components.*
 import org.ttpss930141011.bj.presentation.components.feedback.*
 import org.ttpss930141011.bj.presentation.components.dialogs.*
-import org.ttpss930141011.bj.presentation.shared.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.GameStatusColors
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CasinoGameScreen(
     gameRules: GameRules = GameRules(),
     onShowSettings: () -> Unit = {},
     onRulesChanged: (GameRules) -> Unit = {}
 ) {
-    val configuration = LocalConfiguration.current
-    val isCompact = configuration.screenWidthDp < 600
     var showSettingsSheet by remember { mutableStateOf(false) }
     val viewModel = remember { GameViewModel() }
     val notificationState = rememberNotificationState()
@@ -45,51 +47,53 @@ fun CasinoGameScreen(
     val game = viewModel.game
     val currentPlayer = game?.player ?: Player(id = "player1", chips = 1000)
     
-    if (isCompact) {
-        // Mobile: BottomSheetScaffold
-        val bottomSheetState = rememberBottomSheetScaffoldState()
-        
-        LaunchedEffect(showSettingsSheet) {
-            if (showSettingsSheet) {
-                bottomSheetState.bottomSheetState.expand()
-            } else {
-                bottomSheetState.bottomSheetState.partialExpand()
+    Layout { screenWidth ->
+        if (screenWidth.isCompact) {
+            // Mobile: BottomSheetScaffold
+            val bottomSheetState = rememberBottomSheetScaffoldState()
+            
+            LaunchedEffect(showSettingsSheet) {
+                if (showSettingsSheet) {
+                    bottomSheetState.bottomSheetState.expand()
+                } else {
+                    bottomSheetState.bottomSheetState.partialExpand()
+                }
             }
-        }
-        
-        BottomSheetScaffold(
-            scaffoldState = bottomSheetState,
-            sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            sheetContainerColor = GameStatusColors.casinoGreen,
-            sheetPeekHeight = 0.dp,
-            sheetContent = {
-                SettingsSheetContent(
-                    currentRules = gameRules,
-                    onRulesChanged = { newRules -> 
-                        onRulesChanged(newRules)
-                        showSettingsSheet = false 
-                    },
-                    onClose = { showSettingsSheet = false }
+            
+            BottomSheetScaffold(
+                scaffoldState = bottomSheetState,
+                sheetShape = RoundedCornerShape(topStart = Tokens.cornerRadius(), topEnd = Tokens.cornerRadius()),
+                sheetContainerColor = GameStatusColors.casinoGreen,
+                sheetPeekHeight = 0.dp,
+                sheetContent = {
+                    SettingsSheetContent(
+                        currentRules = gameRules,
+                        onRulesChanged = { newRules -> 
+                            onRulesChanged(newRules)
+                            showSettingsSheet = false 
+                        },
+                        onClose = { showSettingsSheet = false }
+                    )
+                }
+            ) {
+                CasinoGameContent(
+                    game = game,
+                    viewModel = viewModel,
+                    currentPlayer = currentPlayer,
+                    notificationState = notificationState,
+                    onShowSettings = { showSettingsSheet = true }
                 )
             }
-        ) {
+        } else {
+            // Desktop: Full screen
             CasinoGameContent(
                 game = game,
                 viewModel = viewModel,
                 currentPlayer = currentPlayer,
                 notificationState = notificationState,
-                onShowSettings = { showSettingsSheet = true }
+                onShowSettings = onShowSettings
             )
         }
-    } else {
-        // Desktop: Full screen
-        CasinoGameContent(
-            game = game,
-            viewModel = viewModel,
-            currentPlayer = currentPlayer,
-            notificationState = notificationState,
-            onShowSettings = onShowSettings
-        )
     }
 }
 
@@ -113,7 +117,7 @@ private fun CasinoGameContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(Tokens.padding()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CasinoHeader(
@@ -123,7 +127,7 @@ private fun CasinoGameContent(
                 onShowSummary = { viewModel.showGameSummary() }
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Tokens.Space.l))
             
             // Casino Table Card
             Card(
@@ -133,20 +137,20 @@ private fun CasinoGameContent(
                 colors = CardDefaults.cardColors(
                     containerColor = GameStatusColors.casinoGreen
                 ),
-                shape = RoundedCornerShape(24.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
+                shape = RoundedCornerShape(Tokens.cornerRadius()),
+                elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.m)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(24.dp))
+                        .clip(RoundedCornerShape(Tokens.cornerRadius()))
                         .background(
                             brush = Brush.radialGradient(
                                 colors = GameStatusColors.casinoTableGradient,
                                 radius = 800f
                             )
                         )
-                        .padding(24.dp)
+                        .padding(Tokens.Space.xl)
                 ) {
                     game?.let { currentGame ->
                         GamePhaseManager(

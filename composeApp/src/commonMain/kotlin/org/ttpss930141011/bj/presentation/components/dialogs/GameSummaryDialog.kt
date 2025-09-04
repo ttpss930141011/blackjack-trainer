@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.domain.SessionStats
+import org.ttpss930141011.bj.presentation.design.Tokens
 
 @Composable
 fun GameSummaryDialog(
@@ -24,15 +25,15 @@ fun GameSummaryDialog(
     Card(
         modifier = Modifier
             .fillMaxWidth(0.9f)
-            .padding(16.dp)
+            .padding(Tokens.Space.l)
     ) {
         Column(
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier.padding(Tokens.Space.xl)
         ) {
             Text(
                 text = "Game Summary",
                 style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = Tokens.Space.l)
             )
             
             Row(
@@ -49,12 +50,12 @@ fun GameSummaryDialog(
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Tokens.Space.l))
             
             Text(
                 text = "Round History",
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = Tokens.Space.s)
             )
             
             LazyColumn(
@@ -63,20 +64,20 @@ fun GameSummaryDialog(
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s)
                     ) {
                         Text("Round", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
                         Text("Decisions", modifier = Modifier.weight(2f), style = MaterialTheme.typography.labelMedium)
                         Text("Result", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
                         Text("Correct", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Tokens.Space.xs))
                 }
                 
                 items(stats.roundHistory) { record ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s)
                     ) {
                         Text("${record.roundNumber}", modifier = Modifier.weight(1f))
                         Text(
@@ -96,7 +97,7 @@ fun GameSummaryDialog(
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Tokens.Space.l))
             
             Row(
                 modifier = Modifier.fillMaxWidth(),

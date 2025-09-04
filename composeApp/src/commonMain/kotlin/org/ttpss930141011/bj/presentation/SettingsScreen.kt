@@ -11,7 +11,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.domain.GameRules
-import org.ttpss930141011.bj.presentation.shared.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.Tokens
+import org.ttpss930141011.bj.presentation.design.GameStatusColors
 
 @Composable
 fun SettingsScreen(
@@ -31,7 +32,7 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(Tokens.padding())
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -52,7 +53,7 @@ fun SettingsScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(Tokens.Space.xl))
             
             SettingsContent(
                 currentRules = currentRules,
@@ -71,7 +72,7 @@ fun SettingsSheetContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp)
+            .padding(Tokens.Space.xl)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -92,7 +93,7 @@ fun SettingsSheetContent(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Tokens.Space.l))
         
         SettingsContent(
             currentRules = currentRules,
@@ -112,21 +113,21 @@ private fun SettingsContent(
         colors = CardDefaults.cardColors(
             containerColor = GameStatusColors.casinoGreen
         ),
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
+        shape = RoundedCornerShape(Tokens.cornerRadius()),
+        elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.m)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(Tokens.cornerRadius()))
                 .background(
                     brush = Brush.radialGradient(
                         colors = GameStatusColors.casinoTableGradient,
                         radius = 800f
                     )
                 )
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(Tokens.Space.xl),
+            verticalArrangement = Arrangement.spacedBy(Tokens.Space.l)
         ) {
             Text(
                 text = "Dealer Rules",
@@ -251,7 +252,7 @@ private fun SettingsContent(
         }
     }
     
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(Tokens.Space.xl))
     
     Button(
         onClick = { onRulesChanged(rules) },

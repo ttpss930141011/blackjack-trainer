@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import org.ttpss930141011.bj.domain.Card
 import org.ttpss930141011.bj.presentation.mappers.CardImageMapper
-import org.ttpss930141011.bj.presentation.shared.CardSize
+import org.ttpss930141011.bj.presentation.design.Tokens
 
 /**
  * Display component for showing card images
@@ -18,7 +18,7 @@ import org.ttpss930141011.bj.presentation.shared.CardSize
 fun CardImageDisplay(
     card: Card,
     modifier: Modifier = Modifier,
-    size: CardSize = CardSize.MEDIUM
+    size: Tokens.CardDimensions = Tokens.Card.medium
 ) {
     Image(
         painter = CardImageMapper.getCardPainter(card),
@@ -31,7 +31,7 @@ fun CardImageDisplay(
 @Composable
 fun HoleCardDisplay(
     modifier: Modifier = Modifier,
-    size: CardSize = CardSize.MEDIUM
+    size: Tokens.CardDimensions = Tokens.Card.medium
 ) {
     Image(
         painter = CardImageMapper.getCardBackPainter(),

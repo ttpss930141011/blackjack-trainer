@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
 import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
-import org.ttpss930141011.bj.presentation.shared.ChipSize
+import org.ttpss930141011.bj.presentation.design.Tokens
 
 /**
  * Display component for showing chip images with animation
@@ -22,7 +22,7 @@ fun ChipImageDisplay(
     value: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    size: ChipSize = ChipSize.MEDIUM
+    size: androidx.compose.ui.unit.Dp = Tokens.Size.chipDiameter
 ) {
     val scale by animateFloatAsState(
         targetValue = 1.0f,
@@ -38,7 +38,7 @@ fun ChipImageDisplay(
         painter = ChipImageMapper.getChipPainter(value),
         contentDescription = "$$value chip",
         modifier = modifier
-            .size(size.diameter)
+            .size(size)
             .scale(scale)
             .clickable(
                 interactionSource = interactionSource,

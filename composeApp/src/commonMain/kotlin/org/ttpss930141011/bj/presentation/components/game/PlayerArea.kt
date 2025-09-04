@@ -1,8 +1,10 @@
 package org.ttpss930141011.bj.presentation.components.game
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -10,13 +12,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.domain.*
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
-import org.ttpss930141011.bj.presentation.shared.CardSize
-import org.ttpss930141011.bj.presentation.shared.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 
 /**
  * Player area component that handles player hand display
@@ -67,7 +74,7 @@ private fun PlayerHandsDisplay(
             phase = phase
         )
     } else {
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.m)) {
             itemsIndexed(playerHands) { index, hand ->
                 PlayerHandCard(
                     hand = hand,
@@ -79,6 +86,7 @@ private fun PlayerHandsDisplay(
         }
     }
 }
+
 
 @Composable
 private fun PlayerHandCard(
@@ -97,13 +105,13 @@ private fun PlayerHandCard(
                 GameStatusColors.casinoGreen.copy(alpha = 0.6f)
             }
         ),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(Tokens.Space.m),
+        elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.xs)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(Tokens.Space.m),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
         ) {
             // Hand title
             val title = when {
@@ -125,9 +133,9 @@ private fun PlayerHandCard(
             )
             
             // Cards
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
                 hand.cards.forEach { card ->
-                    CardImageDisplay(card = card, size = CardSize.MEDIUM)
+                    CardImageDisplay(card = card, size = Tokens.Card.medium)
                 }
             }
             
@@ -149,7 +157,7 @@ private fun PlayerHandCard(
             
             // Status area - fixed height to prevent jumping
             Box(
-                modifier = Modifier.height(20.dp),
+                modifier = Modifier.height(Tokens.Size.iconSmall),
                 contentAlignment = Alignment.Center
             ) {
                 val statusText = when {

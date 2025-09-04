@@ -15,10 +15,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
 import org.ttpss930141011.bj.presentation.components.displays.HoleCardDisplay
-import org.ttpss930141011.bj.presentation.shared.CardSize
-import org.ttpss930141011.bj.presentation.shared.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.GameStatusColors
 
 /**
  * Dealer area component that handles dealer display logic
@@ -53,9 +53,9 @@ fun DealerArea(
 private fun DealerWaitingDisplay() {
     Card {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(Tokens.Space.l),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
         ) {
             Text(
                 text = "Dealer",
@@ -64,7 +64,7 @@ private fun DealerWaitingDisplay() {
             )
             
             // Show placeholder cards
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
                 repeat(2) {
                     PlaceholderCard()
                 }
@@ -87,9 +87,9 @@ private fun DealerHandDisplay(
 ) {
     Card {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(Tokens.Space.l),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
         ) {
             Text(
                 text = "Dealer",
@@ -100,18 +100,18 @@ private fun DealerHandDisplay(
             when (phase) {
                 GamePhase.PLAYER_ACTIONS -> {
                     dealerUpCard?.let { upCard ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            CardImageDisplay(card = upCard, size = CardSize.MEDIUM)
-                            HoleCardDisplay(size = CardSize.MEDIUM)
+                        Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
+                            CardImageDisplay(card = upCard, size = Tokens.Card.medium)
+                            HoleCardDisplay(size = Tokens.Card.medium)
                         }
                         Text("Up Card: ${upCard.rank}")
                     }
                 }
                 else -> {
                     dealerHand?.let { hand ->
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
                             items(hand.cards) { card ->
-                                CardImageDisplay(card = card, size = CardSize.MEDIUM)
+                                CardImageDisplay(card = card, size = Tokens.Card.medium)
                             }
                         }
                         Text(
@@ -137,15 +137,15 @@ private fun DealerHandDisplay(
 private fun PlaceholderCard() {
     Box(
         modifier = Modifier
-            .size(CardSize.MEDIUM.width, CardSize.MEDIUM.height)
+            .size(Tokens.Card.medium.width, Tokens.Card.medium.height)
             .background(
                 Color.Gray.copy(alpha = 0.3f),
-                RoundedCornerShape(4.dp)
+                RoundedCornerShape(Tokens.Space.xs)
             )
             .border(
                 1.dp,
                 Color.White.copy(alpha = 0.3f),
-                RoundedCornerShape(4.dp)
+                RoundedCornerShape(Tokens.Space.xs)
             )
     )
 }

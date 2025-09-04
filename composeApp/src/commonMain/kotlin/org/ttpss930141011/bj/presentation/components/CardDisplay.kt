@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.presentation.shared
+package org.ttpss930141011.bj.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -12,10 +12,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.domain.Card
+import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.domain.Hand
 import org.ttpss930141011.bj.domain.PlayerHand
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
-import org.ttpss930141011.bj.presentation.shared.CardSize
+import org.ttpss930141011.bj.presentation.design.GameStatusColors
 
 /**
  * Shared utilities for card display components.
@@ -26,12 +27,12 @@ object CardDisplayUtils {
     @Composable
     fun CardRow(
         cards: List<Card>,
-        size: CardSize = CardSize.MEDIUM,
+        size: Tokens.CardDimensions = Tokens.Card.medium,
         modifier: Modifier = Modifier
     ) {
         if (cards.size <= 5) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs),
                 modifier = modifier
             ) {
                 cards.forEach { card ->
@@ -40,7 +41,7 @@ object CardDisplayUtils {
             }
         } else {
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs),
                 modifier = modifier
             ) {
                 items(cards) { card ->

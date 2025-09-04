@@ -15,10 +15,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
-import org.ttpss930141011.bj.presentation.responsive.ResponsiveLayout
-import org.ttpss930141011.bj.presentation.responsive.WindowInfo
-import org.ttpss930141011.bj.presentation.responsive.getPadding
-import org.ttpss930141011.bj.presentation.responsive.getCardCornerRadius
+import org.ttpss930141011.bj.presentation.layout.Layout
+import org.ttpss930141011.bj.presentation.layout.ScreenWidth
+import org.ttpss930141011.bj.presentation.layout.isCompact
+import org.ttpss930141011.bj.presentation.layout.isMedium
+import org.ttpss930141011.bj.presentation.design.Tokens
 
 @Composable
 fun NotificationSystem(
@@ -26,24 +27,21 @@ fun NotificationSystem(
     onDismiss: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ResponsiveLayout { windowInfo ->
+    Layout { screenWidth ->
         when {
-            windowInfo.isCompact -> MobileNotifications(
+            screenWidth.isCompact -> MobileNotifications(
                 notifications = notifications,
                 onDismiss = onDismiss,
-                windowInfo = windowInfo,
                 modifier = modifier
             )
-            windowInfo.isMedium -> TabletNotifications(
+            screenWidth.isMedium -> TabletNotifications(
                 notifications = notifications,
                 onDismiss = onDismiss,
-                windowInfo = windowInfo,
                 modifier = modifier
             )
             else -> DesktopNotifications(
                 notifications = notifications,
                 onDismiss = onDismiss,
-                windowInfo = windowInfo,
                 modifier = modifier
             )
         }
@@ -54,10 +52,8 @@ fun NotificationSystem(
 private fun MobileNotifications(
     notifications: List<NotificationItem>,
     onDismiss: (String) -> Unit,
-    windowInfo: WindowInfo,
     modifier: Modifier
 ) {
-    // Mobile: Bottom sheet style, full width
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomCenter
@@ -79,8 +75,7 @@ private fun MobileNotifications(
             ) {
                 MobileNotificationCard(
                     notification = notification,
-                    onDismiss = { onDismiss(notification.id) },
-                    windowInfo = windowInfo
+                    onDismiss = { onDismiss(notification.id) }
                 )
             }
         }
@@ -91,18 +86,16 @@ private fun MobileNotifications(
 private fun TabletNotifications(
     notifications: List<NotificationItem>,
     onDismiss: (String) -> Unit,
-    windowInfo: WindowInfo,
     modifier: Modifier
 ) {
-    // Tablet: Bottom-right corner, but larger than mobile
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(windowInfo.getPadding()),
+            .padding(Tokens.padding()),
         contentAlignment = Alignment.BottomEnd
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(Tokens.spacing()),
             horizontalAlignment = Alignment.End
         ) {
             notifications.takeLast(2).forEachIndexed { index, notification ->
@@ -111,22 +104,21 @@ private fun TabletNotifications(
                 AnimatedVisibility(
                     visible = true,
                     enter = slideInHorizontally(
-                        initialOffsetX = { fullWidth -> fullWidth },
+                        initialOffsetX = { it },
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
                             stiffness = Spring.StiffnessMedium
                         )
                     ) + fadeIn(),
                     exit = slideOutHorizontally(
-                        targetOffsetX = { fullWidth -> fullWidth },
+                        targetOffsetX = { it },
                         animationSpec = tween(300)
                     ) + fadeOut()
                 ) {
                     TabletNotificationCard(
                         notification = notification,
                         onDismiss = { onDismiss(notification.id) },
-                        isTop = isTop,
-                        windowInfo = windowInfo
+                        isTop = isTop
                     )
                 }
             }
@@ -138,37 +130,34 @@ private fun TabletNotifications(
 private fun DesktopNotifications(
     notifications: List<NotificationItem>,
     onDismiss: (String) -> Unit,
-    windowInfo: WindowInfo,
     modifier: Modifier
 ) {
-    // Desktop: Original sonner-style stacking
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(windowInfo.getPadding()),
+            .padding(Tokens.padding()),
         contentAlignment = Alignment.BottomEnd
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy((-8).dp),
+            verticalArrangement = Arrangement.spacedBy((-Tokens.spacing())),
             horizontalAlignment = Alignment.End
         ) {
             notifications.takeLast(3).forEachIndexed { index, notification ->
                 val isTop = index == notifications.takeLast(3).size - 1
                 val zIndex = (index + 1).toFloat()
-                val scale = 1f - (index * 0.05f)
                 val alpha = if (index == 0 && notifications.size > 1) 0.7f else 1f
                 
                 AnimatedVisibility(
                     visible = true,
                     enter = slideInHorizontally(
-                        initialOffsetX = { fullWidth -> fullWidth },
+                        initialOffsetX = { it },
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
                             stiffness = Spring.StiffnessMedium
                         )
                     ) + fadeIn(),
                     exit = slideOutHorizontally(
-                        targetOffsetX = { fullWidth -> fullWidth },
+                        targetOffsetX = { it },
                         animationSpec = tween(300)
                     ) + fadeOut(),
                     modifier = Modifier.zIndex(zIndex)
@@ -176,10 +165,8 @@ private fun DesktopNotifications(
                     DesktopNotificationCard(
                         notification = notification,
                         isTop = isTop,
-                        scale = scale,
                         alpha = alpha,
-                        onDismiss = { onDismiss(notification.id) },
-                        windowInfo = windowInfo
+                        onDismiss = { onDismiss(notification.id) }
                     )
                 }
             }
@@ -190,12 +177,10 @@ private fun DesktopNotifications(
 @Composable
 private fun MobileNotificationCard(
     notification: NotificationItem,
-    onDismiss: () -> Unit,
-    windowInfo: WindowInfo
+    onDismiss: () -> Unit
 ) {
     val feedback = notification.feedback
     
-    // Auto-dismiss after 3 seconds on mobile
     LaunchedEffect(notification.id) {
         delay(3000)
         onDismiss()
@@ -204,7 +189,7 @@ private fun MobileNotificationCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = windowInfo.getPadding()),
+            .padding(horizontal = Tokens.padding()),
         colors = CardDefaults.cardColors(
             containerColor = if (feedback.isCorrect) {
                 Color(0xFF4CAF50).copy(alpha = 0.95f)
@@ -212,26 +197,24 @@ private fun MobileNotificationCard(
                 Color(0xFFF44336).copy(alpha = 0.95f)
             }
         ),
-        shape = RoundedCornerShape(windowInfo.getCardCornerRadius()),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        shape = RoundedCornerShape(Tokens.cornerRadius()),
+        elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.s)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(windowInfo.getPadding()),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(Tokens.padding()),
+            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing()),
             verticalAlignment = Alignment.Top
         ) {
-            // Status Icon
             Text(
                 text = if (feedback.isCorrect) "✅" else "❌",
                 fontSize = 24.sp
             )
             
-            // Content
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(Tokens.Space.xs)
             ) {
                 Text(
                     text = if (feedback.isCorrect) "Correct!" else "Not Optimal",
@@ -248,10 +231,9 @@ private fun MobileNotificationCard(
                 )
             }
             
-            // Dismiss button
             TextButton(
                 onClick = onDismiss,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(Tokens.Size.touchTarget),
                 contentPadding = PaddingValues(0.dp)
             ) {
                 Text(
@@ -269,8 +251,7 @@ private fun MobileNotificationCard(
 private fun TabletNotificationCard(
     notification: NotificationItem,
     onDismiss: () -> Unit,
-    isTop: Boolean,
-    windowInfo: WindowInfo
+    isTop: Boolean
 ) {
     val feedback = notification.feedback
     
@@ -282,7 +263,7 @@ private fun TabletNotificationCard(
     }
     
     Card(
-        modifier = Modifier.width(350.dp),
+        modifier = Modifier.width(Tokens.notificationWidth() ?: 350.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (feedback.isCorrect) {
                 Color(0xFF4CAF50).copy(alpha = 0.95f)
@@ -290,14 +271,14 @@ private fun TabletNotificationCard(
                 Color(0xFFF44336).copy(alpha = 0.95f)
             }
         ),
-        shape = RoundedCornerShape(windowInfo.getCardCornerRadius()),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isTop) 8.dp else 4.dp)
+        shape = RoundedCornerShape(Tokens.cornerRadius()),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isTop) Tokens.Space.s else Tokens.Space.xs)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(Tokens.Space.l),
+            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing()),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -328,7 +309,7 @@ private fun TabletNotificationCard(
             if (isTop) {
                 TextButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(Tokens.Size.iconLarge),
                     contentPadding = PaddingValues(0.dp)
                 ) {
                     Text(
@@ -347,10 +328,8 @@ private fun TabletNotificationCard(
 private fun DesktopNotificationCard(
     notification: NotificationItem,
     isTop: Boolean,
-    scale: Float,
     alpha: Float,
-    onDismiss: () -> Unit,
-    windowInfo: WindowInfo
+    onDismiss: () -> Unit
 ) {
     val feedback = notification.feedback
     
@@ -363,10 +342,10 @@ private fun DesktopNotificationCard(
     
     Card(
         modifier = Modifier
-            .width(300.dp)
+            .width(Tokens.notificationWidth() ?: 300.dp)
             .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(windowInfo.getCardCornerRadius())
+                elevation = Tokens.Space.s,
+                shape = RoundedCornerShape(Tokens.cornerRadius())
             )
             .animateContentSize(),
         colors = CardDefaults.cardColors(
@@ -376,14 +355,14 @@ private fun DesktopNotificationCard(
                 Color(0xFFF44336).copy(alpha = 0.95f)
             }
         ),
-        shape = RoundedCornerShape(windowInfo.getCardCornerRadius()),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isTop) 8.dp else 4.dp)
+        shape = RoundedCornerShape(Tokens.cornerRadius()),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isTop) Tokens.Space.s else Tokens.Space.xs)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(Tokens.Space.l),
+            horizontalArrangement = Arrangement.spacedBy(Tokens.spacing()),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -414,7 +393,7 @@ private fun DesktopNotificationCard(
             if (isTop) {
                 TextButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Tokens.Size.iconMedium),
                     contentPadding = PaddingValues(0.dp)
                 ) {
                     Text(

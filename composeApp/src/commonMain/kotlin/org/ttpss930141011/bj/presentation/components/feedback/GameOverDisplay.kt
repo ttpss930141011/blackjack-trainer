@@ -7,12 +7,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.ttpss930141011.bj.presentation.design.Tokens
 
 @Composable
 fun GameOverDisplay(totalChips: Int) {
     Card {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(Tokens.Space.l),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(

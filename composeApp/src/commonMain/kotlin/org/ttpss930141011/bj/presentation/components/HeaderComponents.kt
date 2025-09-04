@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.presentation.shared
+package org.ttpss930141011.bj.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.ttpss930141011.bj.presentation.design.Tokens
 
 /**
  * Shared header components used across different responsive layouts
@@ -62,29 +63,29 @@ fun BalanceBadge(
         },
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFFC107)),
         shape = RoundedCornerShape(when (style) {
-            BalanceBadgeStyle.FULL_WIDTH -> 12.dp
-            BalanceBadgeStyle.CARD -> 14.dp
-            BalanceBadgeStyle.ELEVATED -> 16.dp
+            BalanceBadgeStyle.FULL_WIDTH -> Tokens.Space.m
+            BalanceBadgeStyle.CARD -> Tokens.Radius.medium
+            BalanceBadgeStyle.ELEVATED -> Tokens.Space.l
         }),
         elevation = CardDefaults.cardElevation(
             defaultElevation = when (style) {
-                BalanceBadgeStyle.FULL_WIDTH -> 4.dp
+                BalanceBadgeStyle.FULL_WIDTH -> Tokens.Space.xs
                 BalanceBadgeStyle.CARD -> 6.dp  
-                BalanceBadgeStyle.ELEVATED -> 8.dp
+                BalanceBadgeStyle.ELEVATED -> Tokens.Space.s
             }
         )
     ) {
         Row(
             modifier = Modifier.padding(
                 horizontal = when (style) {
-                    BalanceBadgeStyle.FULL_WIDTH -> 16.dp
-                    BalanceBadgeStyle.CARD -> 16.dp
-                    BalanceBadgeStyle.ELEVATED -> 20.dp
+                    BalanceBadgeStyle.FULL_WIDTH -> Tokens.Space.l
+                    BalanceBadgeStyle.CARD -> Tokens.Space.l
+                    BalanceBadgeStyle.ELEVATED -> Tokens.Size.iconSmall
                 },
                 vertical = when (style) {
-                    BalanceBadgeStyle.FULL_WIDTH -> 8.dp
+                    BalanceBadgeStyle.FULL_WIDTH -> Tokens.Space.s
                     BalanceBadgeStyle.CARD -> 10.dp
-                    BalanceBadgeStyle.ELEVATED -> 12.dp
+                    BalanceBadgeStyle.ELEVATED -> Tokens.Space.m
                 }
             ),
             horizontalArrangement = if (style == BalanceBadgeStyle.FULL_WIDTH) {
@@ -122,9 +123,9 @@ fun HeaderActions(
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(when (size) {
-            HeaderActionSize.COMPACT -> 8.dp
+            HeaderActionSize.COMPACT -> Tokens.Space.s
             HeaderActionSize.MEDIUM -> 10.dp
-            HeaderActionSize.EXPANDED -> 12.dp
+            HeaderActionSize.EXPANDED -> Tokens.Space.m
         }),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -155,12 +156,12 @@ private fun HeaderIconButton(
     val buttonSize = when (size) {
         HeaderActionSize.COMPACT -> 40.dp
         HeaderActionSize.MEDIUM -> 44.dp
-        HeaderActionSize.EXPANDED -> 48.dp
+        HeaderActionSize.EXPANDED -> Tokens.Size.buttonHeight
     }
     
     val elevation = when (size) {
         HeaderActionSize.COMPACT -> 0.dp
-        HeaderActionSize.MEDIUM -> 4.dp
+        HeaderActionSize.MEDIUM -> Tokens.Space.xs
         HeaderActionSize.EXPANDED -> 6.dp
     }
     

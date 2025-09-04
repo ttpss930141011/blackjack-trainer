@@ -15,10 +15,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.domain.BettingTableState
+import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.domain.ChipInSpot
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
-import org.ttpss930141011.bj.presentation.shared.ChipSize
-import org.ttpss930141011.bj.presentation.shared.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.GameStatusColors
 
 /**
  * Betting circle component for placing and displaying bets
@@ -32,7 +32,7 @@ fun BettingCircle(
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier.size(160.dp),
+        modifier = modifier.size(Tokens.bettingCircleSize()),
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -71,7 +71,7 @@ fun BettingCircle(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .size(32.dp)
+                    .size(Tokens.Size.iconLarge)
                     .clip(CircleShape)
                     .background(Color.Gray.copy(alpha = 0.7f))
                     .clickable { onClearBet() },
@@ -107,7 +107,7 @@ private fun ChipDisplay(
                     ChipImageDisplay(
                         value = chipInSpot.value.value,
                         onClick = { },
-                        size = ChipSize.MEDIUM,
+                        size = Tokens.Size.chipDiameter,
                         modifier = Modifier.offset(
                             x = (stackIndex * 2).dp,
                             y = (stackIndex * 1).dp

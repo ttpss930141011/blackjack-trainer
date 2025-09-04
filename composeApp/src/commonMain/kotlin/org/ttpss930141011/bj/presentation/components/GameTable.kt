@@ -11,9 +11,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.application.GameViewModel
+import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.domain.*
 import org.ttpss930141011.bj.presentation.components.game.*
-import org.ttpss930141011.bj.presentation.shared.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.GameStatusColors
 
 /**
  * Unified game table that adapts to all game phases.
@@ -30,14 +31,14 @@ fun GameTable(
         colors = CardDefaults.cardColors(
             containerColor = GameStatusColors.casinoGreen.copy(alpha = 0.7f)
         ),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        shape = RoundedCornerShape(Tokens.Size.iconSmall),
+        elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.s)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .padding(Tokens.Space.xl),
+            verticalArrangement = Arrangement.spacedBy(Tokens.Space.xl)
         ) {
             // Phase title
             PhaseHeader(game.phase)
