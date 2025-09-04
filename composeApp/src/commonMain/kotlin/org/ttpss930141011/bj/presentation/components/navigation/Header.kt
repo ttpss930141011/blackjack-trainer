@@ -28,11 +28,12 @@ fun Header(
     balance: Int,
     onShowSettings: () -> Unit,
     hasStats: Boolean,
-    onShowSummary: () -> Unit
+    onShowSummary: () -> Unit,
+    drawerButton: (@Composable () -> Unit)? = null
 ) {
     BreakpointLayout(
-        compact = { CompactLayout(balance, onShowSettings, hasStats, onShowSummary) },
-        expanded = { ExpandedLayout(balance, onShowSettings, hasStats, onShowSummary) }
+        compact = { CompactLayout(balance, onShowSettings, hasStats, onShowSummary, drawerButton) },
+        expanded = { ExpandedLayout(balance, onShowSettings, hasStats, onShowSummary, drawerButton) }
     )
 }
 
@@ -41,7 +42,8 @@ private fun CompactLayout(
     balance: Int,
     onShowSettings: () -> Unit,
     hasStats: Boolean,
-    onShowSummary: () -> Unit
+    onShowSummary: () -> Unit,
+    drawerButton: (@Composable () -> Unit)?
 ) {
     Layout { screenWidth ->
         Row(
@@ -51,20 +53,53 @@ private fun CompactLayout(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Title(compact = true)
-            
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(
-                    when (screenWidth) {
-                        org.ttpss930141011.bj.presentation.layout.ScreenWidth.COMPACT -> 14.dp
-                        org.ttpss930141011.bj.presentation.layout.ScreenWidth.MEDIUM -> 16.dp
-                        else -> 20.dp
-                    }
-                ),
-                verticalAlignment = Alignment.CenterVertically
+            // 左側：Drawer 按鈕
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
             ) {
-                CompactBalanceBadge(balance, screenWidth)
-                Actions(hasStats, onShowSummary, onShowSettings, screenWidth)
+                drawerButton?.invoke()
+            }
+            
+            // 中間：標題
+            Box(
+                modifier = Modifier.weight(2f),
+                contentAlignment = Alignment.Center
+            ) {
+                Title(compact = true)
+            }
+            
+            // 右側：餘額 + 設定
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CompactBalanceBadge(balance, screenWidth)
+                    if (hasStats) {
+                        IconButton(
+                            onClick = onShowSummary
+                        ) {
+                            Text(
+                                text = "📊",
+                                fontSize = 18.sp,
+                                color = Color.White
+                            )
+                        }
+                    }
+                    IconButton(
+                        onClick = onShowSettings
+                    ) {
+                        Text(
+                            text = "⚙️",
+                            fontSize = 18.sp,
+                            color = Color.White
+                        )
+                    }
+                }
             }
         }
     }
@@ -75,7 +110,8 @@ private fun ExpandedLayout(
     balance: Int,
     onShowSettings: () -> Unit,
     hasStats: Boolean,
-    onShowSummary: () -> Unit
+    onShowSummary: () -> Unit,
+    drawerButton: (@Composable () -> Unit)?
 ) {
     Layout { screenWidth ->
         Row(
@@ -85,14 +121,53 @@ private fun ExpandedLayout(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Title(compact = false)
-            
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth)),
-                verticalAlignment = Alignment.CenterVertically
+            // 左側：Drawer 按鈕
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
             ) {
-                BalanceCard(balance, fullWidth = false, screenWidth = screenWidth)
-                Actions(hasStats, onShowSummary, onShowSettings, screenWidth)
+                drawerButton?.invoke()
+            }
+            
+            // 中間：標題
+            Box(
+                modifier = Modifier.weight(2f),
+                contentAlignment = Alignment.Center
+            ) {
+                Title(compact = false)
+            }
+            
+            // 右側：餘額 + 設定
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    BalanceCard(balance, fullWidth = false, screenWidth = screenWidth)
+                    if (hasStats) {
+                        IconButton(
+                            onClick = onShowSummary
+                        ) {
+                            Text(
+                                text = "📊",
+                                fontSize = 20.sp,
+                                color = Color.White
+                            )
+                        }
+                    }
+                    IconButton(
+                        onClick = onShowSettings
+                    ) {
+                        Text(
+                            text = "⚙️",
+                            fontSize = 20.sp,
+                            color = Color.White
+                        )
+                    }
+                }
             }
         }
     }
@@ -103,21 +178,24 @@ private fun Title(
     compact: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text(
-            text = if (compact) "BJ Trainer" else "Blackjack Strategy Trainer",
+            text = if (compact) "BlackJack Trainer" else "BlackJack Strategy Trainer",
             style = if (compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall,
             color = Color.White,
             fontWeight = FontWeight.Bold,
-            fontSize = if (compact) 18.sp else 24.sp,
+            fontSize = if (compact) 16.sp else 24.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = if (compact) "Master strategy" else "Master optimal basic strategy",
+            text = if (compact) "Master Strategy" else "Learn Optimal Basic Strategy",
             style = MaterialTheme.typography.bodyMedium,
             color = Color(0xFFA5D6A7),
-            fontSize = if (compact) 12.sp else 14.sp,
+            fontSize = if (compact) 11.sp else 14.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -282,12 +360,15 @@ private fun Actions(
                 screenWidth = screenWidth
             )
         }
-        ActionButton(
-            icon = "⚙️",
-            onClick = onShowSettings,
-            color = Color.White.copy(alpha = 0.2f),
-            screenWidth = screenWidth
-        )
+        IconButton(
+            onClick = onShowSettings
+        ) {
+            Text(
+                text = "⚙️",
+                fontSize = 20.sp,
+                color = Color.White
+            )
+        }
     }
 }
 

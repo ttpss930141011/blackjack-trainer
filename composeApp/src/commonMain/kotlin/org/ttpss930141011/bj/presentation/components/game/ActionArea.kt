@@ -5,7 +5,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,7 +29,8 @@ import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 fun ActionArea(
     game: Game,
     viewModel: GameViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    feedback: DecisionFeedback? = null
 ) {
     when (game.phase) {
         GamePhase.WAITING_FOR_BETS -> {
@@ -52,6 +53,7 @@ fun ActionArea(
                 onAction = { action ->
                     viewModel.playerAction(action)
                 },
+                feedback = feedback,
                 modifier = modifier
             )
         }
@@ -175,7 +177,8 @@ private fun ChipSelection(
 private fun ActionButtons(
     availableActions: List<Action>,
     onAction: (Action) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    feedback: DecisionFeedback? = null
 ) {
     BreakpointLayout(
         compact = {
@@ -189,7 +192,11 @@ private fun ActionButtons(
                 verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
             ) {
                 availableActions.forEach { action ->
-                    ActionButton(action = action, onAction = onAction)
+                    ActionButton(
+                        action = action,
+                        onAction = onAction,
+                        feedback = feedback
+                    )
                 }
             }
         },
@@ -200,7 +207,11 @@ private fun ActionButtons(
                 modifier = modifier
             ) {
                 items(availableActions) { action ->
-                    ActionButton(action = action, onAction = onAction)
+                    ActionButton(
+                        action = action,
+                        onAction = onAction,
+                        feedback = feedback
+                    )
                 }
             }
         }
@@ -211,9 +222,10 @@ private fun ActionButtons(
 private fun ActionButton(
     action: Action,
     onAction: (Action) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    feedback: DecisionFeedback? = null
 ) {
-    val (color, icon) = when (action) {
+    val (baseColor, icon) = when (action) {
         Action.HIT -> GameStatusColors.hitColor to "+"
         Action.STAND -> GameStatusColors.standColor to "−"
         Action.DOUBLE -> GameStatusColors.doubleColor to "×2"
@@ -221,10 +233,14 @@ private fun ActionButton(
         Action.SPLIT -> GameStatusColors.casinoGold to "⁝⁝"
     }
     
+    // Show hint only (no color changes)
+    val isOptimal = feedback?.optimalAction == action
+    val showHint = feedback != null && !feedback.isCorrect && isOptimal
+    
     Button(
         onClick = { onAction(action) },
         colors = ButtonDefaults.buttonColors(
-            containerColor = color,
+            containerColor = baseColor,
             contentColor = Color.White
         ),
         shape = RoundedCornerShape(Tokens.Space.m),
@@ -234,15 +250,26 @@ private fun ActionButton(
     ) {
         BreakpointLayout(
             compact = {
-                // Compact: Show only icon
-                Text(
-                    text = icon,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
+                // Compact: Show icon + hint
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = icon,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    if (showHint) {
+                        Text(
+                            text = "💡",
+                            fontSize = 12.sp
+                        )
+                    }
+                }
             },
             expanded = {
-                // Expanded: Show icon + text
+                // Expanded: Show icon + text + hint
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs),
                     verticalAlignment = Alignment.CenterVertically
@@ -257,6 +284,12 @@ private fun ActionButton(
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
+                    if (showHint) {
+                        Text(
+                            text = "💡",
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
         )

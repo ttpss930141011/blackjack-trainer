@@ -21,6 +21,7 @@ import org.ttpss930141011.bj.presentation.components.feedback.GameOverDisplay
 fun GamePhaseManager(
     game: Game,
     viewModel: GameViewModel,
+    feedback: DecisionFeedback? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -31,6 +32,7 @@ fun GamePhaseManager(
         GameTable(
             game = game,
             viewModel = viewModel,
+            feedback = feedback,
             modifier = Modifier.fillMaxSize()
         )
         

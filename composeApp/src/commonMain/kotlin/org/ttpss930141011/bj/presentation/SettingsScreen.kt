@@ -71,7 +71,11 @@ fun SettingsScreen(
 fun SettingsSheetContent(
     currentRules: GameRules,
     onRulesChanged: (GameRules) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    // Feedback notification settings
+    feedbackNotificationEnabled: Boolean = true,
+    feedbackDurationSeconds: Float = 2.5f,
+    onFeedbackSettingsChanged: (enabled: Boolean, duration: Float) -> Unit = { _, _ -> }
 ) {
     Column(
         modifier = Modifier
@@ -102,7 +106,10 @@ fun SettingsSheetContent(
         SettingsContent(
             currentRules = currentRules,
             onRulesChanged = onRulesChanged,
-            screenWidth = org.ttpss930141011.bj.presentation.layout.ScreenWidth.MEDIUM
+            screenWidth = org.ttpss930141011.bj.presentation.layout.ScreenWidth.MEDIUM,
+            feedbackNotificationEnabled = feedbackNotificationEnabled,
+            feedbackDurationSeconds = feedbackDurationSeconds,
+            onFeedbackSettingsChanged = onFeedbackSettingsChanged
         )
     }
 }
@@ -111,9 +118,15 @@ fun SettingsSheetContent(
 private fun SettingsContent(
     currentRules: GameRules,
     onRulesChanged: (GameRules) -> Unit,
-    screenWidth: org.ttpss930141011.bj.presentation.layout.ScreenWidth
+    screenWidth: org.ttpss930141011.bj.presentation.layout.ScreenWidth,
+    // Feedback notification settings
+    feedbackNotificationEnabled: Boolean = true,
+    feedbackDurationSeconds: Float = 2.5f,
+    onFeedbackSettingsChanged: (enabled: Boolean, duration: Float) -> Unit = { _, _ -> }
 ) {
     var rules by remember { mutableStateOf(currentRules) }
+    var notificationEnabled by remember { mutableStateOf(feedbackNotificationEnabled) }
+    var notificationDuration by remember { mutableStateOf(feedbackDurationSeconds) }
     
     Card(
         colors = CardDefaults.cardColors(
@@ -135,6 +148,66 @@ private fun SettingsContent(
                 .padding(Tokens.Space.xl),
             verticalArrangement = Arrangement.spacedBy(Tokens.Space.l)
         ) {
+            // Feedback Settings Section
+            Text(
+                text = "Feedback Settings",
+                style = MaterialTheme.typography.titleMedium,
+                color = GameStatusColors.casinoGold
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Show feedback notifications",
+                    color = GameStatusColors.casinoGold
+                )
+                Switch(
+                    checked = notificationEnabled,
+                    onCheckedChange = { 
+                        notificationEnabled = it
+                        onFeedbackSettingsChanged(it, notificationDuration)
+                    }
+                )
+            }
+            
+            if (notificationEnabled) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Notification duration",
+                            color = GameStatusColors.casinoGold
+                        )
+                        Text(
+                            text = "${notificationDuration.toInt()}s",
+                            color = GameStatusColors.casinoGold.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    Slider(
+                        value = notificationDuration,
+                        onValueChange = { 
+                            notificationDuration = it
+                            onFeedbackSettingsChanged(notificationEnabled, it)
+                        },
+                        valueRange = 1f..5f,
+                        steps = 7,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+            }
+            
+            HorizontalDivider(
+                color = GameStatusColors.casinoGold.copy(alpha = 0.3f),
+                modifier = Modifier.padding(vertical = Tokens.Space.m)
+            )
+            
             Text(
                 text = "Dealer Rules",
                 style = MaterialTheme.typography.titleMedium,

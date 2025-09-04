@@ -24,6 +24,7 @@ import org.ttpss930141011.bj.presentation.design.GameStatusColors
 fun GameTable(
     game: Game,
     viewModel: GameViewModel,
+    feedback: DecisionFeedback? = null,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -64,6 +65,7 @@ fun GameTable(
             ActionArea(
                 game = game,
                 viewModel = viewModel,
+                feedback = feedback,
                 modifier = Modifier.fillMaxWidth()
             )
         }
