@@ -13,11 +13,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.application.GameViewModel
+import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.domain.*
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
-import org.ttpss930141011.bj.presentation.shared.ChipSize
-import org.ttpss930141011.bj.presentation.shared.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 
 /**
  * Action area component that handles phase-specific user actions
@@ -91,7 +92,7 @@ private fun ChipSelection(
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(Tokens.Space.l)
     ) {
         // Player balance
         Text(
@@ -101,23 +102,51 @@ private fun ChipSelection(
             fontWeight = FontWeight.Bold
         )
         
-        // Chip selection
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-            contentPadding = PaddingValues(horizontal = 16.dp)
-        ) {
-            items(availableChips) { chipValue ->
-                ChipImageDisplay(
-                    value = chipValue,
-                    size = ChipSize.LARGE,
-                    onClick = {
-                        if (currentBet + chipValue <= playerChips) {
-                            onChipSelected(chipValue)
-                        }
+        // Chip selection - responsive wrapping
+        BreakpointLayout(
+            compact = {
+                // Compact: FlowRow for wrapping
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        Tokens.Space.s, 
+                        Alignment.CenterHorizontally
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
+                ) {
+                    availableChips.forEach { chipValue ->
+                        ChipImageDisplay(
+                            value = chipValue,
+                            size = Tokens.chipSize(),
+                            onClick = {
+                                if (currentBet + chipValue <= playerChips) {
+                                    onChipSelected(chipValue)
+                                }
+                            }
+                        )
                     }
-                )
+                }
+            },
+            expanded = {
+                // Expanded: LazyRow
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(Tokens.Space.m, Alignment.CenterHorizontally),
+                    contentPadding = PaddingValues(horizontal = Tokens.Space.l)
+                ) {
+                    items(availableChips) { chipValue ->
+                        ChipImageDisplay(
+                            value = chipValue,
+                            size = Tokens.Size.chipDiameter,
+                            onClick = {
+                                if (currentBet + chipValue <= playerChips) {
+                                    onChipSelected(chipValue)
+                                }
+                            }
+                        )
+                    }
+                }
             }
-        }
+        )
         
         // Deal button
         Button(
@@ -130,8 +159,8 @@ private fun ChipSelection(
                 containerColor = GameStatusColors.casinoGold,
                 contentColor = Color.Black
             ),
-            shape = RoundedCornerShape(16.dp),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+            shape = RoundedCornerShape(Tokens.Space.l),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = Tokens.Space.s)
         ) {
             Text(
                 text = if (currentBet > 0) "Deal Cards ($$currentBet)" else "Deal Cards",
@@ -148,29 +177,89 @@ private fun ActionButtons(
     onAction: (Action) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-        modifier = modifier
-    ) {
-        items(availableActions) { action ->
-            Button(
-                onClick = { onAction(action) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GameStatusColors.casinoGold,
-                    contentColor = Color.Black
+    BreakpointLayout(
+        compact = {
+            // Compact: FlowRow for wrapping
+            FlowRow(
+                modifier = modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(
+                    Tokens.Space.s, 
+                    Alignment.CenterHorizontally
                 ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .height(48.dp)
-                    .widthIn(min = 80.dp)
+                verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
             ) {
-                Text(
-                    text = action.name,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+                availableActions.forEach { action ->
+                    ActionButton(action = action, onAction = onAction)
+                }
+            }
+        },
+        expanded = {
+            // Expanded: LazyRow
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.m, Alignment.CenterHorizontally),
+                modifier = modifier
+            ) {
+                items(availableActions) { action ->
+                    ActionButton(action = action, onAction = onAction)
+                }
             }
         }
+    )
+}
+
+@Composable
+private fun ActionButton(
+    action: Action,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val (color, icon) = when (action) {
+        Action.HIT -> GameStatusColors.hitColor to "+"
+        Action.STAND -> GameStatusColors.standColor to "−"
+        Action.DOUBLE -> GameStatusColors.doubleColor to "×2"
+        Action.SURRENDER -> GameStatusColors.surrenderColor to "↓"
+        Action.SPLIT -> GameStatusColors.casinoGold to "⁝⁝"
+    }
+    
+    Button(
+        onClick = { onAction(action) },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = color,
+            contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(Tokens.Space.m),
+        modifier = modifier
+            .height(Tokens.Size.buttonHeight)
+            .widthIn(min = Tokens.Size.chipDiameter)
+    ) {
+        BreakpointLayout(
+            compact = {
+                // Compact: Show only icon
+                Text(
+                    text = icon,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            expanded = {
+                // Expanded: Show icon + text
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = icon,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = action.name,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        )
     }
 }
 
@@ -192,8 +281,8 @@ private fun DealerTurnButton(
                 containerColor = GameStatusColors.casinoGold,
                 contentColor = Color.Black
             ),
-            shape = RoundedCornerShape(16.dp),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+            shape = RoundedCornerShape(Tokens.Space.l),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = Tokens.Space.s)
         ) {
             Text(
                 text = "Play Dealer Turn",
@@ -219,7 +308,7 @@ private fun NextRoundButton(
                 containerColor = GameStatusColors.casinoGreen,
                 contentColor = Color.White
             ),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(Tokens.Space.m),
             modifier = Modifier
                 .height(56.dp)
                 .fillMaxWidth(0.6f)
