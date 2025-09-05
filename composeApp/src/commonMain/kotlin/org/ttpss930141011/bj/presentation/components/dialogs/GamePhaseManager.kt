@@ -15,6 +15,7 @@ import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.components.GameTable
 import org.ttpss930141011.bj.presentation.components.feedback.GameOverDisplay
+import org.ttpss930141011.bj.presentation.design.AppConstants
 
 /**
  * Simple phase manager that delegates to unified GameTable component.
@@ -27,41 +28,36 @@ fun GamePhaseManager(
     feedback: DecisionFeedback? = null,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Single unified table for all phases
+    // Game over check - use ViewModel's domain-aligned logic
+    if (viewModel.isGameOver) {
+        GameOverDisplay(
+            totalChips = game.player?.chips ?: 0,
+            sessionStats = viewModel.sessionStats,
+            onNewGame = {
+                // Reset to new game with starting chips
+                viewModel.initializeGame(
+                    game.rules, 
+                    Player(
+                        id = game.player?.id ?: "player1",
+                        chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS
+                    )
+                )
+            },
+            onViewHistory = {
+                // This would trigger opening the feedback drawer
+                // Implementation depends on parent component structure
+            },
+            onViewSummary = {
+                viewModel.showGameSummary()
+            }
+        )
+    } else {
+        // Single unified table for normal game phases
         GameTable(
             game = game,
             viewModel = viewModel,
             feedback = feedback,
-            modifier = Modifier.fillMaxSize()
+            modifier = modifier
         )
-        
-        // Game over check - align with Domain layer logic (GameSession.isGameOver)
-        if (game.phase == GamePhase.WAITING_FOR_BETS && (game.player?.chips ?: 0) < 5) {
-            GameOverDisplay(
-                totalChips = game.player?.chips ?: 0,
-                sessionStats = viewModel.sessionStats,
-                onNewGame = {
-                    // Reset to new game with starting chips
-                    viewModel.initializeGame(
-                        game.rules, 
-                        Player(
-                            id = game.player?.id ?: "player1",
-                            chips = 500 // Starting chips
-                        )
-                    )
-                },
-                onViewHistory = {
-                    // This would trigger opening the feedback drawer
-                    // Implementation depends on parent component structure
-                },
-                onViewSummary = {
-                    viewModel.showGameSummary()
-                }
-            )
-        }
     }
 }
