@@ -1,6 +1,9 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.valueobjects
+
+import kotlin.ConsistentCopyVisibility
 
 // Rich Deck aggregate for card dealing
+@ConsistentCopyVisibility
 data class Deck private constructor(
     private val cards: List<Card>,
     private val dealtCards: List<Card> = emptyList()

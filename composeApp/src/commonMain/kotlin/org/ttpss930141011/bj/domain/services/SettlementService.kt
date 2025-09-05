@@ -1,4 +1,10 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.services
+
+import org.ttpss930141011.bj.domain.entities.Game
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.GamePhase
+import org.ttpss930141011.bj.domain.enums.HandStatus
+import org.ttpss930141011.bj.domain.enums.RoundResult
 
 /**
  * Domain service responsible for round settlement and winnings calculation.

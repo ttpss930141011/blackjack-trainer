@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.valueobjects
 
 // Rich SessionStats - Round基礎統計與歷史記錄
 data class SessionStats(

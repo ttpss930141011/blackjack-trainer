@@ -1,4 +1,8 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.valueobjects
+
+import org.ttpss930141011.bj.domain.entities.Game
+import org.ttpss930141011.bj.domain.enums.GamePhase
+import org.ttpss930141011.bj.domain.enums.ChipValue
 
 /**
  * Domain representation of the betting table visual state
@@ -114,7 +118,18 @@ data class BettingTableState(
     }
     
     /**
-     * Convert to Game domain for game flow
+     * Apply betting table state to game domain model.
+     * 
+     * This method bridges the betting UI state with the core game logic by:
+     * 1. Restoring the player's total chip balance (available + bet)
+     * 2. Using Game.placeBet() for proper validation and state management
+     * 
+     * Critical: This prevents double chip deduction since we restore the full
+     * balance before calling placeBet(), which will correctly deduct the bet amount.
+     * 
+     * @param game Current game in WAITING_FOR_BETS phase
+     * @return Game with bet applied and chips properly deducted
+     * @throws IllegalArgumentException if game is not in betting phase
      */
     fun toGameBet(game: Game): Game {
         require(game.phase == GamePhase.WAITING_FOR_BETS) { 
@@ -122,9 +137,13 @@ data class BettingTableState(
         }
         
         return if (currentBet > 0) {
-            // Game.placeBet handles validation and chip deduction
-            val playerWithRestoredChips = game.player!!.copy(chips = availableBalance + currentBet)
-            game.copy(player = playerWithRestoredChips).placeBet(currentBet)
+            // Step 1: Restore player's total chip balance to prevent double deduction
+            val totalChips = availableBalance + currentBet
+            val playerWithRestoredChips = game.player!!.copy(chips = totalChips)
+            val gameWithPlayer = game.copy(player = playerWithRestoredChips)
+            
+            // Step 2: Apply bet using domain logic (will correctly deduct chips)
+            gameWithPlayer.placeBet(currentBet)
         } else {
             game
         }
@@ -132,47 +151,3 @@ data class BettingTableState(
     
 }
 
-/**
- * Value object representing a chip stack in the betting spot
- */
-data class ChipInSpot(
-    val value: ChipValue,
-    val count: Int
-) {
-    init {
-        require(count > 0) { "Chip count must be positive" }
-    }
-}
-
-/**
- * Result of attempting to add a chip
- */
-data class AddChipResult(
-    val success: Boolean,
-    val errorMessage: String?,
-    val bettingTable: BettingTableState
-)
-
-/**
- * Domain enum for chip denominations
- */
-enum class ChipValue(val value: Int) {
-    FIVE(5),
-    TEN(10), 
-    TWENTY_FIVE(25),
-    FIFTY(50),
-    ONE_HUNDRED(100),
-    TWO_HUNDRED(200),
-    FIVE_HUNDRED(500);
-    
-    companion object {
-        /**
-         * Standard casino chip denominations
-         */
-        fun standardCasinoChips(): List<ChipValue> = listOf(
-            FIVE, TEN, TWENTY_FIVE, FIFTY, ONE_HUNDRED, TWO_HUNDRED, FIVE_HUNDRED
-        )
-        
-        fun fromValue(value: Int): ChipValue? = entries.find { it.value == value }
-    }
-}

@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.valueobjects
 
 data class GameRules(
     val dealerHitsOnSoft17: Boolean = true,           // 莊家軟17要牌

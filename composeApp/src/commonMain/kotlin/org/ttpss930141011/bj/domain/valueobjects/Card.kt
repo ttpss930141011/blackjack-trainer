@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.valueobjects
 
 enum class Suit {
     HEARTS, DIAMONDS, CLUBS, SPADES

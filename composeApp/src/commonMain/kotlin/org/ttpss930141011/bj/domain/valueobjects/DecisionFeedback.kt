@@ -1,4 +1,7 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.valueobjects
+
+import org.ttpss930141011.bj.domain.enums.Action
+import org.ttpss930141011.bj.domain.services.StrategyEngine
 
 data class DecisionFeedback(
     val playerAction: Action,

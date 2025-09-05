@@ -1,4 +1,7 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.valueobjects
+
+import org.ttpss930141011.bj.domain.enums.HandStatus
+import org.ttpss930141011.bj.domain.enums.Action
 
 // PlayerHand - Simplified value object replacing SeatHand + Seat abstraction
 data class PlayerHand(

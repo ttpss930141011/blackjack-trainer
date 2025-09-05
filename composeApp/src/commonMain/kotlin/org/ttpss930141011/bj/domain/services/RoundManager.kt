@@ -1,4 +1,9 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.services
+
+import org.ttpss930141011.bj.domain.entities.Game
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.Action
+import org.ttpss930141011.bj.domain.enums.GamePhase
 
 /**
  * Domain service responsible for managing round flow and card dealing.
@@ -37,16 +42,28 @@ class RoundManager {
         require(game.canAct) { "Player cannot act at this time" }
         
         val hand = game.currentHand!!
+        
+        // Handle payment for DOUBLE before processing action
+        val gameAfterPayment = if (action == Action.DOUBLE) {
+            val additionalBet = hand.bet
+            require((game.player?.chips ?: 0) >= additionalBet) { 
+                "Insufficient balance for double down" 
+            }
+            game.copy(player = game.player?.deductChips(additionalBet))
+        } else {
+            game
+        }
+        
         val (newHands, newDeck, newIndex) = when (action) {
-            Action.SPLIT -> handleSplit(game, hand)
-            else -> handleRegularAction(game, hand, action)
+            Action.SPLIT -> handleSplit(gameAfterPayment, hand)
+            else -> handleRegularAction(gameAfterPayment, hand, action)
         }
         
         // Check if all hands are complete to proceed to dealer turn
         val allComplete = newHands.all { it.isCompleted }
         val newPhase = if (allComplete) GamePhase.DEALER_TURN else GamePhase.PLAYER_ACTIONS
         
-        return game.copy(
+        return gameAfterPayment.copy(
             playerHands = newHands,
             currentHandIndex = newIndex,
             deck = newDeck,
@@ -94,13 +111,7 @@ class RoundManager {
         hand: PlayerHand, 
         action: Action
     ): Triple<List<PlayerHand>, Deck, Int> {
-        // Validate double action requires sufficient balance
-        if (action == Action.DOUBLE) {
-            require((game.player?.chips ?: 0) >= hand.bet) { 
-                "Insufficient balance for double down" 
-            }
-        }
-        
+        // Payment has already been handled in processPlayerAction
         val actionResult = when (action) {
             Action.HIT -> hand.hit(game.deck)
             Action.STAND -> PlayerHandActionResult(hand.stand(), game.deck)

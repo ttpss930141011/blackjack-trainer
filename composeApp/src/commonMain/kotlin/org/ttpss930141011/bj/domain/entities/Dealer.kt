@@ -1,4 +1,7 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.entities
+
+import org.ttpss930141011.bj.domain.valueobjects.Hand
+import org.ttpss930141011.bj.domain.valueobjects.Card
 
 // Dealer entity
 data class Dealer(

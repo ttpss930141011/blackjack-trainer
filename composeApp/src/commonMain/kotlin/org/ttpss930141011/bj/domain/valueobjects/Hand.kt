@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.valueobjects
 
 data class Hand(internal val cards: List<Card>) {
     

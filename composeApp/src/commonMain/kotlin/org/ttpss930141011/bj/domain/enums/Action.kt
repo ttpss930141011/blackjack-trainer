@@ -1,4 +1,4 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.enums
 
 enum class Action {
     HIT,        // 要牌

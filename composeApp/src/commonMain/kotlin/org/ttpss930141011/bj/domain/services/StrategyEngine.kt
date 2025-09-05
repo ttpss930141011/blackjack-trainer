@@ -1,4 +1,7 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.services
+
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.Action
 
 class StrategyEngine(private val rules: GameRules = GameRules()) {
     
@@ -62,7 +65,6 @@ class StrategyEngine(private val rules: GameRules = GameRules()) {
                     else -> null
                 }
             }
-            else -> null
         }
     }
     

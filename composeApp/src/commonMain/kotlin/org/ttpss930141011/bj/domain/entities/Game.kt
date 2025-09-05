@@ -1,4 +1,11 @@
-package org.ttpss930141011.bj.domain
+package org.ttpss930141011.bj.domain.entities
+
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.Action
+import org.ttpss930141011.bj.domain.enums.HandStatus
+import org.ttpss930141011.bj.domain.enums.GamePhase
+import org.ttpss930141011.bj.domain.services.RoundManager
+import org.ttpss930141011.bj.domain.services.SettlementService
 
 // Game - Simplified aggregate root replacing Table → Seat → SeatHand complexity
 data class Game(
@@ -64,6 +71,23 @@ data class Game(
         )
     }
     
+    fun clearBet(): Game {
+        require(hasPlayer) { "No player in game" }
+        require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear bet during betting phase" }
+        
+        // Restore chips to player if there was a bet
+        val updatedPlayer = if (currentBet > 0) {
+            player!!.addChips(currentBet)
+        } else {
+            player!!
+        }
+        
+        return copy(
+            player = updatedPlayer,
+            currentBet = 0
+        )
+    }
+    
     // Delegate to domain services for complex operations
     fun dealRound(): Game = RoundManager().dealRound(this)
     
@@ -111,12 +135,3 @@ data class Game(
         return constrainedActions
     }
 }
-
-enum class GamePhase {
-    WAITING_FOR_BETS,
-    DEALING,
-    PLAYER_ACTIONS,
-    DEALER_TURN,
-    SETTLEMENT
-}
-
