@@ -1,7 +1,7 @@
 package org.ttpss930141011.bj.presentation.components.feedback
 
 import androidx.compose.runtime.*
-import org.ttpss930141011.bj.domain.DecisionFeedback
+import org.ttpss930141011.bj.domain.valueobjects.DecisionFeedback
 
 data class NotificationItem(
     val id: String,

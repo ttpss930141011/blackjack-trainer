@@ -12,7 +12,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.presentation.design.Tokens
-import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.domain.entities.*
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.*
+import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.components.game.*
 import org.ttpss930141011.bj.presentation.design.GameStatusColors
 

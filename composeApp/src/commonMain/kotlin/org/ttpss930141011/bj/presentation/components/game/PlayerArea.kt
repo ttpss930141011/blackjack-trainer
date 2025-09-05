@@ -17,7 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.application.GameViewModel
-import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.domain.entities.*
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.*
+import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
 import org.ttpss930141011.bj.presentation.components.displays.StatusOverlay
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
@@ -26,8 +29,8 @@ import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import org.ttpss930141011.bj.domain.ChipInSpot
-import org.ttpss930141011.bj.domain.BettingTableState
+import org.ttpss930141011.bj.domain.valueobjects.ChipInSpot
+import org.ttpss930141011.bj.domain.valueobjects.BettingTableState
 import org.ttpss930141011.bj.presentation.design.AppConstants
 
 /**

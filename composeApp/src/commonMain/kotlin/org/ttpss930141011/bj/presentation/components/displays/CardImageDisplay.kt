@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import org.ttpss930141011.bj.domain.Card
+import org.ttpss930141011.bj.domain.valueobjects.Card
 import org.ttpss930141011.bj.presentation.mappers.CardImageMapper
 import org.ttpss930141011.bj.presentation.design.Tokens
 

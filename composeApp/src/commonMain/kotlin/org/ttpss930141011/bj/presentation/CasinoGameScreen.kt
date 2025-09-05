@@ -13,7 +13,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.ttpss930141011.bj.application.GameViewModel
-import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.domain.entities.*
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.*
+import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.layout.Layout
 import org.ttpss930141011.bj.presentation.layout.isCompact
@@ -226,9 +229,10 @@ private fun CasinoGameContent(
                             feedback = feedback
                         )
                         
-                        // Error handling
+                        // Error handling with auto-dismiss
                         viewModel.errorMessage?.let { error ->
                             LaunchedEffect(error) {
+                                kotlinx.coroutines.delay(3000)
                                 viewModel.clearError()
                             }
                         }

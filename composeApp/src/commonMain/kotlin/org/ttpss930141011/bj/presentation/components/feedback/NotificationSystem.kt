@@ -4,7 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
-import org.ttpss930141011.bj.domain.DecisionFeedback
+import org.ttpss930141011.bj.domain.valueobjects.DecisionFeedback
 
 @Composable
 fun FeedbackSystem(

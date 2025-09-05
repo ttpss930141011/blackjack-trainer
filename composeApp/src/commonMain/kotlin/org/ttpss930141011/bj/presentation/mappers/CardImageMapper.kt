@@ -3,9 +3,9 @@ package org.ttpss930141011.bj.presentation.mappers
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.DrawableResource
-import org.ttpss930141011.bj.domain.Card
-import org.ttpss930141011.bj.domain.Rank
-import org.ttpss930141011.bj.domain.Suit
+import org.ttpss930141011.bj.domain.valueobjects.Card
+import org.ttpss930141011.bj.domain.valueobjects.Rank
+import org.ttpss930141011.bj.domain.valueobjects.Suit
 import androidx.compose.ui.graphics.painter.Painter
 import blackjack_strategy_trainer.composeapp.generated.resources.Res
 import blackjack_strategy_trainer.composeapp.generated.resources.*

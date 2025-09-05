@@ -11,10 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.ttpss930141011.bj.domain.Card
+import org.ttpss930141011.bj.domain.valueobjects.Card
 import org.ttpss930141011.bj.presentation.design.Tokens
-import org.ttpss930141011.bj.domain.Hand
-import org.ttpss930141011.bj.domain.PlayerHand
+import org.ttpss930141011.bj.domain.valueobjects.Hand
+import org.ttpss930141011.bj.domain.valueobjects.PlayerHand
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
 import org.ttpss930141011.bj.presentation.design.GameStatusColors
 

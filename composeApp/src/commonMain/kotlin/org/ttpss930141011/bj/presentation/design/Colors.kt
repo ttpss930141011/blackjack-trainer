@@ -1,8 +1,8 @@
 package org.ttpss930141011.bj.presentation.design
 
 import androidx.compose.ui.graphics.Color
-import org.ttpss930141011.bj.domain.GamePhase
-import org.ttpss930141011.bj.domain.HandStatus
+import org.ttpss930141011.bj.domain.enums.GamePhase
+import org.ttpss930141011.bj.domain.enums.HandStatus
 
 /**
  * Centralized color definitions for game status indicators.

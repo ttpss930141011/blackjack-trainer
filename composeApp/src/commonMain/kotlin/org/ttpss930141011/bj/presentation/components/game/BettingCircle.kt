@@ -14,9 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.ttpss930141011.bj.domain.BettingTableState
+import org.ttpss930141011.bj.domain.valueobjects.BettingTableState
 import org.ttpss930141011.bj.presentation.design.Tokens
-import org.ttpss930141011.bj.domain.ChipInSpot
+import org.ttpss930141011.bj.domain.valueobjects.ChipInSpot
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.design.GameStatusColors
 import org.ttpss930141011.bj.presentation.layout.Layout

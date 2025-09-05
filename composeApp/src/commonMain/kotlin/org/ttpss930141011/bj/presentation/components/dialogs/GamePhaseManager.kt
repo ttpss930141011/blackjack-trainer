@@ -9,7 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.application.GameViewModel
-import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.domain.entities.*
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.*
+import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.components.GameTable
 import org.ttpss930141011.bj.presentation.components.feedback.GameOverDisplay
 
@@ -36,9 +39,29 @@ fun GamePhaseManager(
             modifier = Modifier.fillMaxSize()
         )
         
-        // Game over check
-        if (game.phase == GamePhase.WAITING_FOR_BETS && (game.player?.chips ?: 0) <= 0) {
-            GameOverDisplay(totalChips = game.player?.chips ?: 0)
+        // Game over check - align with Domain layer logic (GameSession.isGameOver)
+        if (game.phase == GamePhase.WAITING_FOR_BETS && (game.player?.chips ?: 0) < 5) {
+            GameOverDisplay(
+                totalChips = game.player?.chips ?: 0,
+                sessionStats = viewModel.sessionStats,
+                onNewGame = {
+                    // Reset to new game with starting chips
+                    viewModel.initializeGame(
+                        game.rules, 
+                        Player(
+                            id = game.player?.id ?: "player1",
+                            chips = 500 // Starting chips
+                        )
+                    )
+                },
+                onViewHistory = {
+                    // This would trigger opening the feedback drawer
+                    // Implementation depends on parent component structure
+                },
+                onViewSummary = {
+                    viewModel.showGameSummary()
+                }
+            )
         }
     }
 }
