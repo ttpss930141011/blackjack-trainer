@@ -1,6 +1,9 @@
 package org.ttpss930141011.bj.application
 
-import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.domain.entities.*
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.*
+import org.ttpss930141011.bj.domain.services.*
 
 class GameSessionService {
     

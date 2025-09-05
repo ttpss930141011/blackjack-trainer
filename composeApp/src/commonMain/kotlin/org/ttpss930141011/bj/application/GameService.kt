@@ -1,6 +1,9 @@
 package org.ttpss930141011.bj.application
 
-import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.domain.entities.*
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.*
+import org.ttpss930141011.bj.domain.services.*
 
 class GameService {
     
@@ -23,18 +26,9 @@ class GameService {
         
         val handBeforeAction = game.currentHand!!
         
-        // Handle double down payment - deduct additional bet from player balance
-        val gameWithPayment = if (action == Action.DOUBLE) {
-            val additionalBet = handBeforeAction.bet
-            require((game.player?.chips ?: 0) >= additionalBet) { 
-                "Insufficient balance for double down" 
-            }
-            game.copy(player = game.player?.deductChips(additionalBet))
-        } else {
-            game
-        }
-        
-        val updatedGame = gameWithPayment.playerAction(action)
+        // Let domain layer handle all validation and payment logic
+        // Domain's availableActions() already validates balance for DOUBLE
+        val updatedGame = game.playerAction(action)
         
         return GameActionResult(
             game = updatedGame,

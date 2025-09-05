@@ -1,7 +1,10 @@
 package org.ttpss930141011.bj.application
 
 import androidx.compose.runtime.*
-import org.ttpss930141011.bj.domain.*
+import org.ttpss930141011.bj.domain.entities.*
+import org.ttpss930141011.bj.domain.valueobjects.*
+import org.ttpss930141011.bj.domain.enums.*
+import org.ttpss930141011.bj.domain.services.*
 
 class GameViewModel(
     private val gameService: GameService = GameService(),
@@ -26,6 +29,12 @@ class GameViewModel(
     private var _errorMessage by mutableStateOf<String?>(null)
     val errorMessage: String? get() = _errorMessage
     
+    // Game over integration from Domain layer
+    val isGameOver: Boolean
+        get() = _game?.player?.let { player ->
+            player.chips < 5 // Minimum bet is 5 chips
+        } ?: false
+    
     fun initializeGame(gameRules: GameRules, player: Player) {
         _game = gameService.createNewGame(gameRules, player)
         _feedback = null
@@ -37,6 +46,10 @@ class GameViewModel(
     
     fun startRound(betAmount: Int) {
         val currentGame = _game ?: return
+        if (isGameOver) {
+            _errorMessage = "Game Over! Insufficient chips to place minimum bet."
+            return
+        }
         try {
             _game = gameService.placeBetAndDeal(currentGame, betAmount)
             _feedback = null
@@ -125,6 +138,10 @@ class GameViewModel(
     fun addChipToBet(chipValue: ChipValue) {
         val currentGame = _game ?: return
         if (currentGame.phase != GamePhase.WAITING_FOR_BETS) return
+        if (isGameOver) {
+            _errorMessage = "Game Over! Insufficient chips to place bets."
+            return
+        }
         
         try {
             val currentTable = _bettingTableState ?: BettingTableState.fromGame(currentGame)
@@ -132,8 +149,6 @@ class GameViewModel(
             
             if (result.success) {
                 _bettingTableState = result.bettingTable
-                // Update the game state with the new bet
-                _game = result.bettingTable.toGameBet(currentGame)
                 _errorMessage = null
             } else {
                 _errorMessage = result.errorMessage
@@ -152,12 +167,8 @@ class GameViewModel(
             val clearedTable = currentTable.clearBet()
             _bettingTableState = clearedTable
             
-            // Restore player's chips and clear bet in game
-            val restoredPlayer = currentGame.player!!.copy(chips = clearedTable.availableBalance + clearedTable.currentBet)
-            _game = currentGame.copy(
-                player = restoredPlayer,
-                currentBet = 0
-            )
+            // Use domain method for proper business logic
+            _game = currentGame.clearBet()
             _errorMessage = null
             
         } catch (e: Exception) {
@@ -171,6 +182,10 @@ class GameViewModel(
         
         if (currentGame.phase != GamePhase.WAITING_FOR_BETS || !currentTable.canDeal) {
             _errorMessage = "Cannot deal cards at this time"
+            return
+        }
+        if (isGameOver) {
+            _errorMessage = "Game Over! Insufficient chips to continue."
             return
         }
         
