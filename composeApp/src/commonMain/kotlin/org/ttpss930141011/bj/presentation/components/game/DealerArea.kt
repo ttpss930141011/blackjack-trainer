@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.domain.*
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
@@ -39,7 +40,7 @@ fun DealerArea(
                 DealerWaitingDisplay()
             }
             else -> {
-                DealerHandDisplay(
+                DealerHandCard(
                     dealerHand = game.dealer.hand,
                     dealerUpCard = game.dealer.upCard,
                     phase = game.phase
@@ -51,83 +52,83 @@ fun DealerArea(
 
 @Composable
 private fun DealerWaitingDisplay() {
-    Card {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = GameStatusColors.casinoGreen.copy(alpha = 0.6f)
+        ),
+        shape = RoundedCornerShape(Tokens.Space.m),
+        elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.xs)
+    ) {
         Column(
             modifier = Modifier.padding(Tokens.Space.l),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
         ) {
-            Text(
-                text = "Dealer",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            // Show placeholder cards
+            // Clean card-only display
             Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
                 repeat(2) {
                     PlaceholderCard()
                 }
             }
-            
-            Text(
-                text = "Waiting for bets...",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
 
 @Composable
-private fun DealerHandDisplay(
+private fun DealerHandCard(
     dealerHand: Hand?,
     dealerUpCard: Card?,
     phase: GamePhase
 ) {
-    Card {
-        Column(
-            modifier = Modifier.padding(Tokens.Space.l),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Tokens.Space.xs)
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = GameStatusColors.casinoGreen.copy(alpha = 0.6f)
+            ),
+            shape = RoundedCornerShape(Tokens.Space.m),
+            elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.xs)
         ) {
-            Text(
-                text = "Dealer",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            when (phase) {
-                GamePhase.PLAYER_ACTIONS -> {
-                    dealerUpCard?.let { upCard ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
-                            CardImageDisplay(card = upCard, size = Tokens.Card.medium)
-                            HoleCardDisplay(size = Tokens.Card.medium)
-                        }
-                        Text("Up Card: ${upCard.rank}")
-                    }
-                }
-                else -> {
-                    dealerHand?.let { hand ->
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
-                            items(hand.cards) { card ->
-                                CardImageDisplay(card = card, size = Tokens.Card.medium)
+            Column(
+                modifier = Modifier.padding(Tokens.Space.m),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
+            ) {
+                when (phase) {
+                    GamePhase.PLAYER_ACTIONS -> {
+                        dealerUpCard?.let { upCard ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
+                                CardImageDisplay(card = upCard, size = Tokens.Card.medium)
+                                HoleCardDisplay(size = Tokens.Card.medium)
                             }
                         }
-                        Text(
-                            text = "Value: ${hand.bestValue}${if (hand.isSoft) " (soft)" else ""}",
-                            color = Color.Black,
-                            fontWeight = FontWeight.Medium
-                        )
-                        if (hand.isBusted) {
-                            Text(
-                                text = "Busted!",
-                                color = GameStatusColors.bustColor,
-                                fontWeight = FontWeight.Bold
-                            )
+                    }
+                    else -> {
+                        dealerHand?.let { hand ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
+                                hand.cards.forEach { card ->
+                                    CardImageDisplay(card = card, size = Tokens.Card.medium)
+                                }
+                            }
                         }
                     }
                 }
+                
+                // Hand value display (matches PlayerHandCard structure)
+                Text(
+                    text = when (phase) {
+                        GamePhase.PLAYER_ACTIONS -> dealerUpCard?.let { 
+                            val upCardValue = if (it.rank == Rank.ACE) "A/11" else "${it.blackjackValue}"
+                            upCardValue
+                        } ?: ""
+                        else -> dealerHand?.let { "${it.bestValue}${if (it.isSoft) " (soft)" else ""}" } ?: ""
+                    },
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp
+                )
             }
         }
     }

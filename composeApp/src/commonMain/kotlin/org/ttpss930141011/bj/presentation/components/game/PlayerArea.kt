@@ -19,11 +19,16 @@ import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.domain.*
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
+import org.ttpss930141011.bj.presentation.components.displays.StatusOverlay
+import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.design.GameStatusColors
 import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import org.ttpss930141011.bj.domain.ChipInSpot
+import org.ttpss930141011.bj.domain.BettingTableState
+import org.ttpss930141011.bj.presentation.design.AppConstants
 
 /**
  * Player area component that handles player hand display
@@ -69,7 +74,6 @@ private fun PlayerHandsDisplay(
     if (playerHands.size == 1) {
         PlayerHandCard(
             hand = playerHands[0],
-            handIndex = 0,
             isActive = currentHandIndex == 0,
             phase = phase
         )
@@ -78,9 +82,8 @@ private fun PlayerHandsDisplay(
             itemsIndexed(playerHands) { index, hand ->
                 PlayerHandCard(
                     hand = hand,
-                    handIndex = index,
                     isActive = currentHandIndex == index,
-                    phase = phase,
+                    phase = phase
                 )
             }
         }
@@ -91,94 +94,94 @@ private fun PlayerHandsDisplay(
 @Composable
 private fun PlayerHandCard(
     hand: PlayerHand,
-    handIndex: Int,
     isActive: Boolean,
     phase: GamePhase,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Column(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive && phase == GamePhase.PLAYER_ACTIONS) {
-                GameStatusColors.activeColor.copy(alpha = 0.8f)
-            } else {
-                GameStatusColors.casinoGreen.copy(alpha = 0.6f)
-            }
-        ),
-        shape = RoundedCornerShape(Tokens.Space.m),
-        elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.xs)
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Tokens.Space.xs)
     ) {
-        Column(
-            modifier = Modifier.padding(Tokens.Space.m),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
-        ) {
-            // Hand title
-            val title = when {
-                handIndex > 0 && isActive && phase == GamePhase.PLAYER_ACTIONS -> "Hand ${handIndex + 1} (Your Turn)"
-                handIndex > 0 -> "Hand ${handIndex + 1}"
-                isActive && phase == GamePhase.PLAYER_ACTIONS -> "Your Turn"
-                else -> "Your Hand"
-            }
-            
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = if (isActive && phase == GamePhase.PLAYER_ACTIONS) {
-                    GameStatusColors.casinoGold
-                } else {
-                    Color.White
-                },
-                fontWeight = FontWeight.Bold
-            )
-            
-            // Cards
-            Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
-                hand.cards.forEach { card ->
-                    CardImageDisplay(card = card, size = Tokens.Card.medium)
-                }
-            }
-            
-            // Hand value
-            Text(
-                text = "Value: ${hand.bestValue}${if (hand.isSoft) " (soft)" else ""}",
-                color = Color.White,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp
-            )
-            
-            // Bet amount
-            Text(
-                text = "Bet: $${hand.bet}",
-                color = GameStatusColors.betColor,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
-            )
-            
-            // Status area - fixed height to prevent jumping
-            Box(
-                modifier = Modifier.height(Tokens.Size.iconSmall),
-                contentAlignment = Alignment.Center
+        // Wrap the entire card in a Box so we can layer the overlay above it
+        Box {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isActive && phase == GamePhase.PLAYER_ACTIONS) {
+                        GameStatusColors.activeColor.copy(alpha = 0.8f)
+                    } else {
+                        GameStatusColors.casinoGreen.copy(alpha = 0.6f)
+                    }
+                ),
+                shape = RoundedCornerShape(Tokens.Space.m),
+                elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.xs)
             ) {
-                val statusText = when {
-                    hand.isBusted -> "Busted!"
-                    phase == GamePhase.SETTLEMENT -> hand.status.name
-                    else -> ""
-                }
-                
-                val statusColor = when {
-                    hand.isBusted -> GameStatusColors.bustColor
-                    phase == GamePhase.SETTLEMENT -> GameStatusColors.getHandStatusColor(hand.status)
-                    else -> Color.Transparent
-                }
-                
-                if (statusText.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.padding(Tokens.Space.m),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
+                ) {
+                    // Cards only - no text labels
+                    Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
+                        hand.cards.forEach { card ->
+                            CardImageDisplay(card = card, size = Tokens.Card.medium)
+                        }
+                    }
+                    
+                    // Hand value (keep for strategy learning)
                     Text(
-                        text = statusText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = statusColor,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                        text = "${hand.bestValue}${if (hand.isSoft) " (soft)" else ""}",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+
+            // This will now fill the exact bounds of the Card and appear on top
+            StatusOverlay(
+                status = hand.status,
+                isBusted = hand.isBusted,
+                showStatus = hand.isBusted || phase == GamePhase.SETTLEMENT,
+                modifier = Modifier.matchParentSize()
+            )
+        }
+        
+        // Chip stack display below card (extracted from card)
+        if (hand.bet > 0) {
+            ChipDisplay(
+                chipComposition = BettingTableState.calculateOptimalChipComposition(hand.bet),
+                modifier = Modifier.size(AppConstants.Dimensions.CHIP_SIZE_COMPACT.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChipDisplay(
+    chipComposition: List<ChipInSpot>,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.size(AppConstants.Dimensions.CHIP_SIZE_COMPACT.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        chipComposition.forEachIndexed { index, chipInSpot ->
+            val offsetX = (index * AppConstants.ChipStack.HORIZONTAL_OFFSET).dp
+            val offsetY = (index * AppConstants.ChipStack.VERTICAL_OFFSET).dp
+            
+            Box(
+                modifier = Modifier.offset(x = offsetX, y = -offsetY)
+            ) {
+                repeat(chipInSpot.count) { stackIndex ->
+                    ChipImageDisplay(
+                        value = chipInSpot.value.value,
+                        onClick = { },
+                        size = Tokens.Size.chipDiameter,
+                        modifier = Modifier.offset(
+                            x = (stackIndex * AppConstants.ChipStack.STACK_HORIZONTAL_OFFSET).dp,
+                            y = (stackIndex * AppConstants.ChipStack.STACK_VERTICAL_OFFSET).dp
+                        )
                     )
                 }
             }

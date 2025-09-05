@@ -29,7 +29,7 @@ object GameStatusColors {
     val surrenderColor = Color(0xFF9E9E9E)   // Gray
     
     // Phase indicators
-    val waitingColor = Color.White.copy(alpha = 0.7f)
+    val waitingColor = Color.White.copy(alpha = WAITING_ALPHA)
     val activePhaseColor = Color(0xFF4CAF50)
     val completedPhaseColor = Color(0xFF2E7D32)
     
@@ -55,6 +55,10 @@ object GameStatusColors {
         }
     }
     
+    // Transparency values
+    const val OVERLAY_ALPHA = 0.5f // 半透明覆蓋層
+    const val WAITING_ALPHA = 0.7f // 等待狀態透明度
+    
     // Casino theme gradients
     val casinoBackgroundGradient = listOf(
         Color(0xFF1B5E20), // Dark green
@@ -66,4 +70,7 @@ object GameStatusColors {
         Color(0xFF2E7D32),
         Color(0xFF1B5E20)
     )
+    
+    // Overlay colors
+    val statusOverlayColor = Color.Black.copy(alpha = OVERLAY_ALPHA)
 }

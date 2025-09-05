@@ -48,8 +48,7 @@ private fun CompactLayout(
     Layout { screenWidth ->
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Tokens.padding(screenWidth)),
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -116,8 +115,7 @@ private fun ExpandedLayout(
     Layout { screenWidth ->
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Tokens.padding(screenWidth)),
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -312,8 +310,8 @@ private fun BalanceCard(
                 // Expanded: Show full text
                 Row(
                     modifier = Modifier.padding(
-                        horizontal = Tokens.padding(screenWidth),
-                        vertical = Tokens.spacing(screenWidth)
+                        horizontal = Tokens.Space.s,
+                        vertical = Tokens.Space.s
                     ),
                     horizontalArrangement = if (fullWidth) {
                         Arrangement.Center
