@@ -4,6 +4,7 @@ import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.Action
 import org.ttpss930141011.bj.domain.enums.HandStatus
 import org.ttpss930141011.bj.domain.enums.GamePhase
+import org.ttpss930141011.bj.domain.enums.ChipValue
 import org.ttpss930141011.bj.domain.services.RoundManager
 import org.ttpss930141011.bj.domain.services.SettlementService
 
@@ -12,7 +13,8 @@ data class Game(
     val player: Player?,
     val playerHands: List<PlayerHand>,
     val currentHandIndex: Int,
-    val currentBet: Int,
+    val pendingBet: Int = 0,      // Uncommitted bet amount during betting phase
+    val currentBet: Int,          // Committed bet amount after dealing
     val dealer: Dealer,
     val deck: Deck,
     val rules: GameRules,
@@ -26,6 +28,7 @@ data class Game(
                 player = null,
                 playerHands = emptyList(),
                 currentHandIndex = 0,
+                pendingBet = 0,
                 currentBet = 0,
                 dealer = Dealer(),
                 deck = Deck.shuffled(),
@@ -38,6 +41,7 @@ data class Game(
                 player = null,
                 playerHands = emptyList(),
                 currentHandIndex = 0,
+                pendingBet = 0,
                 currentBet = 0,
                 dealer = Dealer(),
                 deck = testDeck,
@@ -48,10 +52,20 @@ data class Game(
     
     // Domain queries
     val hasPlayer: Boolean = player != null
-    val hasBet: Boolean = currentBet > 0
+    val hasPendingBet: Boolean = pendingBet > 0
+    val hasCommittedBet: Boolean = currentBet > 0
+    val hasBet: Boolean = currentBet > 0  // Keep for backward compatibility
+    val canDealCards: Boolean = hasPendingBet && phase == GamePhase.WAITING_FOR_BETS
     val currentHand: PlayerHand? = playerHands.getOrNull(currentHandIndex)
     val canAct: Boolean = hasPlayer && currentHand != null && currentHand.status == HandStatus.ACTIVE
     val allHandsComplete: Boolean = playerHands.all { it.isCompleted }
+    
+    // Game Over logic - domain-driven minimum bet requirement
+    // Only check game over when waiting for bets (between rounds)
+    val isGameOver: Boolean 
+        get() = player?.let { p -> 
+            p.chips < rules.minimumBet && phase == GamePhase.WAITING_FOR_BETS 
+        } ?: false
     
     // Rich domain behavior - player management
     fun addPlayer(newPlayer: Player): Game {
@@ -88,6 +102,81 @@ data class Game(
         )
     }
     
+    // New pending bet behavior - for BettingTableState replacement
+    fun addToPendingBet(amount: Int): Game {
+        require(hasPlayer) { "No player in game" }
+        require(phase == GamePhase.WAITING_FOR_BETS) { "Can only add to pending bet during betting phase" }
+        require(amount > 0) { "Amount must be positive" }
+        require(player!!.chips >= (pendingBet + amount)) { 
+            "Insufficient chips for additional bet" 
+        }
+        
+        return copy(pendingBet = pendingBet + amount)
+    }
+    
+    fun clearPendingBet(): Game {
+        require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear pending bet during betting phase" }
+        return copy(pendingBet = 0)
+    }
+    
+    fun commitPendingBet(): Game {
+        require(hasPendingBet) { "No pending bet to commit" }
+        require(hasPlayer) { "No player in game" }
+        require(player!!.chips >= pendingBet) { "Insufficient chips" }
+        
+        val updatedPlayer = player.deductChips(pendingBet)
+        return copy(
+            player = updatedPlayer,
+            currentBet = pendingBet,
+            pendingBet = 0
+        )
+    }
+    
+    /**
+     * Try to add chip to pending bet with validation
+     * Returns result indicating success/failure with updated game state
+     */
+    fun tryAddChipToPendingBet(chipValue: ChipValue): AddChipResult {
+        if (!hasPlayer) {
+            return AddChipResult(
+                success = false,
+                errorMessage = "No player in game",
+                updatedGame = this
+            )
+        }
+        
+        if (phase != GamePhase.WAITING_FOR_BETS) {
+            return AddChipResult(
+                success = false,
+                errorMessage = "Can only add chips during betting phase",
+                updatedGame = this
+            )
+        }
+        
+        if (player!!.chips < (pendingBet + chipValue.value)) {
+            return AddChipResult(
+                success = false,
+                errorMessage = "Insufficient chips",
+                updatedGame = this
+            )
+        }
+        
+        try {
+            val updatedGame = addToPendingBet(chipValue.value)
+            return AddChipResult(
+                success = true,
+                errorMessage = null,
+                updatedGame = updatedGame
+            )
+        } catch (e: IllegalArgumentException) {
+            return AddChipResult(
+                success = false,
+                errorMessage = e.message,
+                updatedGame = this
+            )
+        }
+    }
+    
     // Delegate to domain services for complex operations
     fun dealRound(): Game = RoundManager().dealRound(this)
     
@@ -102,7 +191,8 @@ data class Game(
         return copy(
             playerHands = emptyList(),           // 清空所有手牌
             currentHandIndex = 0,                // 重設手牌索引
-            currentBet = 0,                      // 清空賭注
+            pendingBet = 0,                      // 清空待確認賭注
+            currentBet = 0,                      // 清空已確認賭注
             dealer = Dealer(),                   // 重設dealer (清空hand)
             deck = Deck.shuffled(),              // 新牌組
             phase = GamePhase.WAITING_FOR_BETS, // 回到下注階段
