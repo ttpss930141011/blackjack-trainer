@@ -28,12 +28,11 @@ fun App() {
             
             AppScreen.SETTINGS -> {
                 SettingsScreen(
-                    currentRules = gameRules,
-                    onRulesChanged = { newRules ->
+                    rules = gameRules,
+                    onRulesChange = { newRules ->
                         gameRules = newRules
                         currentScreen = AppScreen.CASINO
-                    },
-                    onBack = { currentScreen = AppScreen.CASINO }
+                    }
                 )
             }
         }

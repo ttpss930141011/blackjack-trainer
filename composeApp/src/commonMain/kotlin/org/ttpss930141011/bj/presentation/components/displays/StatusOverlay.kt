@@ -79,9 +79,9 @@ fun StatusOverlay(
                         
                         // Dealer text (new)
                         dealerStatus == DealerStatus.REVEALING -> "REVEALING"
-                        dealerStatus == DealerStatus.BUSTED -> "DEALER BUST"
-                        dealerStatus == DealerStatus.STANDING -> "DEALER STANDS"
-                        dealerStatus == DealerStatus.HITTING -> "DEALER HITS"
+                        dealerStatus == DealerStatus.BUSTED -> "BUST"
+                        dealerStatus == DealerStatus.STANDING -> "STANDS"
+                        dealerStatus == DealerStatus.HITTING -> "HITS"
                         else -> ""
                     },
                     fontSize = 16.sp,

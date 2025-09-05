@@ -48,7 +48,7 @@ object GameStatusColors {
     fun getPhaseColor(phase: GamePhase): Color {
         return when (phase) {
             GamePhase.WAITING_FOR_BETS -> waitingColor
-            GamePhase.PLAYER_ACTIONS -> activePhaseColor
+            GamePhase.PLAYER_TURN -> activePhaseColor
             GamePhase.DEALER_TURN -> activePhaseColor
             GamePhase.SETTLEMENT -> completedPhaseColor
             GamePhase.DEALING -> activePhaseColor

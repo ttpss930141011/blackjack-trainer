@@ -22,7 +22,9 @@ import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
 import org.ttpss930141011.bj.presentation.components.displays.HoleCardDisplay
+import org.ttpss930141011.bj.presentation.components.displays.StatusOverlay
 import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.mappers.DealerStatus
 
 /**
  * Dealer area component that handles dealer display logic
@@ -87,53 +89,77 @@ private fun DealerHandCard(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Tokens.Space.xs)
     ) {
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = GameStatusColors.casinoGreen.copy(alpha = 0.6f)
-            ),
-            shape = RoundedCornerShape(Tokens.Space.m),
-            elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.xs)
-        ) {
-            Column(
-                modifier = Modifier.padding(Tokens.Space.m),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
+        Box { // Wrap in Box to overlay status
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = GameStatusColors.casinoGreen.copy(alpha = 0.6f)
+                ),
+                shape = RoundedCornerShape(Tokens.Space.m),
+                elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.xs)
             ) {
-                when (phase) {
-                    GamePhase.PLAYER_ACTIONS -> {
-                        dealerUpCard?.let { upCard ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
-                                CardImageDisplay(card = upCard, size = Tokens.Card.medium)
-                                HoleCardDisplay(size = Tokens.Card.medium)
+                Column(
+                    modifier = Modifier.padding(Tokens.Space.m),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
+                ) {
+                    when (phase) {
+                        GamePhase.PLAYER_TURN -> {
+                            dealerUpCard?.let { upCard ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
+                                    CardImageDisplay(card = upCard, size = Tokens.Card.medium)
+                                    HoleCardDisplay(size = Tokens.Card.medium)
+                                }
                             }
                         }
-                    }
-                    else -> {
-                        dealerHand?.let { hand ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
-                                hand.cards.forEach { card ->
-                                    CardImageDisplay(card = card, size = Tokens.Card.medium)
+                        else -> {
+                            dealerHand?.let { hand ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
+                                    hand.cards.forEach { card ->
+                                        CardImageDisplay(card = card, size = Tokens.Card.medium)
+                                    }
                                 }
                             }
                         }
                     }
+                    
+                    // Hand value display (matches PlayerHandCard structure)
+                    Text(
+                        text = when (phase) {
+                            GamePhase.PLAYER_TURN -> dealerUpCard?.let { 
+                                val upCardValue = if (it.rank == Rank.ACE) "A/11" else "${it.blackjackValue}"
+                                upCardValue
+                            } ?: ""
+                            else -> dealerHand?.let { "${it.bestValue}${if (it.isSoft) " (soft)" else ""}" } ?: ""
+                        },
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp
+                    )
                 }
-                
-                // Hand value display (matches PlayerHandCard structure)
-                Text(
-                    text = when (phase) {
-                        GamePhase.PLAYER_ACTIONS -> dealerUpCard?.let { 
-                            val upCardValue = if (it.rank == Rank.ACE) "A/11" else "${it.blackjackValue}"
-                            upCardValue
-                        } ?: ""
-                        else -> dealerHand?.let { "${it.bestValue}${if (it.isSoft) " (soft)" else ""}" } ?: ""
-                    },
-                    color = Color.White,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
-                )
             }
+            
+            // StatusOverlay for dealer states
+            val dealerStatus = getDealerStatus(dealerHand, phase)
+            val showDealerStatus = dealerStatus != null
+            
+            StatusOverlay(
+                dealerStatus = dealerStatus,
+                showDealerStatus = showDealerStatus,
+                modifier = Modifier.matchParentSize()
+            )
         }
+    }
+}
+
+// Helper function to determine dealer status
+private fun getDealerStatus(dealerHand: Hand?, phase: GamePhase): DealerStatus? {
+    return when {
+        dealerHand == null -> null
+        phase == GamePhase.PLAYER_TURN -> null // Don't show status during player turn
+        dealerHand.isBusted -> DealerStatus.BUSTED
+        phase == GamePhase.DEALER_TURN -> DealerStatus.HITTING
+        phase == GamePhase.SETTLEMENT -> DealerStatus.STANDING
+        else -> null
     }
 }
 

@@ -79,7 +79,7 @@ fun GameTable(
 private fun PhaseHeader(phase: GamePhase) {
     val title = when (phase) {
         GamePhase.WAITING_FOR_BETS -> "Place Your Bet"
-        GamePhase.PLAYER_ACTIONS -> "Your Turn"
+        GamePhase.PLAYER_TURN -> "Your Turn"
         GamePhase.DEALER_TURN -> "Dealer's Turn"
         GamePhase.SETTLEMENT -> "Round Results"
         else -> "Casino Table"

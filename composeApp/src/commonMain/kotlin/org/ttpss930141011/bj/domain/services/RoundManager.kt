@@ -2,108 +2,86 @@ package org.ttpss930141011.bj.domain.services
 
 import org.ttpss930141011.bj.domain.entities.Game
 import org.ttpss930141011.bj.domain.valueobjects.*
-import org.ttpss930141011.bj.domain.enums.Action
-import org.ttpss930141011.bj.domain.enums.GamePhase
+import org.ttpss930141011.bj.domain.enums.*
+import org.ttpss930141011.bj.domain.DomainConstants
 
-/**
- * Domain service responsible for managing round flow and card dealing.
- * Extracted from Game class to improve Single Responsibility Principle.
- */
 class RoundManager {
     
     fun dealRound(game: Game): Game {
-        require(game.hasBet) { "No bet placed" }
+        require(game.hasCommittedBet) { "No bet committed" }
+        require(game.phase == GamePhase.WAITING_FOR_BETS) { "Round already started" }
         
-        var currentDeck = game.deck
+        // Deal two cards to player and dealer
+        val (playerCards, tempDeck1) = game.deck.dealCards(2)
+        val (dealerCards, newDeck) = tempDeck1.dealCards(2)
         
-        // Deal player cards
-        val dealResult = currentDeck.dealCards(2)
-        val playerCards = dealResult.first
-        currentDeck = dealResult.second
+        // Create player hands
         val playerHand = PlayerHand.initial(playerCards, game.currentBet)
+        val playerHands = listOf(playerHand)
         
-        // Deal dealer cards (up card + hole card)
-        val dealerResult = currentDeck.dealCards(2)
-        val dealerCards = dealerResult.first
-        val newDealer = game.dealer.dealInitialCards(dealerCards[0], dealerCards[1])
-        val finalDeck = dealerResult.second
+        // Set up dealer with hole card
+        val newDealer = game.dealer.dealInitialCards(
+            upCard = dealerCards[0], 
+            holeCard = dealerCards[1]
+        )
         
         return game.copy(
-            playerHands = listOf(playerHand),
+            playerHands = playerHands,
             currentHandIndex = 0,
             dealer = newDealer,
-            deck = finalDeck,
-            phase = GamePhase.PLAYER_ACTIONS
+            deck = newDeck,
+            phase = GamePhase.PLAYER_TURN
         )
     }
     
     fun processPlayerAction(game: Game, action: Action): Game {
-        require(game.phase == GamePhase.PLAYER_ACTIONS) { "Not in player action phase" }
-        require(game.canAct) { "Player cannot act at this time" }
+        require(game.canAct) { "Cannot act on current hand" }
         
-        val hand = game.currentHand!!
+        val currentHand = game.currentHand!!
         
-        // Handle payment for DOUBLE before processing action
-        val gameAfterPayment = if (action == Action.DOUBLE) {
-            val additionalBet = hand.bet
-            require((game.player?.chips ?: 0) >= additionalBet) { 
-                "Insufficient balance for double down" 
+        val updatedGame = when (action) {
+            Action.SPLIT -> {
+                val (newHands, newDeck, nextIndex) = handleSplit(game, currentHand)
+                game.copy(
+                    playerHands = newHands,
+                    deck = newDeck,
+                    currentHandIndex = nextIndex
+                )
             }
-            game.copy(player = game.player?.deductChips(additionalBet))
+            else -> {
+                val (newHands, newDeck, nextIndex) = handleRegularAction(game, currentHand, action)
+                game.copy(
+                    playerHands = newHands,
+                    deck = newDeck,
+                    currentHandIndex = nextIndex
+                )
+            }
+        }
+        
+        // Auto-transition to dealer turn when all player hands are complete
+        return if (updatedGame.allHandsComplete && updatedGame.phase == GamePhase.PLAYER_TURN) {
+            updatedGame.copy(phase = GamePhase.DEALER_TURN)
         } else {
-            game
+            updatedGame
         }
-        
-        val (newHands, newDeck, newIndex) = when (action) {
-            Action.SPLIT -> handleSplit(gameAfterPayment, hand)
-            else -> handleRegularAction(gameAfterPayment, hand, action)
-        }
-        
-        // Check if all hands are complete to proceed to dealer turn
-        val allComplete = newHands.all { it.isCompleted }
-        val newPhase = if (allComplete) GamePhase.DEALER_TURN else GamePhase.PLAYER_ACTIONS
-        
-        return gameAfterPayment.copy(
-            playerHands = newHands,
-            currentHandIndex = newIndex,
-            deck = newDeck,
-            phase = newPhase
-        )
     }
     
-    fun processDealerTurn(game: Game): Game {
-        require(game.phase == GamePhase.DEALER_TURN) { "Not in dealer turn phase" }
-        require(game.dealer.hand != null) { "Dealer has no hand to play" }
-        
-        var currentGame = revealDealerCards(game)
-        
-        // Dealer hits until must stand
-        while (shouldDealerHit(currentGame.dealer.hand!!, game.rules)) {
-            val (newCard, newDeck) = currentGame.deck.dealCard()
-            val newDealerHand = currentGame.dealer.hand!!.addCard(newCard)
-            currentGame = currentGame.copy(
-                dealer = currentGame.dealer.copy(hand = newDealerHand),
-                deck = newDeck
-            )
-        }
-        
-        // Auto-settlement for better UX - no manual intervention needed
-        val settledGame = currentGame.copy(phase = GamePhase.SETTLEMENT).settleRound()
-        return settledGame
-    }
-    
+    // Split handling
     private fun handleSplit(game: Game, hand: PlayerHand): Triple<List<PlayerHand>, Deck, Int> {
         require(hand.canSplit) { "Hand cannot be split" }
         require(game.playerHands.size < game.rules.maxSplits + 1) { "Maximum splits exceeded" }
         
-        val splitResult = hand.split(game.deck)
+        // Deal two new cards for split hands
+        val (newCards, newDeck) = game.deck.dealCards(2)
+        val (firstHand, secondHand) = hand.split(newCards[0], newCards[1])
+        
         val newHands = game.playerHands.toMutableList()
         
         // Replace current hand with two split hands
-        newHands[game.currentHandIndex] = splitResult.firstHand
-        newHands.add(game.currentHandIndex + 1, splitResult.secondHand)
+        newHands[game.currentHandIndex] = firstHand
+        newHands.add(game.currentHandIndex + 1, secondHand)
         
-        return Triple(newHands, splitResult.deck, game.currentHandIndex)
+        return Triple(newHands, newDeck, game.currentHandIndex)
     }
     
     private fun handleRegularAction(
@@ -111,40 +89,74 @@ class RoundManager {
         hand: PlayerHand, 
         action: Action
     ): Triple<List<PlayerHand>, Deck, Int> {
-        // Payment has already been handled in processPlayerAction
-        val actionResult = when (action) {
-            Action.HIT -> hand.hit(game.deck)
-            Action.STAND -> PlayerHandActionResult(hand.stand(), game.deck)
-            Action.DOUBLE -> hand.double(game.deck)
-            Action.SURRENDER -> PlayerHandActionResult(hand.surrender(), game.deck)
+        val (newHand, newDeck) = when (action) {
+            Action.HIT -> {
+                val (card, deck) = game.deck.dealCard()
+                val updatedHand = hand.hit(card)
+                Pair(updatedHand, deck)
+            }
+            Action.STAND -> {
+                Pair(hand.stand(), game.deck)
+            }
+            Action.DOUBLE -> {
+                val (card, deck) = game.deck.dealCard()
+                val updatedHand = hand.doubleDown(card)
+                Pair(updatedHand, deck)
+            }
+            Action.SURRENDER -> {
+                Pair(hand.surrender(), game.deck)
+            }
             Action.SPLIT -> error("Split should be handled separately")
         }
         
         val newHands = game.playerHands.toMutableList()
-        newHands[game.currentHandIndex] = actionResult.hand
+        newHands[game.currentHandIndex] = newHand
         
         // Move to next hand if current hand is complete
-        val nextIndex = if (actionResult.hand.isCompleted && game.currentHandIndex < newHands.size - 1) {
+        val nextIndex = if (newHand.isCompleted && game.currentHandIndex < newHands.size - 1) {
             game.currentHandIndex + 1
         } else {
             game.currentHandIndex
         }
         
-        return Triple(newHands, actionResult.deck, nextIndex)
+        return Triple(newHands, newDeck, nextIndex)
     }
     
-    private fun revealDealerCards(game: Game): Game {
-        require(game.dealer.hand != null) { "No dealer hand" }
-        val revealedDealer = game.dealer.revealHoleCard()
-        return game.copy(dealer = revealedDealer)
+    fun processDealerTurn(game: Game): Game {
+        require(game.allHandsComplete) { "Player hands not complete" }
+        
+        // 莊家需要動作嗎？
+        val playerHasWinningHands = game.playerHands.any { hand ->
+            !hand.isBusted && hand.status != HandStatus.SURRENDERED
+        }
+        
+        if (!playerHasWinningHands) {
+            // All player hands busted or surrendered, dealer doesn't need to act
+            return game.copy(phase = GamePhase.SETTLEMENT)
+        }
+        
+        // 翻開暗牌並根據規則要牌
+        var newDealer = game.dealer.revealHoleCard()
+        var newDeck = game.deck
+        
+        while (shouldDealerHit(newDealer.hand!!, game.rules)) {
+            val (card, deck) = newDeck.dealCard()
+            newDealer = newDealer.hit(card)
+            newDeck = deck
+        }
+        
+        return game.copy(dealer = newDealer, deck = newDeck, phase = GamePhase.SETTLEMENT)
     }
     
     private fun shouldDealerHit(hand: Hand, rules: GameRules): Boolean {
+        // 首先檢查是否爆牌 - 爆牌絕對不能繼續要牌
+        if (hand.isBusted) return false
+        
         val value = hand.bestValue
         return when {
-            value < 17 -> true
-            value > 17 -> false
-            value == 17 && hand.isSoft && rules.dealerHitsOnSoft17 -> true
+            value < DomainConstants.BlackjackValues.DEALER_STAND_HARD -> true
+            value > DomainConstants.BlackjackValues.DEALER_STAND_HARD -> false
+            value == DomainConstants.BlackjackValues.DEALER_STAND_HARD && hand.isSoft && rules.dealerHitsOnSoft17 -> true
             else -> false
         }
     }

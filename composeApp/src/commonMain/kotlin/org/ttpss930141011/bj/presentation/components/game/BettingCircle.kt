@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.ttpss930141011.bj.domain.valueobjects.BettingTableState
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.domain.valueobjects.ChipInSpot
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
@@ -28,7 +27,8 @@ import org.ttpss930141011.bj.presentation.layout.Layout
 
 @Composable
 fun BettingCircle(
-    bettingTableState: BettingTableState?,
+    currentBet: Int,
+    chipComposition: List<ChipInSpot>,
     onClearBet: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -42,7 +42,7 @@ fun BettingCircle(
                 .fillMaxSize()
                 .clip(CircleShape)
                 .background(
-                    if (bettingTableState?.currentBet == 0) {
+                    if (currentBet == 0) {
                         Color.White.copy(alpha = 0.1f)
                     } else {
                         GameStatusColors.activeColor.copy(alpha = 0.3f)
@@ -55,7 +55,7 @@ fun BettingCircle(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            if (bettingTableState?.currentBet == 0 || bettingTableState == null) {
+            if (currentBet == 0) {
                 Text(
                     text = "Place Bet",
                     fontSize = 14.sp,
@@ -64,12 +64,12 @@ fun BettingCircle(
                 )
             } else {
                 // Show dynamic chip composition instead of text
-                ChipDisplay(chipComposition = bettingTableState.chipComposition)
+                ChipDisplay(chipComposition = chipComposition)
             }
         }
         
         // Clear button when bet is placed
-        if ((bettingTableState?.currentBet ?: 0) > 0) {
+        if (currentBet > 0) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)

@@ -74,7 +74,8 @@
       "Bash(git rm:*)",
       "Bash(move:*)",
       "mcp__filesystem__edit_file",
-      "WebFetch(domain:www.jetbrains.com)"
+      "WebFetch(domain:www.jetbrains.com)",
+      "Bash(kotlin test:*)"
     ],
     "deny": [],
     "ask": []

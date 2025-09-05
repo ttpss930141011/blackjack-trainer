@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,7 +31,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import org.ttpss930141011.bj.domain.valueobjects.ChipInSpot
-import org.ttpss930141011.bj.domain.valueobjects.BettingTableState
 import org.ttpss930141011.bj.presentation.design.AppConstants
 
 /**
@@ -44,6 +44,7 @@ fun PlayerArea(
     viewModel: GameViewModel,
     modifier: Modifier = Modifier
 ) {
+    val chipCompositionService = remember { ChipCompositionService() }
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -51,7 +52,8 @@ fun PlayerArea(
         when (game.phase) {
             GamePhase.WAITING_FOR_BETS -> {
                 BettingCircle(
-                    bettingTableState = viewModel.bettingTableState,
+                    currentBet = viewModel.currentBetAmount,
+                    chipComposition = viewModel.chipComposition,
                     onClearBet = { viewModel.clearBet() }
                 )
             }
@@ -59,7 +61,8 @@ fun PlayerArea(
                 PlayerHandsDisplay(
                     playerHands = game.playerHands,
                     currentHandIndex = game.currentHandIndex,
-                    phase = game.phase
+                    phase = game.phase,
+                    chipCompositionService = chipCompositionService
                 )
             }
         }
@@ -70,7 +73,8 @@ fun PlayerArea(
 private fun PlayerHandsDisplay(
     playerHands: List<PlayerHand>,
     currentHandIndex: Int,
-    phase: GamePhase
+    phase: GamePhase,
+    chipCompositionService: ChipCompositionService
 ) {
     if (playerHands.isEmpty()) return
     
@@ -78,7 +82,8 @@ private fun PlayerHandsDisplay(
         PlayerHandCard(
             hand = playerHands[0],
             isActive = currentHandIndex == 0,
-            phase = phase
+            phase = phase,
+            chipCompositionService = chipCompositionService
         )
     } else {
         LazyRow(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.m)) {
@@ -86,7 +91,8 @@ private fun PlayerHandsDisplay(
                 PlayerHandCard(
                     hand = hand,
                     isActive = currentHandIndex == index,
-                    phase = phase
+                    phase = phase,
+                    chipCompositionService = chipCompositionService
                 )
             }
         }
@@ -99,6 +105,7 @@ private fun PlayerHandCard(
     hand: PlayerHand,
     isActive: Boolean,
     phase: GamePhase,
+    chipCompositionService: ChipCompositionService,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -110,7 +117,7 @@ private fun PlayerHandCard(
         Box {
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isActive && phase == GamePhase.PLAYER_ACTIONS) {
+                    containerColor = if (isActive && phase == GamePhase.PLAYER_TURN) {
                         GameStatusColors.activeColor.copy(alpha = 0.8f)
                     } else {
                         GameStatusColors.casinoGreen.copy(alpha = 0.6f)
@@ -153,7 +160,7 @@ private fun PlayerHandCard(
         // Chip stack display below card (extracted from card)
         if (hand.bet > 0) {
             ChipDisplay(
-                chipComposition = BettingTableState.calculateOptimalChipComposition(hand.bet),
+                chipComposition = chipCompositionService.calculateOptimalComposition(hand.bet),
                 modifier = Modifier.size(AppConstants.Dimensions.CHIP_SIZE_COMPACT.dp)
             )
         }

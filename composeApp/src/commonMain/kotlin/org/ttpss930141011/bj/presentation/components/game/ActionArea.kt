@@ -40,7 +40,7 @@ fun ActionArea(
             ChipSelection(
                 availableChips = ChipImageMapper.standardChipValues,
                 playerChips = game.player?.chips ?: 0,
-                currentBet = viewModel.bettingTableState?.currentBet ?: 0,
+                currentBet = viewModel.currentBetAmount,
                 onChipSelected = { chipValue ->
                     ChipValue.fromValue(chipValue)?.let { viewModel.addChipToBet(it) }
                 },
@@ -50,7 +50,7 @@ fun ActionArea(
                 modifier = modifier
             )
         }
-        GamePhase.PLAYER_ACTIONS -> {
+        GamePhase.PLAYER_TURN -> {
             ActionButtons(
                 availableActions = game.availableActions().toList(),
                 onAction = { action ->
