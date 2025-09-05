@@ -21,7 +21,7 @@ class GameService {
     }
     
     fun executePlayerAction(game: Game, action: Action): GameActionResult {
-        require(game.phase == GamePhase.PLAYER_ACTIONS) { "Not in player action phase" }
+        require(game.phase == GamePhase.PLAYER_TURN) { "Not in player action phase" }
         require(game.canAct) { "Player cannot act" }
         
         val handBeforeAction = game.currentHand!!

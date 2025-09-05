@@ -8,7 +8,8 @@ import org.ttpss930141011.bj.domain.services.*
 
 class GameViewModel(
     private val gameService: GameService = GameService(),
-    private val sessionService: GameSessionService = GameSessionService()
+    private val sessionService: GameSessionService = GameSessionService(),
+    private val chipCompositionService: ChipCompositionService = ChipCompositionService()
 ) {
     
     private var _game by mutableStateOf<Game?>(null)
@@ -31,9 +32,7 @@ class GameViewModel(
     
     // Game over integration from Domain layer
     val isGameOver: Boolean
-        get() = _game?.player?.let { player ->
-            player.chips < 5 // Minimum bet is 5 chips
-        } ?: false
+        get() = _game?.isGameOver ?: false
     
     fun initializeGame(gameRules: GameRules, player: Player) {
         _game = gameService.createNewGame(gameRules, player)
@@ -86,25 +85,21 @@ class GameViewModel(
         val currentGame = _game ?: return
         try {
             _game = gameService.processDealerTurn(currentGame)
+            
+            // 自動結算：當進入 SETTLEMENT 階段時立即結算
+            if (_game?.phase == GamePhase.SETTLEMENT && _game?.isSettled == false) {
+                _game = gameService.settleRound(_game!!)
+                
+                val outcome = sessionService.determineRoundOutcome(_game!!)
+                _sessionStats = sessionService.updateSessionStats(_sessionStats, _roundDecisions, outcome)
+            }
+            
             _errorMessage = null
         } catch (e: Exception) {
             _errorMessage = e.message
         }
     }
     
-    fun settleRound() {
-        val currentGame = _game ?: return
-        try {
-            _game = gameService.settleRound(currentGame)
-            
-            val outcome = sessionService.determineRoundOutcome(_game!!)
-            _sessionStats = sessionService.updateSessionStats(_sessionStats, _roundDecisions, outcome)
-            _errorMessage = null
-            
-        } catch (e: Exception) {
-            _errorMessage = e.message
-        }
-    }
     
     fun nextRound() {
         val currentGame = _game ?: return
@@ -112,7 +107,6 @@ class GameViewModel(
         _feedback = null
         _roundDecisions = emptyList()
         _errorMessage = null
-        initializeBettingTableState()
     }
     
     fun showGameSummary() {
@@ -131,9 +125,15 @@ class GameViewModel(
         _feedback = null
     }
     
-    // New betting table methods for chip-by-chip betting
-    private var _bettingTableState by mutableStateOf<BettingTableState?>(null)
-    val bettingTableState: BettingTableState? get() = _bettingTableState
+    // Domain-based chip display properties for UI layer
+    val currentBetAmount: Int get() = _game?.pendingBet ?: 0
+    val canDealCards: Boolean get() = _game?.canDealCards ?: false
+    val chipComposition: List<ChipInSpot> 
+        get() = _game?.pendingBet?.let { amount ->
+            if (amount > 0) chipCompositionService.calculateOptimalComposition(amount)
+            else emptyList()
+        } ?: emptyList()
+    val availableBalance: Int get() = _game?.player?.chips ?: 0
     
     fun addChipToBet(chipValue: ChipValue) {
         val currentGame = _game ?: return
@@ -144,11 +144,10 @@ class GameViewModel(
         }
         
         try {
-            val currentTable = _bettingTableState ?: BettingTableState.fromGame(currentGame)
-            val result = currentTable.tryAddChip(chipValue)
+            val result = currentGame.tryAddChipToPendingBet(chipValue)
             
             if (result.success) {
-                _bettingTableState = result.bettingTable
+                _game = result.updatedGame
                 _errorMessage = null
             } else {
                 _errorMessage = result.errorMessage
@@ -163,14 +162,8 @@ class GameViewModel(
         if (currentGame.phase != GamePhase.WAITING_FOR_BETS) return
         
         try {
-            val currentTable = _bettingTableState ?: BettingTableState.fromGame(currentGame)
-            val clearedTable = currentTable.clearBet()
-            _bettingTableState = clearedTable
-            
-            // Use domain method for proper business logic
-            _game = currentGame.clearBet()
+            _game = currentGame.clearPendingBet()
             _errorMessage = null
-            
         } catch (e: Exception) {
             _errorMessage = e.message
         }
@@ -178,35 +171,21 @@ class GameViewModel(
     
     fun dealCards() {
         val currentGame = _game ?: return
-        val currentTable = _bettingTableState ?: return
         
-        if (currentGame.phase != GamePhase.WAITING_FOR_BETS || !currentTable.canDeal) {
+        if (!currentGame.canDealCards) {
             _errorMessage = "Cannot deal cards at this time"
-            return
-        }
-        if (isGameOver) {
-            _errorMessage = "Game Over! Insufficient chips to continue."
             return
         }
         
         try {
-            // Convert betting table state to final game bet and deal
-            val gameWithBet = currentTable.toGameBet(currentGame)
-            _game = gameService.dealRound(gameWithBet)
-            _bettingTableState = null // Clear betting state
+            // Commit pending bet and deal
+            val gameWithCommittedBet = currentGame.commitPendingBet()
+            _game = gameService.dealRound(gameWithCommittedBet)
             _feedback = null
             _errorMessage = null
-            
         } catch (e: Exception) {
             _errorMessage = e.message
         }
     }
     
-    // Initialize betting table state when entering betting phase
-    private fun initializeBettingTableState() {
-        val currentGame = _game
-        if (currentGame?.phase == GamePhase.WAITING_FOR_BETS) {
-            _bettingTableState = BettingTableState.fromGame(currentGame)
-        }
-    }
 }
