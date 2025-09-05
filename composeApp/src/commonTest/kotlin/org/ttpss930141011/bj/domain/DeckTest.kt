@@ -4,6 +4,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import org.ttpss930141011.bj.domain.valueobjects.Deck
+import org.ttpss930141011.bj.domain.valueobjects.Card
+import org.ttpss930141011.bj.domain.valueobjects.Suit
+import org.ttpss930141011.bj.domain.valueobjects.Rank
 
 class DeckTest {
     

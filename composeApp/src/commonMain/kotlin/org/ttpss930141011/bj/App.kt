@@ -3,7 +3,7 @@ package org.ttpss930141011.bj
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.ttpss930141011.bj.domain.GameRules
+import org.ttpss930141011.bj.domain.valueobjects.GameRules
 import org.ttpss930141011.bj.presentation.*
 
 enum class AppScreen {
