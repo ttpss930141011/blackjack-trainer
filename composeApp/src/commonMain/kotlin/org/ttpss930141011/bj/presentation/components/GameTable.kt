@@ -18,8 +18,9 @@ import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.components.game.*
-import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.components.feedback.GameOverOverlay
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
+import org.ttpss930141011.bj.presentation.design.AppConstants
 
 /**
  * Unified game table that adapts to all game phases.
@@ -32,42 +33,67 @@ fun GameTable(
     feedback: DecisionFeedback? = null,
     modifier: Modifier = Modifier
 ) {
-    // 移除Card包裝，直接使用Column最大化遊戲區域
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(CasinoTheme.CardTableBackground)
-            .padding(Tokens.Space.m),
-        verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
-    ) {
-            // Phase title
-            PhaseHeader(game.phase)
-            
-            // Dealer area - consistent across all phases
-            DealerArea(
-                game = game,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            // Player area - adapts based on phase
-            PlayerArea(
-                game = game,
-                viewModel = viewModel,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            // Action area - adapts based on phase  
-            ActionArea(
-                game = game,
-                viewModel = viewModel,
-                feedback = feedback,
-                modifier = Modifier.fillMaxWidth()
-            )
+    Box(modifier = modifier.fillMaxSize()) {
+        // Main game table - always visible
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(CasinoTheme.CardTableBackground)
+                .padding(Tokens.Space.m),
+            verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
+        ) {
+                // Phase title
+                PhaseHeader(game.phase)
+                
+                // Dealer area - consistent across all phases
+                DealerArea(
+                    game = game,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.weight(1f))
+                
+                // Player area - adapts based on phase
+                PlayerArea(
+                    game = game,
+                    viewModel = viewModel,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.weight(1f))
+                
+                // Action area - adapts based on phase  
+                ActionArea(
+                    game = game,
+                    viewModel = viewModel,
+                    feedback = feedback,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        
+        // Game over overlay - following StatusOverlay pattern
+        if (viewModel.isGameOver) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                GameOverOverlay(
+                    onNewGame = {
+                        // Reset to new game with starting chips
+                        viewModel.initializeGame(
+                            game.rules, 
+                            Player(
+                                id = game.player?.id ?: "player1",
+                                chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS
+                            )
+                        )
+                    }
+                )
+            }
         }
+    }
 }
 
 @Composable

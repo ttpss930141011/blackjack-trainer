@@ -9,6 +9,57 @@ import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.domain.valueobjects.SessionStats
 import org.ttpss930141011.bj.presentation.design.Tokens
 
+/**
+ * Streamlined Game Over overlay - shows as centered overlay on the game table
+ * with simplified controls (only restart needed)
+ */
+@Composable
+fun GameOverOverlay(
+    onNewGame: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .width(320.dp)
+            .wrapContentHeight(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(Tokens.Space.xl),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Game Over Header
+            Text(
+                text = "🎲 Game Over!",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            
+            Text(
+                text = "Insufficient chips to continue",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
+                modifier = Modifier.padding(bottom = Tokens.Space.l)
+            )
+            
+            // Single action button - streamlined UX
+            Button(
+                onClick = onNewGame,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("🎯 Start Over")
+            }
+        }
+    }
+}
+
+/**
+ * Legacy GameOverDisplay - kept for backward compatibility if needed
+ * But recommend using GameOverOverlay instead
+ */
 @Composable
 fun GameOverDisplay(
     totalChips: Int,
@@ -44,36 +95,10 @@ fun GameOverDisplay(
                 modifier = Modifier.padding(bottom = Tokens.Space.l)
             )
             
-            // Final Result
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(Tokens.Space.l),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Final Chips",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "$totalChips",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = if (totalChips > 0) MaterialTheme.colorScheme.primary 
-                               else MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-            
-            // Learning Summary (if available)
+            // Learning Summary (if available) - removed Final Chips card
             if (sessionStats.totalRounds > 0) {
-                Spacer(modifier = Modifier.height(Tokens.Space.l))
-                
                 Text(
-                    text = "📊 Session Learning",
+                    text = "📊 Session Summary",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = Tokens.Space.s)
                 )
@@ -95,44 +120,16 @@ fun GameOverDisplay(
                         value = "${sessionStats.perfectRounds}"
                     )
                 }
+                
+                Spacer(modifier = Modifier.height(Tokens.Space.xl))
             }
             
-            Spacer(modifier = Modifier.height(Tokens.Space.xl))
-            
-            // Action Buttons
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Single essential action - removed History button
+            Button(
+                onClick = onNewGame,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Button(
-                    onClick = onNewGame,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("🎯 Start New Game")
-                }
-                
-                Spacer(modifier = Modifier.height(Tokens.Space.s))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s)
-                ) {
-                    if (sessionStats.totalRounds > 0) {
-                        OutlinedButton(
-                            onClick = onViewSummary,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("📈 Details")
-                        }
-                    }
-                    
-                    OutlinedButton(
-                        onClick = onViewHistory,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("📚 History")
-                    }
-                }
+                Text("🎯 Start New Game")
             }
         }
     }
