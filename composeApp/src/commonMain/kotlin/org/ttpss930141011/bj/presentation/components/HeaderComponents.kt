@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.presentation.design.Tokens
+import org.ttpss930141011.bj.presentation.design.CasinoSemanticColors
 
 /**
  * Shared header components used across different responsive layouts
@@ -61,7 +62,7 @@ fun BalanceBadge(
         modifier = modifier.let {
             if (style == BalanceBadgeStyle.FULL_WIDTH) it.fillMaxWidth() else it
         },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFC107)),
+        colors = CasinoSemanticColors.balanceColors(),
         shape = RoundedCornerShape(when (style) {
             BalanceBadgeStyle.FULL_WIDTH -> Tokens.Space.m
             BalanceBadgeStyle.CARD -> Tokens.Radius.medium
@@ -129,14 +130,7 @@ fun HeaderActions(
         }),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (hasStats) {
-            HeaderIconButton(
-                icon = "📊",
-                onClick = onShowSummary,
-                color = Color(0xFF4CAF50),
-                size = size
-            )
-        }
+        // Stats button removed - functionality available via navigation
         HeaderIconButton(
             icon = "⚙️",
             onClick = onShowSettings,

@@ -26,11 +26,13 @@ object CasinoTheme {
     val CasinoSurfaceLight = Color(0xFF334155)   // Light slate for contrast
     val CasinoBackground = Color(0xFF020617)    // Deep background
     
-    // Clean backgrounds for different areas - user specified colors
-    val HeaderBackground = Color(0xFF34623f)   // User specified green for header
-    val PageBackground = Color(0xFF34623f)     // User specified green for pages
-    val CardTableBackground = Color(0xFF34623f) // User specified green for card table
-    val HitButtonBackground = Color(0xFF1E2F23) // User specified dark green for hit button
+    // Clean backgrounds for different areas - updated to #216125
+    val PageBackground = Color(0xFFBEE3DB)     // Light mint green for pages
+    val CardTableBackground = Color(0xFF216125) // Dark green for card table
+    val HitButtonBackground = Color(0xFF4CAF50) // Bright green for better contrast on table  
+    val BalanceBadgeBackground = Color(0xFF59876B) // Medium green for badge
+    val HoverEffectColor = Color(0xFFBCDCC4)   // Hover effect color
+    val HeaderBackground = Color(0xFF216125)   // Dark green for header
     
     // Status colors - modern and clear
     val CasinoSuccess = Color(0xFF22C55E)      // Fresh success green
@@ -42,7 +44,7 @@ object CasinoTheme {
     val NavigationSurface = Color(0xFF1E293B)     // Clean slate surface
     val NavigationSelected = Color(0xFFE11D48)    // Premium rose accent
     val NavigationUnselected = Color(0xFF64748B)  // Subtle slate gray
-    val NavigationBackground = Color(0xFFFAFAFA)  // Clean white background
+    val NavigationBackground = Color(0xFF216125)  // Dark green background for navbar
     
     // Interactive elements
     val ButtonPrimary = Color(0xFF059669)      // Emerald CTA
@@ -73,8 +75,8 @@ object CasinoSemanticColors {
     
     @Composable
     fun balanceColors() = CardDefaults.cardColors(
-        containerColor = CasinoTheme.BalancePrimary,
-        contentColor = CasinoTheme.BalanceAccent
+        containerColor = CasinoTheme.BalanceBadgeBackground,
+        contentColor = Color.White
     )
     
     @Composable

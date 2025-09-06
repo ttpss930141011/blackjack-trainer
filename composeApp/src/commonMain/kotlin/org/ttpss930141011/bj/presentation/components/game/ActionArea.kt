@@ -1,8 +1,10 @@
 package org.ttpss930141011.bj.presentation.components.game
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -94,84 +96,75 @@ private fun ChipSelection(
     onDealCards: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val scrollState = rememberScrollState()
     Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Tokens.Space.l)
     ) {
-        // Player balance
-        Text(
-            text = "Balance: $$playerChips",
-            style = MaterialTheme.typography.titleMedium,
-            color = CasinoTheme.BalanceAccent,
-            fontWeight = FontWeight.Bold
-        )
-        
-        // Chip selection - responsive wrapping
-        BreakpointLayout(
-            compact = {
-                // Compact: FlowRow for wrapping
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(
-                        Tokens.Space.s, 
-                        Alignment.CenterHorizontally
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
-                ) {
-                    availableChips.forEach { chipValue ->
-                        ChipImageDisplay(
-                            value = chipValue,
-                            size = Tokens.Size.chipDiameter,
-                            onClick = {
-                                if (currentBet + chipValue <= playerChips) {
-                                    onChipSelected(chipValue)
-                                }
-                            }
-                        )
-                    }
-                }
-            },
-            expanded = {
-                // Expanded: LazyRow
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(Tokens.Space.m, Alignment.CenterHorizontally),
-                    contentPadding = PaddingValues(horizontal = Tokens.Space.l)
-                ) {
-                    items(availableChips) { chipValue ->
-                        ChipImageDisplay(
-                            value = chipValue,
-                            size = Tokens.Size.chipDiameter,
-                            onClick = {
-                                if (currentBet + chipValue <= playerChips) {
-                                    onChipSelected(chipValue)
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-        )
-        
-        // Deal button
-        Button(
-            onClick = onDealCards,
-            enabled = currentBet > 0,
-            modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = CasinoTheme.ButtonPrimary,
-                contentColor = Color.Black
-            ),
-            shape = RoundedCornerShape(Tokens.Space.l),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = Tokens.Space.s)
+        // Player balance - centered
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
             Text(
-                text = if (currentBet > 0) "Deal Cards ($$currentBet)" else "Deal Cards",
+                text = "Balance: $$playerChips",
                 style = MaterialTheme.typography.titleMedium,
+                color = CasinoTheme.BalanceAccent,
                 fontWeight = FontWeight.Bold
             )
+        }
+        
+        // Chip selection - horizontally scrollable for mobile devices
+        // Use fixed width to ensure scrolling works on mobile (7 chips * 80dp + spacing ≈ 624dp)
+        val mobileContentWidth = Tokens.Size.chipDiameter * 8 // Buffer for spacing and padding
+        
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .width(mobileContentWidth)
+                    .horizontalScroll(scrollState)
+                    .padding(horizontal = Tokens.Space.s),
+                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                availableChips.forEach { chipValue ->
+                    ChipImageDisplay(
+                        value = chipValue,
+                        size = Tokens.Size.chipDiameter,
+                        onClick = {
+                            if (currentBet + chipValue <= playerChips) {
+                                onChipSelected(chipValue)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+        
+        // Deal button - centered
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Button(
+                onClick = onDealCards,
+                enabled = currentBet > 0,
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = CasinoTheme.ButtonPrimary,
+                    contentColor = Color.Black
+                ),
+                shape = RoundedCornerShape(Tokens.Space.l),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = Tokens.Space.s)
+            ) {
+                Text(
+                    text = if (currentBet > 0) "Deal Cards ($$currentBet)" else "Deal Cards",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

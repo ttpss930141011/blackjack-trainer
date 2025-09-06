@@ -100,4 +100,14 @@ class LearningRecorder(
     fun clearAllData() {
         repository.clear()
     }
+    
+    /**
+     * Get detailed scenario statistics for analytics.
+     * 
+     * @return Map of scenario keys to ScenarioStats
+     */
+    fun getScenarioStats(): Map<String, org.ttpss930141011.bj.infrastructure.ScenarioStats> {
+        val repositoryInstance = repository as? org.ttpss930141011.bj.infrastructure.InMemoryLearningRepository
+        return repositoryInstance?.getScenarioStats() ?: emptyMap()
+    }
 }

@@ -29,7 +29,6 @@ import org.ttpss930141011.bj.presentation.components.navigation.GameNavigationDr
 import org.ttpss930141011.bj.presentation.components.navigation.GameNavigationBar
 import org.ttpss930141011.bj.presentation.components.navigation.NavigationPage
 import org.ttpss930141011.bj.presentation.pages.*
-import org.ttpss930141011.bj.presentation.design.GameStatusColors
 import org.ttpss930141011.bj.presentation.design.AppConstants
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 
@@ -37,7 +36,6 @@ import org.ttpss930141011.bj.presentation.design.CasinoTheme
 @Composable
 fun CasinoGameScreen(
     gameRules: GameRules = GameRules(),
-    onShowSettings: () -> Unit = {},
     onRulesChanged: (GameRules) -> Unit = {}
 ) {
     val viewModel = remember { GameViewModel() }
@@ -81,6 +79,7 @@ fun CasinoGameScreen(
         if (screenWidth.isCompact) {
             // Mobile: NavigationBar at bottom
             Scaffold(
+                containerColor = CasinoTheme.PageBackground,
                 bottomBar = {
                     GameNavigationBar(
                         currentPage = currentPage ?: NavigationPage.HOME,
@@ -149,7 +148,6 @@ fun CasinoGameScreen(
                                 viewModel = viewModel,
                                 currentPlayer = currentPlayer,
                                 feedback = viewModel.feedback,
-                                onShowSettings = onShowSettings,
                                 currentPage = currentPage,
                                 feedbackNotificationEnabled = feedbackNotificationEnabled,
                                 feedbackDurationSeconds = feedbackDurationSeconds
@@ -165,10 +163,6 @@ fun CasinoGameScreen(
             
             GameWithNavigationDrawer(
                 currentPage = currentPage,
-                gameRules = gameRules,
-                decisionHistory = viewModel.getRecentDecisions(),
-                scenarioStats = viewModel.getScenarioStats(),
-                onClearHistory = { viewModel.clearAllLearningData() },
                 onPageSelected = { currentPage = it },
                 drawerState = drawerState
             ) {
@@ -228,7 +222,6 @@ fun CasinoGameScreen(
                             viewModel = viewModel,
                             currentPlayer = currentPlayer,
                             feedback = viewModel.feedback,
-                            onShowSettings = onShowSettings,
                             currentPage = currentPage,
                             feedbackNotificationEnabled = feedbackNotificationEnabled,
                             feedbackDurationSeconds = feedbackDurationSeconds,
@@ -247,7 +240,6 @@ private fun CasinoGameContent(
     viewModel: GameViewModel,
     currentPlayer: Player,
     feedback: DecisionFeedback?,
-    onShowSettings: () -> Unit,
     currentPage: NavigationPage?,
     feedbackNotificationEnabled: Boolean = true,
     feedbackDurationSeconds: Float = 2.5f,
@@ -266,9 +258,6 @@ private fun CasinoGameContent(
         ) {
             Header(
                 balance = currentPlayer.chips,
-                onShowSettings = onShowSettings,
-                hasStats = viewModel.sessionStats.totalRounds > 0,
-                onShowSummary = { viewModel.showGameSummary() },
                 currentPage = currentPage,
                 drawerButton = drawerState?.let { drawer ->
                     {
@@ -283,8 +272,6 @@ private fun CasinoGameContent(
                     }
                 }
             )
-            
-            Spacer(modifier = Modifier.height(8.dp))
             
             // 遊戲區域直接填滿剩餘空間，移除多餘包裝
             game?.let { currentGame ->
@@ -313,23 +300,12 @@ private fun CasinoGameContent(
             modifier = Modifier.align(Alignment.TopCenter)
         )
         
-        if (viewModel.showGameSummary) {
-            GameSummaryDialog(
-                stats = viewModel.sessionStats,
-                onDismiss = { viewModel.hideGameSummary() },
-                onBackToMenu = { viewModel.hideGameSummary() }
-            )
-        }
     }
 }
 
 @Composable
 fun GameWithNavigationDrawer(
     currentPage: NavigationPage?,
-    gameRules: GameRules,
-    decisionHistory: List<org.ttpss930141011.bj.domain.valueobjects.DecisionRecord>,
-    scenarioStats: Map<String, org.ttpss930141011.bj.infrastructure.ScenarioStats>,
-    onClearHistory: () -> Unit,
     onPageSelected: (NavigationPage?) -> Unit,
     drawerState: DrawerState,
     gameContent: @Composable () -> Unit

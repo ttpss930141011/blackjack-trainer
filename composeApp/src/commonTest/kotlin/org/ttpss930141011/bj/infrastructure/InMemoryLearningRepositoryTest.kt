@@ -163,7 +163,7 @@ class InMemoryLearningRepositoryTest {
         assertEquals(2.0/3.0, worstScenarios[0].second, 0.001)
         assertEquals("Hard 12 vs 5", worstScenarios[1].first)
         assertEquals(1.0/3.0, worstScenarios[1].second, 0.001)
-        assertEquals("Hard 20 vs 7", worstScenarios[2].first)
+        assertEquals("Pair 10s vs 7", worstScenarios[2].first)
         assertEquals(0.0, worstScenarios[2].second, 0.001)
     }
 

@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 class DecisionEvaluatorTest {
 
     private val evaluator = DecisionEvaluator()
-    private val standardRules = GameRules()
+    private val standardRules = GameRules(surrenderAllowed = false)
 
     @Test
     fun `given player hand 16 vs dealer 10 when hit then should evaluate as correct`() {
@@ -66,18 +66,18 @@ class DecisionEvaluatorTest {
     }
 
     @Test
-    fun `given soft 17 vs dealer 3 when hit then should evaluate as correct`() {
+    fun `given soft 17 vs dealer 3 when double then should evaluate as correct`() {
         // Given
         val playerHand = PlayerHand(listOf(Card(Suit.HEARTS, Rank.ACE), Card(Suit.SPADES, Rank.SIX)), bet = 50)
         val dealerUpCard = Card(Suit.CLUBS, Rank.THREE)
-        val playerAction = Action.HIT
+        val playerAction = Action.DOUBLE
         
         // When
         val feedback = evaluator.evaluateDecision(playerHand, dealerUpCard, playerAction, standardRules)
         
         // Then
         assertTrue(feedback.isCorrect)
-        assertEquals(Action.HIT, feedback.optimalAction)
+        assertEquals(Action.DOUBLE, feedback.optimalAction)
     }
 
     @Test

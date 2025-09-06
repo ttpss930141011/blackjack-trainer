@@ -18,73 +18,59 @@ class InMemoryLearningRepository : LearningRepository {
     private val decisions: MutableList<DecisionRecord> = mutableListOf()
     
     override fun save(decision: DecisionRecord) {
-        synchronized(decisions) {
-            decisions.add(decision)
-        }
+        decisions.add(decision)
     }
     
     override fun getAll(): List<DecisionRecord> {
-        synchronized(decisions) {
-            return decisions.toList() // Return defensive copy
-        }
+        return decisions.toList() // Return defensive copy
     }
     
     override fun getRecent(limit: Int): List<DecisionRecord> {
-        synchronized(decisions) {
-            return decisions
-                .sortedByDescending { it.timestamp }
-                .take(limit)
-        }
+        return decisions
+            .sortedByDescending { it.timestamp }
+            .take(limit)
     }
     
     override fun findByScenario(scenarioKey: String): List<DecisionRecord> {
-        synchronized(decisions) {
-            return decisions.filter { it.scenarioKey == scenarioKey }
-        }
+        return decisions.filter { it.scenarioKey == scenarioKey }
     }
     
     override fun getWorstScenarios(minSamples: Int): List<Pair<String, Double>> {
-        synchronized(decisions) {
-            return decisions
-                .groupBy { it.scenarioKey }
-                .filter { (_, decisionList) -> decisionList.size >= minSamples }
-                .map { (scenario, decisionList) ->
-                    val errorRate = decisionList.count { !it.isCorrect }.toDouble() / decisionList.size
-                    scenario to errorRate
-                }
-                .sortedByDescending { it.second } // Sort by error rate (worst first)
-        }
+        return decisions
+            .groupBy { it.scenarioKey }
+            .filter { (_, decisionList) -> decisionList.size >= minSamples }
+            .map { (scenario, decisionList) ->
+                val errorRate = decisionList.count { !it.isCorrect }.toDouble() / decisionList.size
+                scenario to errorRate
+            }
+            .sortedByDescending { it.second } // Sort by error rate (worst first)
     }
     
     override fun clear() {
-        synchronized(decisions) {
-            decisions.clear()
-        }
+        decisions.clear()
     }
     
     /**
      * Get current size of stored decisions (for testing/debugging)
      */
     val size: Int
-        get() = synchronized(decisions) { decisions.size }
+        get() = decisions.size
     
     /**
      * Get detailed scenario statistics (for advanced analytics)
      */
     fun getScenarioStats(): Map<String, ScenarioStats> {
-        synchronized(decisions) {
-            return decisions
-                .groupBy { it.scenarioKey }
-                .mapValues { (scenario, decisionList) ->
-                    ScenarioStats(
-                        scenario = scenario,
-                        totalAttempts = decisionList.size,
-                        correctAttempts = decisionList.count { it.isCorrect },
-                        errorRate = decisionList.count { !it.isCorrect }.toDouble() / decisionList.size,
-                        lastAttempt = decisionList.maxByOrNull { it.timestamp }?.timestamp
-                    )
-                }
-        }
+        return decisions
+            .groupBy { it.scenarioKey }
+            .mapValues { (scenario, decisionList) ->
+                ScenarioStats(
+                    scenario = scenario,
+                    totalAttempts = decisionList.size,
+                    correctAttempts = decisionList.count { it.isCorrect },
+                    errorRate = decisionList.count { !it.isCorrect }.toDouble() / decisionList.size,
+                    lastAttempt = decisionList.maxByOrNull { it.timestamp }?.timestamp
+                )
+            }
     }
 }
 

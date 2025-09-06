@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Clean layout system based on Material 3 breakpoints
+ * Uses BoxWithConstraints for multiplatform compatibility
  */
 
 enum class ScreenWidth {
@@ -41,6 +42,23 @@ fun BreakpointLayout(
             ScreenWidth.EXPANDED -> expanded()
         }
     }
+}
+
+/**
+ * Remember screen width based on BoxWithConstraints
+ * Multiplatform-compatible alternative to LocalConfiguration
+ */
+@Composable
+fun rememberScreenWidth(): ScreenWidth {
+    var result = ScreenWidth.COMPACT
+    BoxWithConstraints {
+        result = when {
+            maxWidth < 600.dp -> ScreenWidth.COMPACT
+            maxWidth < 840.dp -> ScreenWidth.MEDIUM
+            else -> ScreenWidth.EXPANDED
+        }
+    }
+    return result
 }
 
 val ScreenWidth.isCompact: Boolean

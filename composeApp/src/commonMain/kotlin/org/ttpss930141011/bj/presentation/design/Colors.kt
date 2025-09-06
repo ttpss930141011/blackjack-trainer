@@ -5,33 +5,40 @@ import org.ttpss930141011.bj.domain.enums.GamePhase
 import org.ttpss930141011.bj.domain.enums.HandStatus
 
 /**
+ * DEPRECATED: Use CasinoTheme instead
  * Centralized color definitions for game status indicators.
- * Reduces duplication and provides consistent styling across components.
+ * This object is maintained for backward compatibility but should be migrated to CasinoTheme.
+ * 
+ * Migration Path:
+ * - Replace direct usage with CasinoTheme.* equivalents
+ * - Use MaterialTheme.colorScheme.* where appropriate
+ * - Apply CasinoTheme wrapper at app level
  */
+@Deprecated("Use CasinoTheme instead for consistent theming")
 object GameStatusColors {
     
-    // Hand status colors
-    val winColor = Color(0xFF4CAF50)      // Green
-    val lossColor = Color(0xFFF44336)     // Red
-    val pushColor = Color(0xFFFFC107)     // Gold
-    val bustColor = Color(0xFFF44336)     // Red
-    val activeColor = Color(0xFF4CAF50)   // Green
+    // Hand status colors - redirected to CasinoTheme
+    val winColor = CasinoTheme.CasinoSuccess
+    val lossColor = CasinoTheme.CasinoError
+    val pushColor = CasinoTheme.CasinoAccentSecondary
+    val bustColor = CasinoTheme.CasinoError
+    val activeColor = CasinoTheme.CasinoPrimary
     
-    // UI element colors
-    val betColor = Color(0xFFFFC107)      // Casino gold
-    val casinoGreen = Color(0xFF1B5E20)   // Casino table green
-    val casinoGold = Color(0xFFFFC107)    // Casino gold
+    // UI element colors - redirected to CasinoTheme
+    val betColor = CasinoTheme.CasinoAccentSecondary
+    val casinoGreen = CasinoTheme.CasinoPrimary
+    val casinoGold = CasinoTheme.CasinoAccentSecondary
     
-    // Action button colors
-    val hitColor = Color(0xFF4CAF50)        // Green
-    val standColor = Color(0xFFF44336)       // Red  
-    val doubleColor = Color(0xFFFF9800)      // Orange
-    val surrenderColor = Color(0xFF9E9E9E)   // Gray
+    // Action button colors - redirected to CasinoTheme
+    val hitColor = CasinoTheme.CasinoSuccess
+    val standColor = CasinoTheme.CasinoError
+    val doubleColor = CasinoTheme.CasinoWarning
+    val surrenderColor = Color.Gray
     
     // Phase indicators
     val waitingColor = Color.White.copy(alpha = WAITING_ALPHA)
-    val activePhaseColor = Color(0xFF4CAF50)
-    val completedPhaseColor = Color(0xFF2E7D32)
+    val activePhaseColor = CasinoTheme.CasinoPrimary
+    val completedPhaseColor = CasinoTheme.CasinoPrimaryVariant
     
     fun getHandStatusColor(status: HandStatus): Color {
         return when (status) {
@@ -59,16 +66,16 @@ object GameStatusColors {
     const val OVERLAY_ALPHA = 0.5f // 半透明覆蓋層
     const val WAITING_ALPHA = 0.7f // 等待狀態透明度
     
-    // Casino theme gradients
+    // Casino theme gradients - updated to use CasinoTheme
     val casinoBackgroundGradient = listOf(
-        Color(0xFF1B5E20), // Dark green
-        Color(0xFF2E7D32), // Medium green
-        Color(0xFF388E3C)  // Lighter green
+        CasinoTheme.CasinoBackground,
+        CasinoTheme.CasinoPrimary,
+        CasinoTheme.CasinoAccent
     )
     
     val casinoTableGradient = listOf(
-        Color(0xFF2E7D32),
-        Color(0xFF1B5E20)
+        CasinoTheme.CasinoSurface,
+        CasinoTheme.CasinoPrimary
     )
     
     // Overlay colors
