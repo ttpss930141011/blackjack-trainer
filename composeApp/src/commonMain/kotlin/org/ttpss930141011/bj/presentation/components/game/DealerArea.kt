@@ -23,7 +23,7 @@ import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
 import org.ttpss930141011.bj.presentation.components.displays.HoleCardDisplay
 import org.ttpss930141011.bj.presentation.components.displays.StatusOverlay
-import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import org.ttpss930141011.bj.presentation.mappers.DealerStatus
 
 /**
@@ -59,7 +59,7 @@ fun DealerArea(
 private fun DealerWaitingDisplay() {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = GameStatusColors.casinoGreen.copy(alpha = 0.6f)
+            containerColor = CasinoTheme.CasinoPrimary.copy(alpha = 0.6f)
         ),
         shape = RoundedCornerShape(Tokens.Space.m),
         elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.xs)
@@ -92,7 +92,7 @@ private fun DealerHandCard(
         Box { // Wrap in Box to overlay status
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = GameStatusColors.casinoGreen.copy(alpha = 0.6f)
+                    containerColor = CasinoTheme.CasinoPrimary.copy(alpha = 0.6f)
                 ),
                 shape = RoundedCornerShape(Tokens.Space.m),
                 elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.xs)

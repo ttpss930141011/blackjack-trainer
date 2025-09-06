@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.domain.enums.HandStatus
 import org.ttpss930141011.bj.presentation.mappers.DealerStatus
 import org.ttpss930141011.bj.presentation.design.Tokens
-import org.ttpss930141011.bj.presentation.design.GameStatusColors
 
 /**
  * Status overlay component that shows visual status indicators
@@ -39,7 +38,7 @@ fun StatusOverlay(
         Box(
             modifier = modifier
                 .clip(RoundedCornerShape(Tokens.Space.m))
-                .background(GameStatusColors.statusOverlayColor),
+                .background(Color.Black.copy(alpha = 0.5f)),
             contentAlignment = Alignment.Center
         ) {
             Column(

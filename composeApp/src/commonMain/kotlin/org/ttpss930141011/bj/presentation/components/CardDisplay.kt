@@ -16,7 +16,7 @@ import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.domain.valueobjects.Hand
 import org.ttpss930141011.bj.domain.valueobjects.PlayerHand
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
-import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.CasinoTheme
 
 /**
  * Shared utilities for card display components.
@@ -76,7 +76,7 @@ object CardDisplayUtils {
         if (isBusted) {
             Text(
                 text = "Busted!",
-                color = GameStatusColors.bustColor,
+                color = CasinoTheme.CasinoError,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -86,7 +86,7 @@ object CardDisplayUtils {
     @Composable
     fun BetDisplay(
         amount: Int,
-        textColor: Color = GameStatusColors.betColor,
+        textColor: Color = CasinoTheme.CasinoAccentSecondary,
         modifier: Modifier = Modifier
     ) {
         Text(

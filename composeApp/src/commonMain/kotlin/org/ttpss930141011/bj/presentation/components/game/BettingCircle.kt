@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.domain.valueobjects.ChipInSpot
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
-import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import org.ttpss930141011.bj.presentation.layout.Layout
 
 /**
@@ -45,7 +45,7 @@ fun BettingCircle(
                     if (currentBet == 0) {
                         Color.White.copy(alpha = 0.1f)
                     } else {
-                        GameStatusColors.activeColor.copy(alpha = 0.3f)
+                        CasinoTheme.CasinoPrimary.copy(alpha = 0.3f)
                     }
                 )
                 .border(
