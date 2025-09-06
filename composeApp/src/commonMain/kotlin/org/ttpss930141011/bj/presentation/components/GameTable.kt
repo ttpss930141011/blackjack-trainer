@@ -1,5 +1,6 @@
 package org.ttpss930141011.bj.presentation.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -18,6 +19,7 @@ import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.components.game.*
 import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.CasinoTheme
 
 /**
  * Unified game table that adapts to all game phases.
@@ -30,20 +32,14 @@ fun GameTable(
     feedback: DecisionFeedback? = null,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = GameStatusColors.casinoGreen.copy(alpha = 0.7f)
-        ),
-        shape = RoundedCornerShape(Tokens.Size.iconSmall),
-        elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.s)
+    // 移除Card包裝，直接使用Column最大化遊戲區域
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(CasinoTheme.CardTableBackground)
+            .padding(Tokens.Space.m),
+        verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(Tokens.Space.xl),
-            verticalArrangement = Arrangement.spacedBy(Tokens.Space.xl)
-        ) {
             // Phase title
             PhaseHeader(game.phase)
             
@@ -72,7 +68,6 @@ fun GameTable(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-    }
 }
 
 @Composable

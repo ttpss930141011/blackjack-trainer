@@ -20,7 +20,7 @@ import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
-import org.ttpss930141011.bj.presentation.design.GameStatusColors
+import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 
 /**
@@ -103,7 +103,7 @@ private fun ChipSelection(
         Text(
             text = "Balance: $$playerChips",
             style = MaterialTheme.typography.titleMedium,
-            color = GameStatusColors.casinoGold,
+            color = CasinoTheme.BalanceAccent,
             fontWeight = FontWeight.Bold
         )
         
@@ -161,7 +161,7 @@ private fun ChipSelection(
                 .fillMaxWidth(0.8f)
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = GameStatusColors.casinoGold,
+                containerColor = CasinoTheme.ButtonPrimary,
                 contentColor = Color.Black
             ),
             shape = RoundedCornerShape(Tokens.Space.l),
@@ -229,11 +229,11 @@ private fun ActionButton(
     feedback: DecisionFeedback? = null
 ) {
     val (baseColor, icon) = when (action) {
-        Action.HIT -> GameStatusColors.hitColor to "+"
-        Action.STAND -> GameStatusColors.standColor to "−"
-        Action.DOUBLE -> GameStatusColors.doubleColor to "×2"
-        Action.SURRENDER -> GameStatusColors.surrenderColor to "↓"
-        Action.SPLIT -> GameStatusColors.casinoGold to "⁝⁝"
+        Action.HIT -> CasinoTheme.HitButtonBackground to "+"
+        Action.STAND -> CasinoTheme.ButtonDanger to "−"
+        Action.DOUBLE -> CasinoTheme.CasinoAccentSecondary to "×2"
+        Action.SURRENDER -> CasinoTheme.ButtonSecondary to "↓"
+        Action.SPLIT -> CasinoTheme.CasinoAccentPrimary to "⁝⁝"
     }
     
     // Show hint only (no color changes)
@@ -314,7 +314,7 @@ private fun DealerTurnButton(
                 .fillMaxWidth(0.6f)
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = GameStatusColors.casinoGold,
+                containerColor = CasinoTheme.ButtonPrimary,
                 contentColor = Color.Black
             ),
             shape = RoundedCornerShape(Tokens.Space.l),
@@ -341,7 +341,7 @@ private fun NextRoundButton(
         Button(
             onClick = onNextRound,
             colors = ButtonDefaults.buttonColors(
-                containerColor = GameStatusColors.casinoGreen,
+                containerColor = CasinoTheme.ButtonPrimary,
                 contentColor = Color.White
             ),
             shape = RoundedCornerShape(Tokens.Space.m),
