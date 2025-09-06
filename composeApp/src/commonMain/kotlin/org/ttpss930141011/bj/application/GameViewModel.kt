@@ -5,10 +5,12 @@ import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
+import org.ttpss930141011.bj.infrastructure.InMemoryLearningRepository
 
 class GameViewModel(
     private val gameService: GameService = GameService(),
-    private val sessionService: GameSessionService = GameSessionService(),
+    private val decisionEvaluator: DecisionEvaluator = DecisionEvaluator(),
+    private val learningRecorder: LearningRecorder = LearningRecorder(InMemoryLearningRepository()),
     private val chipCompositionService: ChipCompositionService = ChipCompositionService()
 ) {
     
@@ -64,7 +66,7 @@ class GameViewModel(
             val result = gameService.executePlayerAction(currentGame, action)
             _game = result.game
             
-            val feedback = sessionService.evaluatePlayerDecision(
+            val feedback = decisionEvaluator.evaluateDecision(
                 handBeforeAction = result.handBeforeAction,
                 dealerUpCard = currentGame.dealer.upCard!!,
                 playerAction = action,
@@ -72,7 +74,15 @@ class GameViewModel(
             )
             _feedback = feedback
             
-            val playerDecision = sessionService.createPlayerDecision(action, feedback.isCorrect)
+            // Record decision for learning analytics
+            learningRecorder.recordDecision(
+                handBeforeAction = result.handBeforeAction,
+                dealerUpCard = currentGame.dealer.upCard!!,
+                playerAction = action,
+                isCorrect = feedback.isCorrect
+            )
+            
+            val playerDecision = PlayerDecision(action, feedback.isCorrect)
             _roundDecisions = _roundDecisions + playerDecision
             _errorMessage = null
             
@@ -90,8 +100,8 @@ class GameViewModel(
             if (_game?.phase == GamePhase.SETTLEMENT && _game?.isSettled == false) {
                 _game = gameService.settleRound(_game!!)
                 
-                val outcome = sessionService.determineRoundOutcome(_game!!)
-                _sessionStats = sessionService.updateSessionStats(_sessionStats, _roundDecisions, outcome)
+                val outcome = determineRoundOutcome(_game!!)
+                _sessionStats = _sessionStats.recordRound(_roundDecisions)
             }
             
             _errorMessage = null
@@ -186,6 +196,29 @@ class GameViewModel(
         } catch (e: Exception) {
             _errorMessage = e.message
         }
+    }
+    
+    private fun determineRoundOutcome(game: Game): String {
+        require(game.phase == GamePhase.SETTLEMENT) { "Game must be in settlement phase" }
+        
+        return if (game.playerHands.isNotEmpty()) {
+            val firstHand = game.playerHands[0]
+            when (firstHand.status) {
+                HandStatus.WIN -> "WIN"
+                HandStatus.LOSS, HandStatus.BUSTED -> "LOSS"
+                HandStatus.PUSH -> "PUSH"
+                else -> "UNKNOWN"
+            }
+        } else "UNKNOWN"
+    }
+    
+    // Learning analytics access
+    fun getWorstScenarios(minSamples: Int = 3): List<Pair<String, Double>> {
+        return learningRecorder.getWorstScenarios(minSamples)
+    }
+    
+    fun getRecentDecisions(limit: Int = 50): List<DecisionRecord> {
+        return learningRecorder.getRecentDecisions(limit)
     }
     
 }

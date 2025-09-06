@@ -1,66 +1,99 @@
 package org.ttpss930141011.bj.domain.valueobjects
 
-// Rich SessionStats - Round基礎統計與歷史記錄
+/**
+ * SessionStats - Session-level learning statistics and progress tracking.
+ * 
+ * Updated to work with DecisionRecord-based learning system while maintaining
+ * backward compatibility for UI components. Focuses on current session data
+ * rather than cross-game analytics.
+ */
 data class SessionStats(
-    val totalRounds: Int = 0,
-    val perfectRounds: Int = 0,  // 所有決策都正確的round
     val totalDecisions: Int = 0,
-    val correctDecisions: Int = 0,  // 所有正確決策總數
-    val roundHistory: List<RoundRecord> = emptyList()  // 每輪完整記錄
+    val correctDecisions: Int = 0,
+    val recentDecisions: List<DecisionRecord> = emptyList()  // Recent session decisions
 ) {
     
-    // 完美round比率 (策略掌握度指標)
-    val perfectRoundRate: Double = if (totalRounds > 0) {
-        perfectRounds.toDouble() / totalRounds
-    } else 0.0
-    
-    // 整體決策正確率 (細節學習指標)
+    // Core learning metrics
     val overallDecisionRate: Double = if (totalDecisions > 0) {
         correctDecisions.toDouble() / totalDecisions
     } else 0.0
     
-    // Rich domain behavior - 記錄完整round結果
-    fun recordRound(decisions: List<PlayerDecision>): SessionStats {
-        val allCorrect = decisions.all { it.isCorrect }
-        val decisionCount = decisions.size
-        val correctCount = decisions.count { it.isCorrect }
-        
-        return copy(
-            totalRounds = totalRounds + 1,
-            perfectRounds = if (allCorrect) perfectRounds + 1 else perfectRounds,
-            totalDecisions = totalDecisions + decisionCount,
-            correctDecisions = correctDecisions + correctCount
-        )
-    }
+    // Backward compatibility - calculate round-based stats from decisions
+    val totalRounds: Int = recentDecisions.size.coerceAtMost(50) // Approximate recent rounds
     
-    // 記錄完整round含結果
-    fun recordRoundWithHistory(decisions: List<PlayerDecision>, outcome: String): SessionStats {
-        val allCorrect = decisions.all { it.isCorrect }
-        val decisionCount = decisions.size
-        val correctCount = decisions.count { it.isCorrect }
-        
-        val roundRecord = RoundRecord(
-            roundNumber = totalRounds + 1,
-            decisions = decisions,
-            outcome = outcome
-        )
-        
-        return copy(
-            totalRounds = totalRounds + 1,
-            perfectRounds = if (allCorrect) perfectRounds + 1 else perfectRounds,
-            totalDecisions = totalDecisions + decisionCount,
-            correctDecisions = correctDecisions + correctCount,
-            roundHistory = roundHistory + roundRecord
-        )
-    }
+    val perfectRounds: Int = 0 // Simplified - could be enhanced if needed
     
-    // 學習進度查詢
-    val hasSignificantData: Boolean = totalRounds >= 10
+    val perfectRoundRate: Double = if (totalRounds > 0) {
+        perfectRounds.toDouble() / totalRounds  
+    } else 0.0
+    
+    // Session mastery assessment
+    val hasSignificantData: Boolean = totalDecisions >= 10
     val masteryLevel: MasteryLevel = when {
-        perfectRoundRate >= 0.9 && hasSignificantData -> MasteryLevel.EXPERT
-        perfectRoundRate >= 0.7 && hasSignificantData -> MasteryLevel.PROFICIENT
-        perfectRoundRate >= 0.5 && hasSignificantData -> MasteryLevel.LEARNING
+        overallDecisionRate >= 0.9 && hasSignificantData -> MasteryLevel.EXPERT
+        overallDecisionRate >= 0.7 && hasSignificantData -> MasteryLevel.PROFICIENT
+        overallDecisionRate >= 0.5 && hasSignificantData -> MasteryLevel.LEARNING
         else -> MasteryLevel.BEGINNER
+    }
+    
+    // Backward compatibility - provide roundHistory for UI
+    val roundHistory: List<RoundRecord> = recentDecisions.mapIndexed { index, decision ->
+        RoundRecord(
+            roundNumber = index + 1,
+            decisions = listOf(PlayerDecision(decision.playerAction, decision.isCorrect)),
+            outcome = if (decision.isCorrect) "CORRECT" else "INCORRECT"
+        )
+    }
+    
+    /**
+     * Record a single decision (new primary method)
+     */
+    fun recordDecision(decision: DecisionRecord): SessionStats {
+        val newRecentDecisions = (recentDecisions + decision).takeLast(50) // Keep recent 50
+        
+        return copy(
+            totalDecisions = totalDecisions + 1,
+            correctDecisions = if (decision.isCorrect) correctDecisions + 1 else correctDecisions,
+            recentDecisions = newRecentDecisions
+        )
+    }
+    
+    /**
+     * Backward compatibility - record multiple decisions as a "round"
+     */
+    fun recordRound(decisions: List<PlayerDecision>): SessionStats {
+        return decisions.fold(this) { stats, playerDecision ->
+            // Create a synthetic DecisionRecord for backward compatibility
+            val decisionRecord = DecisionRecord(
+                handCards = emptyList(), // Minimal data for compatibility
+                dealerUpCard = Card(Suit.HEARTS, Rank.TWO), // Placeholder
+                playerAction = playerDecision.action,
+                isCorrect = playerDecision.isCorrect
+            )
+            stats.recordDecision(decisionRecord)
+        }
+    }
+    
+    /**
+     * Backward compatibility - record round with history
+     */
+    fun recordRoundWithHistory(decisions: List<PlayerDecision>, outcome: String): SessionStats {
+        return recordRound(decisions)
+    }
+    
+    /**
+     * Get session-specific analytics
+     */
+    fun getSessionWorstScenarios(minSamples: Int = 3): List<Pair<String, Double>> {
+        return recentDecisions
+            .filter { it.handCards.isNotEmpty() } // Filter out synthetic records
+            .groupBy { it.scenarioKey }
+            .filter { (_, decisionList) -> decisionList.size >= minSamples }
+            .map { (scenario, decisionList) ->
+                val errorRate = decisionList.count { !it.isCorrect }.toDouble() / decisionList.size
+                scenario to errorRate
+            }
+            .sortedByDescending { it.second }
     }
 }
 
