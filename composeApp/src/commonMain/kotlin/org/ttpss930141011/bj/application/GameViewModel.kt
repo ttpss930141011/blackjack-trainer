@@ -26,8 +26,6 @@ class GameViewModel(
     private var _roundDecisions by mutableStateOf<List<PlayerDecision>>(emptyList())
     val roundDecisions: List<PlayerDecision> get() = _roundDecisions
     
-    private var _showGameSummary by mutableStateOf(false)
-    val showGameSummary: Boolean get() = _showGameSummary
     
     private var _errorMessage by mutableStateOf<String?>(null)
     val errorMessage: String? get() = _errorMessage
@@ -41,7 +39,6 @@ class GameViewModel(
         _feedback = null
         _sessionStats = SessionStats()
         _roundDecisions = emptyList()
-        _showGameSummary = false
         _errorMessage = null
     }
     
@@ -119,13 +116,6 @@ class GameViewModel(
         _errorMessage = null
     }
     
-    fun showGameSummary() {
-        _showGameSummary = true
-    }
-    
-    fun hideGameSummary() {
-        _showGameSummary = false
-    }
     
     fun clearError() {
         _errorMessage = null
@@ -219,6 +209,20 @@ class GameViewModel(
     
     fun getRecentDecisions(limit: Int = 50): List<DecisionRecord> {
         return learningRecorder.getRecentDecisions(limit)
+    }
+    
+    /**
+     * Clear all learning data (for testing or reset)
+     */
+    fun clearAllLearningData() {
+        learningRecorder.clearAllData()
+    }
+    
+    /**
+     * Get scenario statistics from the learning repository
+     */
+    fun getScenarioStats(): Map<String, org.ttpss930141011.bj.infrastructure.ScenarioStats> {
+        return learningRecorder.getScenarioStats()
     }
     
 }
