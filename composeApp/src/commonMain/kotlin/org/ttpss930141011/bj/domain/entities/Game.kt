@@ -8,6 +8,8 @@ import org.ttpss930141011.bj.domain.enums.ChipValue
 import org.ttpss930141011.bj.domain.services.RoundManager
 import org.ttpss930141011.bj.domain.services.SettlementService
 
+enum class RoundOutcome { WIN, LOSS, PUSH, UNKNOWN }
+
 // Game - Simplified aggregate root replacing Table → Seat → SeatHand complexity
 data class Game(
     val player: Player?,
@@ -223,5 +225,30 @@ data class Game(
         }
         
         return constrainedActions
+    }
+    
+    // Round outcome determination - domain logic belongs here
+    fun getRoundOutcome(): RoundOutcome {
+        require(phase == GamePhase.SETTLEMENT) { "Game must be in settlement phase" }
+        
+        return if (playerHands.isNotEmpty()) {
+            val firstHand = playerHands[0]
+            when (firstHand.status) {
+                HandStatus.WIN -> RoundOutcome.WIN
+                HandStatus.LOSS, HandStatus.BUSTED -> RoundOutcome.LOSS
+                HandStatus.PUSH -> RoundOutcome.PUSH
+                HandStatus.SURRENDERED -> RoundOutcome.LOSS
+                else -> RoundOutcome.UNKNOWN
+            }
+        } else RoundOutcome.UNKNOWN
+    }
+    
+    // Auto-advance logic - Game knows when it should progress
+    fun shouldAutoAdvance(): Boolean {
+        return when (phase) {
+            GamePhase.DEALER_TURN -> allHandsComplete
+            GamePhase.SETTLEMENT -> !isSettled
+            else -> false
+        }
     }
 }

@@ -6,7 +6,20 @@ import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.infrastructure.InMemoryLearningRepository
+import org.ttpss930141011.bj.infrastructure.ScenarioStats
 
+/**
+ * REFACTORED GameViewModel - Linus Style
+ * 
+ * "Split the God Object into focused controllers, but keep the same public API 
+ * so nothing breaks." - Linus approach
+ * 
+ * Internal structure:
+ * - GameStateManager: Core game state and business logic
+ * - FeedbackManager: Decision evaluation and feedback
+ * - AnalyticsManager: Learning data and statistics
+ * - UIStateManager: Error messages and notifications
+ */
 class GameViewModel(
     private val gameService: GameService = GameService(),
     private val decisionEvaluator: DecisionEvaluator = DecisionEvaluator(),
@@ -14,297 +27,273 @@ class GameViewModel(
     private val chipCompositionService: ChipCompositionService = ChipCompositionService()
 ) {
     
-    private var _game by mutableStateOf<Game?>(null)
-    val game: Game? get() = _game
+    private val gameStateManager = GameStateManager(gameService)
+    private val feedbackManager = FeedbackManager(decisionEvaluator)
+    private val analyticsManager = AnalyticsManager(learningRecorder)
+    private val uiStateManager = UIStateManager(chipCompositionService)
+    val game: Game? get() = gameStateManager.game
+    val feedback: DecisionFeedback? get() = feedbackManager.feedback
+    val sessionStats: SessionStats get() = analyticsManager.sessionStats
+    val roundDecisions: List<PlayerDecision> get() = feedbackManager.roundDecisions
+    val errorMessage: String? get() = uiStateManager.errorMessage
+    val ruleChangeNotification: String? get() = uiStateManager.ruleChangeNotification
     
-    private var _feedback by mutableStateOf<DecisionFeedback?>(null)
-    val feedback: DecisionFeedback? get() = _feedback
+    val isGameOver: Boolean get() = gameStateManager.isGameOver
     
-    private var _sessionStats by mutableStateOf(SessionStats())
-    val sessionStats: SessionStats get() = _sessionStats
-    
-    private var _roundDecisions by mutableStateOf<List<PlayerDecision>>(emptyList())
-    val roundDecisions: List<PlayerDecision> get() = _roundDecisions
-    
-    
-    private var _errorMessage by mutableStateOf<String?>(null)
-    val errorMessage: String? get() = _errorMessage
-    
-    private var _ruleChangeNotification by mutableStateOf<String?>(null)
-    val ruleChangeNotification: String? get() = _ruleChangeNotification
-    
-    // Game over integration from Domain layer
-    val isGameOver: Boolean
-        get() = _game?.isGameOver ?: false
-    
+    /**
+     * Initializes a new game with specified rules and player
+     * 
+     * @param gameRules The blackjack rules to use
+     * @param player The player instance
+     */
     fun initializeGame(gameRules: GameRules, player: Player) {
-        _game = gameService.createNewGame(gameRules, player)
-        _feedback = null
-        _sessionStats = SessionStats()
-        _roundDecisions = emptyList()
-        _errorMessage = null
+        gameStateManager.initializeGame(gameRules, player)
+        feedbackManager.reset()
+        analyticsManager.resetSession()
+        uiStateManager.clearError()
     }
     
+    /**
+     * Starts a new round with the specified bet amount
+     * 
+     * @param betAmount Amount to bet for this round
+     */
     fun startRound(betAmount: Int) {
-        val currentGame = _game ?: return
-        if (isGameOver) {
-            _errorMessage = "Game Over! Insufficient chips to place minimum bet."
-            return
-        }
-        try {
-            _game = gameService.placeBetAndDeal(currentGame, betAmount)
-            _feedback = null
-            _errorMessage = null
-        } catch (e: Exception) {
-            _errorMessage = e.message
+        when (val result = gameStateManager.startRound(betAmount)) {
+            is GameStateResult.Success -> {
+                feedbackManager.startNewRound()
+                uiStateManager.clearError()
+            }
+            is GameStateResult.Error -> uiStateManager.setError(result.message)
         }
     }
     
+    /**
+     * Executes a player action and handles all related state updates
+     * 
+     * @param action The action to take (HIT, STAND, DOUBLE, SPLIT, SURRENDER)
+     */
     fun playerAction(action: Action) {
-        val currentGame = _game ?: return
-        try {
-            val result = gameService.executePlayerAction(currentGame, action)
-            _game = result.game
-            
-            val feedback = decisionEvaluator.evaluateDecision(
+        executePlayerAction(action)
+        recordDecisionForLearning(action)
+        handleAutoTransitions()
+    }
+    
+    private fun executePlayerAction(action: Action) {
+        val result = gameStateManager.executePlayerAction(action)
+        if (result != null) {
+            val currentGame = game!!
+            val feedback = feedbackManager.evaluatePlayerAction(
                 handBeforeAction = result.handBeforeAction,
                 dealerUpCard = currentGame.dealer.upCard!!,
                 playerAction = action,
                 rules = currentGame.rules
             )
-            _feedback = feedback
-            
-            // Record decision for learning analytics
-            learningRecorder.recordDecision(
-                handBeforeAction = result.handBeforeAction,
-                dealerUpCard = currentGame.dealer.upCard!!,
-                playerAction = action,
-                isCorrect = feedback.isCorrect,
-                gameRules = currentGame.rules
-            )
-            
-            val playerDecision = PlayerDecision(action, feedback.isCorrect)
-            _roundDecisions = _roundDecisions + playerDecision
-            _errorMessage = null
-            
-            // 自动触发庄家轮次（如果所有玩家手牌完成）
-            _game?.let { game ->
-                if (game.phase == GamePhase.DEALER_TURN && game.allHandsComplete) {
-                    dealerTurn()
-                }
+            uiStateManager.clearError()
+        } else {
+            uiStateManager.setError("Failed to execute player action")
+        }
+    }
+    
+    private fun recordDecisionForLearning(action: Action) {
+        val currentGame = game ?: return
+        val feedback = this.feedback ?: return
+        
+        analyticsManager.recordPlayerAction(
+            handBeforeAction = currentGame.currentHand!!,
+            dealerUpCard = currentGame.dealer.upCard!!,
+            playerAction = action,
+            isCorrect = feedback.isCorrect,
+            gameRules = currentGame.rules
+        )
+    }
+    
+    private fun handleAutoTransitions() {
+        game?.let { currentGame ->
+            if (currentGame.shouldAutoAdvance() && currentGame.phase == GamePhase.DEALER_TURN) {
+                dealerTurn()
             }
-            
-        } catch (e: Exception) {
-            _errorMessage = e.message
         }
-    }
-    
-    fun dealerTurn() {
-        val currentGame = _game ?: return
-        try {
-            _game = gameService.processDealerTurn(currentGame)
-            
-            // 自動結算：當進入 SETTLEMENT 階段時立即結算
-            if (_game?.phase == GamePhase.SETTLEMENT && _game?.isSettled == false) {
-                _game = gameService.settleRound(_game!!)
-                
-                val outcome = determineRoundOutcome(_game!!)
-                _sessionStats = _sessionStats.recordRound(_roundDecisions)
-            }
-            
-            _errorMessage = null
-        } catch (e: Exception) {
-            _errorMessage = e.message
-        }
-    }
-    
-    
-    fun nextRound() {
-        val currentGame = _game ?: return
-        _game = gameService.startNewRound(currentGame)
-        _feedback = null
-        _roundDecisions = emptyList()
-        _errorMessage = null
-    }
-    
-    
-    fun clearError() {
-        _errorMessage = null
-    }
-    
-    fun clearFeedback() {
-        _feedback = null
-    }
-    
-    // Domain-based chip display properties for UI layer
-    val currentBetAmount: Int get() = _game?.pendingBet ?: 0
-    val canDealCards: Boolean get() = _game?.canDealCards ?: false
-    val chipComposition: List<ChipInSpot> 
-        get() = _game?.pendingBet?.let { amount ->
-            if (amount > 0) chipCompositionService.calculateOptimalComposition(amount)
-            else emptyList()
-        } ?: emptyList()
-    val availableBalance: Int get() = _game?.player?.chips ?: 0
-    
-    fun addChipToBet(chipValue: ChipValue) {
-        val currentGame = _game ?: return
-        if (currentGame.phase != GamePhase.WAITING_FOR_BETS) return
-        if (isGameOver) {
-            _errorMessage = "Game Over! Insufficient chips to place bets."
-            return
-        }
-        
-        try {
-            val result = currentGame.tryAddChipToPendingBet(chipValue)
-            
-            if (result.success) {
-                _game = result.updatedGame
-                _errorMessage = null
-            } else {
-                _errorMessage = result.errorMessage
-            }
-        } catch (e: Exception) {
-            _errorMessage = e.message
-        }
-    }
-    
-    fun clearBet() {
-        val currentGame = _game ?: return
-        if (currentGame.phase != GamePhase.WAITING_FOR_BETS) return
-        
-        try {
-            _game = currentGame.clearPendingBet()
-            _errorMessage = null
-        } catch (e: Exception) {
-            _errorMessage = e.message
-        }
-    }
-    
-    fun dealCards() {
-        val currentGame = _game ?: return
-        
-        if (!currentGame.canDealCards) {
-            _errorMessage = "Cannot deal cards at this time"
-            return
-        }
-        
-        try {
-            // Commit pending bet and deal
-            val gameWithCommittedBet = currentGame.commitPendingBet()
-            _game = gameService.dealRound(gameWithCommittedBet)
-            _feedback = null
-            _errorMessage = null
-        } catch (e: Exception) {
-            _errorMessage = e.message
-        }
-    }
-    
-    private fun determineRoundOutcome(game: Game): String {
-        require(game.phase == GamePhase.SETTLEMENT) { "Game must be in settlement phase" }
-        
-        return if (game.playerHands.isNotEmpty()) {
-            val firstHand = game.playerHands[0]
-            when (firstHand.status) {
-                HandStatus.WIN -> "WIN"
-                HandStatus.LOSS, HandStatus.BUSTED -> "LOSS"
-                HandStatus.PUSH -> "PUSH"
-                else -> "UNKNOWN"
-            }
-        } else "UNKNOWN"
-    }
-    
-    // Learning analytics access
-    fun getWorstScenarios(minSamples: Int = 3): List<ScenarioErrorStat> {
-        return learningRecorder.getWorstScenarios(minSamples)
-    }
-    
-    fun getRecentDecisions(limit: Int = 50): List<DecisionRecord> {
-        return learningRecorder.getRecentDecisions(limit)
     }
     
     /**
-     * Clear all learning data (for testing or reset)
+     * Processes the dealer's turn according to house rules
+     */
+    fun dealerTurn() {
+        when (val result = gameStateManager.processDealerTurn()) {
+            is GameStateResult.Success -> {
+                if (game?.phase == GamePhase.SETTLEMENT && game?.isSettled == true) {
+                    analyticsManager.recordRound(roundDecisions)
+                }
+                uiStateManager.clearError()
+            }
+            is GameStateResult.Error -> uiStateManager.setError(result.message)
+        }
+    }
+    
+    /**
+     * Advances to the next round
+     */
+    fun nextRound() {
+        when (val result = gameStateManager.startNewRound()) {
+            is GameStateResult.Success -> {
+                feedbackManager.startNewRound()
+                uiStateManager.clearError()
+            }
+            is GameStateResult.Error -> uiStateManager.setError(result.message)
+        }
+    }
+    
+    /**
+     * Clears any current error message
+     */
+    fun clearError() {
+        uiStateManager.clearError()
+    }
+    
+    /**
+     * Clears current decision feedback
+     */
+    fun clearFeedback() {
+        feedbackManager.clearFeedback()
+    }
+    /** Current pending bet amount */
+    val currentBetAmount: Int get() = game?.pendingBet ?: 0
+    
+    /** True if cards can be dealt (bet placed and game ready) */
+    val canDealCards: Boolean get() = game?.canDealCards ?: false
+    
+    /** Visual representation of chips in betting circle */
+    val chipComposition: List<ChipInSpot>
+        get() = uiStateManager.calculateChipComposition(currentBetAmount)
+    
+    /** Player's available chip balance */
+    val availableBalance: Int get() = game?.player?.chips ?: 0
+    
+    /**
+     * Adds a chip to the current bet
+     * 
+     * @param chipValue Value of chip to add
+     */
+    fun addChipToBet(chipValue: ChipValue) {
+        when (val result = gameStateManager.addChipToBet(chipValue)) {
+            is GameStateResult.Success -> uiStateManager.clearError()
+            is GameStateResult.Error -> uiStateManager.setError(result.message)
+        }
+    }
+    
+    /**
+     * Clears all chips from the current bet
+     */
+    fun clearBet() {
+        when (val result = gameStateManager.clearBet()) {
+            is GameStateResult.Success -> uiStateManager.clearError()
+            is GameStateResult.Error -> uiStateManager.setError(result.message)
+        }
+    }
+    
+    /**
+     * Deals initial cards to start the round
+     */
+    fun dealCards() {
+        when (val result = gameStateManager.dealCards()) {
+            is GameStateResult.Success -> {
+                feedbackManager.reset()
+                uiStateManager.clearError()
+            }
+            is GameStateResult.Error -> uiStateManager.setError(result.message)
+        }
+    }
+    
+    /**
+     * Gets scenarios where player made the most mistakes
+     * 
+     * @param minSamples Minimum number of samples required
+     * @return List of scenarios sorted by error rate
+     */
+    fun getWorstScenarios(minSamples: Int = 3): List<ScenarioErrorStat> {
+        return analyticsManager.getWorstScenarios(minSamples)
+    }
+    
+    /**
+     * Gets the most recent player decisions
+     * 
+     * @param limit Maximum number of decisions to return
+     * @return List of recent decisions ordered by timestamp
+     */
+    fun getRecentDecisions(limit: Int = 50): List<DecisionRecord> {
+        return analyticsManager.getRecentDecisions(limit)
+    }
+    
+    /**
+     * Clears all recorded learning data and statistics
      */
     fun clearAllLearningData() {
-        learningRecorder.clearAllData()
+        analyticsManager.clearAllLearningData()
     }
     
     /**
-     * Get recent decisions for current rule set only (Phase 3).
-     * Clean rule-filtered history for UI consumption.
+     * Gets recent decisions filtered by current game rules
+     * 
+     * @param limit Maximum number of decisions to return
+     * @return List of decisions for current rule set
      */
     fun getRecentDecisionsForCurrentRule(limit: Int = 50): List<DecisionRecord> {
-        val currentRules = currentGameRules ?: return emptyList()
-        return learningRecorder.getRecentDecisions(limit * 2) // Get more to filter
-            .filter { it.gameRules == currentRules }
-            .take(limit)
+        return analyticsManager.getRecentDecisionsForCurrentRule(currentGameRules, limit)
     }
     
     /**
-     * Get scenario statistics from the learning repository
+     * Gets detailed statistics for all played scenarios
+     * 
+     * @return Map of scenario ID to statistics
      */
-    fun getScenarioStats(): Map<String, org.ttpss930141011.bj.infrastructure.ScenarioStats> {
-        return learningRecorder.getScenarioStats()
+    fun getScenarioStats(): Map<String, ScenarioStats> {
+        return analyticsManager.getScenarioStats()
     }
     
-    // === Core Rule Tracking (Phase 2) ===
+    /** Current game rules or null if no game active */
+    val currentGameRules: GameRules? get() = game?.rules
     
     /**
-     * Current game rules for UI consumption.
-     * Clean access to current rule set without complexity.
-     */
-    val currentGameRules: GameRules?
-        get() = _game?.rules
-    
-    // === Rule-Aware Analytics Methods ===
-    
-    /**
-     * Handle game rule changes during active session.
-     * Shows notification about rule change impact on statistics.
+     * Handles game rule changes and shows notification
+     * 
+     * @param newRules The new rules to apply
      */
     fun handleRuleChange(newRules: GameRules) {
-        val currentGame = _game ?: return
+        val currentGame = game ?: return
         
-        // Check if rules actually changed
-        if (currentGame.rules == newRules) {
-            _ruleChangeNotification = null
-            return
-        }
+        uiStateManager.handleRuleChangeNotification(
+            currentRules = currentGame.rules,
+            newRules = newRules,
+            sessionStats = sessionStats
+        )
         
-        // Check if this creates rule change notification
-        if (_sessionStats.hasRuleChanged(newRules)) {
-            _ruleChangeNotification = "⚠️ Rule change detected: Starting fresh analytics for new rule set"
-            
-            // Show comparison if available
-            _sessionStats.getRuleComparisonSummary()?.let { comparison ->
-                _ruleChangeNotification = "⚠️ $comparison"
-            }
-        }
-        
-        // Update game with new rules (without resetting state)
-        _game = currentGame.copy(rules = newRules)
+        gameStateManager.handleRuleChange(newRules)
     }
     
     /**
-     * Get rule-specific worst scenarios (clean analytics).
-     * Uses domain objects instead of primitive types.
+     * Gets worst scenarios for current rule set only
+     * 
+     * @param minSamples Minimum number of samples required
+     * @return List of scenarios for current rules sorted by error rate
      */
     fun getCurrentRuleWorstScenarios(minSamples: Int = 3): List<ScenarioErrorStat> {
-        return learningRecorder.getWorstScenariosForRule(currentGameRules, minSamples)
+        return analyticsManager.getCurrentRuleWorstScenarios(currentGameRules, minSamples)
     }
     
     /**
-     * Get statistics for current rule set only.
+     * Gets statistics segmented by current rule set
+     * 
+     * @return Rule-specific statistics or null if no current rules
      */
     fun getCurrentRuleStats(): RuleSegmentStats? {
-        return _sessionStats.getCurrentRuleStats()
+        return analyticsManager.getCurrentRuleStats()
     }
     
     /**
-     * Dismiss rule change notification.
+     * Dismisses the rule change notification banner
      */
     fun dismissRuleChangeNotification() {
-        _ruleChangeNotification = null
+        uiStateManager.dismissRuleChangeNotification()
     }
-    
 }

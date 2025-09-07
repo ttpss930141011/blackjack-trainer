@@ -84,6 +84,15 @@ fun SmartHandCarousel(
     }
 }
 
+/**
+ * Displays a single player hand in centered position
+ *
+ * @param hand The player hand to display
+ * @param isActive Whether this hand is currently active
+ * @param phase Current game phase for state-dependent styling
+ * @param chipCompositionService Service for calculating optimal chip stacks
+ * @param screenWidth Current screen size category for responsive design
+ */
 @Composable
 private fun SingleHandDisplay(
     hand: PlayerHand,
@@ -101,6 +110,16 @@ private fun SingleHandDisplay(
     )
 }
 
+/**
+ * Displays multiple player hands in a horizontally scrolling carousel with automatic centering
+ * The active hand is automatically scrolled into view and visually emphasized
+ *
+ * @param playerHands List of all player hands to display
+ * @param currentHandIndex Index of the currently active hand
+ * @param phase Current game phase for conditional styling
+ * @param chipCompositionService Service for calculating chip stack compositions
+ * @param screenWidth Screen size category for responsive layout adjustments
+ */
 @Composable
 private fun MultiHandCarousel(
     playerHands: List<PlayerHand>,
@@ -112,14 +131,10 @@ private fun MultiHandCarousel(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    // Auto-center active hand with smooth animation
     LaunchedEffect(currentHandIndex) {
         if (currentHandIndex in playerHands.indices) {
             coroutineScope.launch {
-                listState.animateScrollToItem(
-                    index = currentHandIndex,
-                    scrollOffset = getScrollOffsetForCentering(screenWidth)
-                )
+                listState.animateScrollToItem(index = currentHandIndex)
             }
         }
     }
@@ -127,13 +142,17 @@ private fun MultiHandCarousel(
     LazyRow(
         state = listState,
         horizontalArrangement = Arrangement.spacedBy(Tokens.Space.l),
+        verticalAlignment = Alignment.CenterVertically,
         contentPadding = PaddingValues(horizontal = Tokens.Space.xl),
         modifier = Modifier.fillMaxWidth()
     ) {
-        itemsIndexed(playerHands) { index, hand ->
+        itemsIndexed(
+            items = playerHands,
+            key = { index, hand -> "hand_${index}_${hand.cards.size}" },
+            contentType = { _, hand -> "PlayerHand_${hand.cards.size}" }
+        ) { index, hand ->
             val isActive = currentHandIndex == index
             
-            // Animated scaling for visual hierarchy
             val scale by animateFloatAsState(
                 targetValue = if (isActive) CarouselConstants.ACTIVE_SCALE else CarouselConstants.INACTIVE_SCALE,
                 animationSpec = tween(
@@ -158,6 +177,16 @@ private fun MultiHandCarousel(
     }
 }
 
+/**
+ * Individual hand card component with visual indicators and chip display
+ * Renders cards, hand value, status overlays, and betting chips
+ *
+ * @param hand The player hand data to render
+ * @param isActive Whether this hand is currently the active player hand
+ * @param phase Current game phase affecting visual state
+ * @param chipCompositionService Service for optimal chip stack arrangement
+ * @param screenWidth Screen size for responsive component sizing
+ */
 @Composable
 private fun SmartHandCard(
     hand: PlayerHand,
@@ -236,6 +265,13 @@ private fun SmartHandCard(
     }
 }
 
+/**
+ * Displays the hand's current value with soft ace indicator
+ * Active hands receive enhanced visual styling
+ *
+ * @param hand Player hand containing cards and calculated values
+ * @param isActive Whether this hand is currently active for visual emphasis
+ */
 @Composable
 private fun HandValueDisplay(
     hand: PlayerHand,
@@ -255,6 +291,13 @@ private fun HandValueDisplay(
     )
 }
 
+/**
+ * Renders stacked casino chips representing the hand's bet amount
+ * Uses optimal chip composition to minimize total chip count
+ *
+ * @param chipComposition List of chip values and counts to display
+ * @param isActive Whether this hand is active for visual styling
+ */
 @Composable
 private fun ChipStackDisplay(
     chipComposition: List<ChipInSpot>,
@@ -285,26 +328,11 @@ private fun ChipStackDisplay(
     }
 }
 
-/**
- * Calculates optimal scroll offset for centering active hand
- */
-private fun getScrollOffsetForCentering(screenWidth: ScreenWidth): Int {
-    return when (screenWidth) {
-        ScreenWidth.COMPACT -> CarouselConstants.COMPACT_CENTER_OFFSET
-        ScreenWidth.MEDIUM -> CarouselConstants.MEDIUM_CENTER_OFFSET
-        ScreenWidth.EXPANDED -> CarouselConstants.EXPANDED_CENTER_OFFSET
-    }
-}
 
 /**
- * Constants for carousel behavior - avoiding magic numbers
+ * Carousel visual constants for consistent scaling behavior
  */
 private object CarouselConstants {
     const val ACTIVE_SCALE = 1.1f
     const val INACTIVE_SCALE = 1.0f
-    
-    // Centering offsets for different screen sizes
-    const val COMPACT_CENTER_OFFSET = -100
-    const val MEDIUM_CENTER_OFFSET = -150
-    const val EXPANDED_CENTER_OFFSET = -200
 }

@@ -26,13 +26,7 @@ if [ $DOMAIN_IMPORTS -gt 10 ]; then
     echo "⚠️ Domain層import數量較多 ($DOMAIN_IMPORTS)，請檢查是否有不必要的依賴"
 fi
 
-# TDD狀態提醒
-if [ -f "CLAUDE.local.md" ]; then
-    TDD_STATUS=$(grep -A 1 "當前階段:" CLAUDE.local.md | tail -1 | sed 's/.*: //')
-    if [ "$TDD_STATUS" != "未開始" ] && [ "$TDD_STATUS" != "" ]; then
-        echo "🔄 TDD狀態: $TDD_STATUS"
-    fi
-fi
+
 
 echo "✅ 快速檢查完成"
 echo ""

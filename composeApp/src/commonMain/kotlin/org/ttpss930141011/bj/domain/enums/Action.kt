@@ -1,9 +1,17 @@
 package org.ttpss930141011.bj.domain.enums
 
+/**
+ * Player actions available in blackjack
+ */
 enum class Action {
-    HIT,        // 要牌
-    STAND,      // 停牌  
-    DOUBLE,     // 加倍
-    SPLIT,      // 分牌
-    SURRENDER   // 投降
+    /** Request additional card */
+    HIT,
+    /** Keep current hand value */  
+    STAND,
+    /** Double bet and take exactly one more card */
+    DOUBLE,
+    /** Split identical cards into two hands */
+    SPLIT,
+    /** Forfeit hand for half the bet */
+    SURRENDER
 }
