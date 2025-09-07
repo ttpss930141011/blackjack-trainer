@@ -45,9 +45,8 @@ class StrategyEngine(private val rules: GameRules = GameRules()) {
             if (surrenderAction != null) return surrenderAction
         }
         
-        if (playerHand.canSplit) {
-            val splitAction = getSplitAction(playerHand, dealerUpCard)
-            if (splitAction != null) return splitAction
+        if (playerHand.canSplit && shouldSplit(playerHand, dealerUpCard)) {
+            return Action.SPLIT
         }
         
         if (playerHand.isSoft) {
@@ -58,41 +57,32 @@ class StrategyEngine(private val rules: GameRules = GameRules()) {
     }
     
     /**
-     * Determines the optimal split action for pair hands.
+     * Determines if a pair should be split (pure boolean decision).
+     * No mixed return types - just YES or NO to splitting.
      * 
      * @param playerHand The player's hand (must be a valid pair)
      * @param dealerUpCard The dealer's visible card
-     * @return Split action if splitting is optimal, null to defer to regular strategy
+     * @return True if pair should be split, false if use normal strategy
      */
-    private fun getSplitAction(playerHand: Hand, dealerUpCard: Card): Action? {
+    private fun shouldSplit(playerHand: Hand, dealerUpCard: Card): Boolean {
         val cards = playerHand.cards
         val firstCardRank = cards[0].rank
         val dealerValue = dealerUpCard.blackjackValue
         
         return when (firstCardRank) {
-            Rank.ACE -> Action.SPLIT
-            Rank.EIGHT -> Action.SPLIT
-            Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING -> Action.STAND
-            Rank.FIVE -> Action.DOUBLE
-            Rank.FOUR -> null
-            
-            Rank.TWO, Rank.THREE -> {
-                if (dealerValue in 2..7) Action.SPLIT else null
+            Rank.ACE -> true
+            Rank.EIGHT -> true
+            Rank.TWO, Rank.THREE -> dealerValue in 2..7
+            Rank.SIX -> dealerValue in 2..6
+            Rank.SEVEN -> dealerValue in 2..7
+            Rank.NINE -> when (dealerValue) {
+                7, DomainConstants.BlackjackValues.FACE_CARD_VALUE -> false
+                DomainConstants.BlackjackValues.ACE_LOW_VALUE -> false
+                in 2..6, 8, 9 -> true
+                else -> false
             }
-            Rank.SIX -> {
-                if (dealerValue in 2..6) Action.SPLIT else null  
-            }
-            Rank.SEVEN -> {
-                if (dealerValue in 2..7) Action.SPLIT else null
-            }
-            Rank.NINE -> {
-                when (dealerValue) {
-                    7, DomainConstants.BlackjackValues.FACE_CARD_VALUE -> Action.STAND
-                    DomainConstants.BlackjackValues.ACE_LOW_VALUE -> Action.STAND
-                    in 2..6, 8, 9 -> Action.SPLIT
-                    else -> null
-                }
-            }
+            // All other pairs (TEN, JACK, QUEEN, KING, FIVE, FOUR) -> use normal strategy
+            else -> false
         }
     }
     

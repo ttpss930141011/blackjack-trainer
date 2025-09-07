@@ -181,26 +181,57 @@ private fun ActionButtons(
 ) {
     BreakpointLayout(
         compact = {
-            // Compact: FlowRow for wrapping
-            FlowRow(
+            // Compact: Two rows - HIT/STAND on first row, DOUBLE/SURRENDER/SPLIT on second row
+            val (primaryActions, secondaryActions) = availableActions.partition { action ->
+                action == Action.HIT || action == Action.STAND
+            }
+            
+            Column(
                 modifier = modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(
-                    Tokens.Space.s, 
-                    Alignment.CenterHorizontally
-                ),
-                verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
+                verticalArrangement = Arrangement.spacedBy(Tokens.Space.s),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                availableActions.forEach { action ->
-                    ActionButton(
-                        action = action,
-                        onAction = onAction,
-                        feedback = feedback
-                    )
+                // First row: HIT and STAND
+                if (primaryActions.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(
+                            Tokens.Space.s,
+                            Alignment.CenterHorizontally
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        primaryActions.forEach { action ->
+                            ActionButton(
+                                action = action,
+                                onAction = onAction,
+                                feedback = feedback
+                            )
+                        }
+                    }
+                }
+                
+                // Second row: DOUBLE, SURRENDER, SPLIT
+                if (secondaryActions.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(
+                            Tokens.Space.s,
+                            Alignment.CenterHorizontally
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        secondaryActions.forEach { action ->
+                            ActionButton(
+                                action = action,
+                                onAction = onAction,
+                                feedback = feedback
+                            )
+                        }
+                    }
                 }
             }
         },
         expanded = {
-            // Expanded: LazyRow
+            // Expanded: LazyRow (unchanged)
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(Tokens.Space.m, Alignment.CenterHorizontally),
                 modifier = modifier

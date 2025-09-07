@@ -86,98 +86,68 @@ fun CasinoGameScreen(
     
     Layout { screenWidth ->
         if (screenWidth.isCompact) {
-            // Mobile: NavigationBar at bottom with drawer support  
-            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-            val scope = rememberCoroutineScope()
-            
-            ModalNavigationDrawer(
-                drawerState = drawerState,
-                drawerContent = {
-                    GameNavigationDrawer(
+            // Mobile: NavigationBar at bottom (NO drawer for compact)
+            Scaffold(
+                containerColor = CasinoTheme.PageBackground,
+                bottomBar = {
+                    GameNavigationBar(
                         currentPage = currentPage ?: NavigationPage.HOME,
-                        onPageSelected = { currentPage = it },
-                        onCloseDrawer = {
-                            scope.launch {
-                                drawerState.close()
-                            }
-                        }
+                        onPageSelected = { currentPage = it }
                     )
                 }
-            ) {
-                Scaffold(
-                    containerColor = CasinoTheme.PageBackground,
-                    bottomBar = {
-                        GameNavigationBar(
-                            currentPage = currentPage ?: NavigationPage.HOME,
-                            onPageSelected = { currentPage = it }
+            ) { paddingValues ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(CasinoTheme.PageBackground)
+                        .padding(paddingValues)
+                ) {
+                    // Add header for non-Home pages (no drawer button in compact)
+                    if (currentPage != NavigationPage.HOME && currentPage != null) {
+                        Header(
+                            balance = currentPlayer.chips,
+                            currentPage = currentPage,
+                            gameRules = viewModel.currentGameRules,
+                            drawerButton = null // No drawer in compact layout
                         )
                     }
-                ) { paddingValues ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(CasinoTheme.PageBackground)
-                            .padding(paddingValues)
-                    ) {
-                        // Add header for non-Home pages
-                        if (currentPage != NavigationPage.HOME && currentPage != null) {
-                            Header(
-                                balance = currentPlayer.chips,
-                                currentPage = currentPage,
-                                gameRules = viewModel.currentGameRules,
-                                drawerButton = {
-                                    TextButton(
-                                        onClick = {
-                                            scope.launch { drawerState.open() }
-                                        }
-                                    ) {
-                                        Text(
-                                            text = "☰",
-                                            color = Color.White,
-                                            style = MaterialTheme.typography.titleLarge
-                                        )
-                                    }
-                                }
+                    
+                    when (currentPage) {
+                        NavigationPage.STRATEGY -> Layout { screenWidth ->
+                            StrategyPage(
+                                gameRules = gameRules,
+                                screenWidth = screenWidth
                             )
                         }
-                        
-                        when (currentPage) {
-                            NavigationPage.STRATEGY -> Layout { screenWidth ->
-                                StrategyPage(
-                                    gameRules = gameRules,
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.HISTORY -> Layout { screenWidth ->
-                                HistoryPage(
-                                    decisionHistory = viewModel.getRecentDecisionsForCurrentRule(),
-                                    onClearHistory = { viewModel.clearAllLearningData() },
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.STATISTICS -> Layout { screenWidth ->
-                                StatisticsPage(
-                                    scenarioStats = viewModel.getCurrentRuleWorstScenarios(),
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.SETTINGS -> Layout { screenWidth ->
-                                SettingsPage(
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.HOME, null -> {
-                                // Default to game content (Home)
-                                CasinoGameContent(
-                                    game = game,
-                                    viewModel = viewModel,
-                                    currentPlayer = currentPlayer,
-                                    feedback = viewModel.feedback,
-                                    currentPage = currentPage,
-                                    feedbackNotificationEnabled = feedbackNotificationEnabled,
-                                    feedbackDurationSeconds = feedbackDurationSeconds
-                                )
-                            }
+                        NavigationPage.HISTORY -> Layout { screenWidth ->
+                            HistoryPage(
+                                decisionHistory = viewModel.getRecentDecisionsForCurrentRule(),
+                                onClearHistory = { viewModel.clearAllLearningData() },
+                                screenWidth = screenWidth
+                            )
+                        }
+                        NavigationPage.STATISTICS -> Layout { screenWidth ->
+                            StatisticsPage(
+                                scenarioStats = viewModel.getCurrentRuleWorstScenarios(),
+                                screenWidth = screenWidth
+                            )
+                        }
+                        NavigationPage.SETTINGS -> Layout { screenWidth ->
+                            SettingsPage(
+                                screenWidth = screenWidth
+                            )
+                        }
+                        NavigationPage.HOME, null -> {
+                            // Default to game content (Home) - no drawer state in compact
+                            CasinoGameContent(
+                                game = game,
+                                viewModel = viewModel,
+                                currentPlayer = currentPlayer,
+                                feedback = viewModel.feedback,
+                                currentPage = currentPage,
+                                feedbackNotificationEnabled = feedbackNotificationEnabled,
+                                feedbackDurationSeconds = feedbackDurationSeconds
+                            )
                         }
                     }
                 }
