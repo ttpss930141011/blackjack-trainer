@@ -235,4 +235,42 @@ class LearningRecorderTest {
             rules = GameRules()
         )
     }
+    
+    @Test
+    fun `given decisions with specific rules when getWorstScenariosForRule then should return rule-specific statistics`() {
+        // Given
+        val recorder = createRecorder()
+        val rules1 = GameRules(dealerHitsOnSoft17 = true)
+        val rules2 = GameRules(dealerHitsOnSoft17 = false)
+        val playerHand = PlayerHand(listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)), bet = 50)
+        val dealerUpCard = Card(Suit.CLUBS, Rank.TEN)
+        
+        // Record decisions for rule set 1 (2 errors out of 3)
+        recorder.recordDecision(playerHand, dealerUpCard, Action.STAND, false, rules1)
+        recorder.recordDecision(playerHand, dealerUpCard, Action.STAND, false, rules1)
+        recorder.recordDecision(playerHand, dealerUpCard, Action.HIT, true, rules1)
+        
+        // Record decisions for rule set 2 (1 error out of 3)  
+        recorder.recordDecision(playerHand, dealerUpCard, Action.STAND, false, rules2)
+        recorder.recordDecision(playerHand, dealerUpCard, Action.HIT, true, rules2)
+        recorder.recordDecision(playerHand, dealerUpCard, Action.HIT, true, rules2)
+        
+        // When
+        val rule1Scenarios = recorder.getWorstScenariosForRule(rules1, minSamples = 3)
+        val rule2Scenarios = recorder.getWorstScenariosForRule(rules2, minSamples = 3)
+        val nullRuleScenarios = recorder.getWorstScenariosForRule(null, minSamples = 3)
+        
+        // Then - Rule 1 should have higher error rate
+        assertEquals(1, rule1Scenarios.size)
+        assertEquals("H16 vs 10", rule1Scenarios[0].baseScenarioKey)
+        assertEquals(2.0/3.0, rule1Scenarios[0].errorRate, 0.001)
+        
+        // Rule 2 should have lower error rate
+        assertEquals(1, rule2Scenarios.size)  
+        assertEquals("H16 vs 10", rule2Scenarios[0].baseScenarioKey)
+        assertEquals(1.0/3.0, rule2Scenarios[0].errorRate, 0.001)
+        
+        // Null rules should return empty
+        assertTrue(nullRuleScenarios.isEmpty())
+    }
 }

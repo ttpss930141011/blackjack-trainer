@@ -207,7 +207,7 @@ class GameViewModel(
     }
     
     // Learning analytics access
-    fun getWorstScenarios(minSamples: Int = 3): List<Pair<String, Double>> {
+    fun getWorstScenarios(minSamples: Int = 3): List<ScenarioErrorStat> {
         return learningRecorder.getWorstScenarios(minSamples)
     }
     
@@ -228,6 +228,15 @@ class GameViewModel(
     fun getScenarioStats(): Map<String, org.ttpss930141011.bj.infrastructure.ScenarioStats> {
         return learningRecorder.getScenarioStats()
     }
+    
+    // === Core Rule Tracking (Phase 2) ===
+    
+    /**
+     * Current game rules for UI consumption.
+     * Clean access to current rule set without complexity.
+     */
+    val currentGameRules: GameRules?
+        get() = _game?.rules
     
     // === Rule-Aware Analytics Methods ===
     
@@ -260,9 +269,10 @@ class GameViewModel(
     
     /**
      * Get rule-specific worst scenarios (clean analytics).
+     * Uses domain objects instead of primitive types.
      */
-    fun getCurrentRuleWorstScenarios(minSamples: Int = 3): List<Pair<String, Double>> {
-        return _sessionStats.getCurrentRuleWorstScenarios(minSamples)
+    fun getCurrentRuleWorstScenarios(minSamples: Int = 3): List<ScenarioErrorStat> {
+        return learningRecorder.getWorstScenariosForRule(currentGameRules, minSamples)
     }
     
     /**

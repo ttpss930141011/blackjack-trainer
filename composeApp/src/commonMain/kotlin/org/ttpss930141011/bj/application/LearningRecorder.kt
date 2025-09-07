@@ -80,6 +80,21 @@ class LearningRecorder(
     }
     
     /**
+     * Get worst scenarios for a specific rule set (Phase 2).
+     * Clean rule-specific analytics without cross-rule contamination.
+     * 
+     * @param gameRules The specific rule set to analyze (null returns empty list)
+     * @param minSamples Minimum attempts required for meaningful statistics
+     * @return List of worst performing scenarios for the specified rules
+     */
+    fun getWorstScenariosForRule(gameRules: GameRules?, minSamples: Int = 3): List<ScenarioErrorStat> {
+        return gameRules?.let { rules ->
+            val ruleHash = DomainConstants.generateRuleHash(rules)
+            repository.getErrorStatsByRule(ruleHash, minSamples)
+        } ?: emptyList()
+    }
+    
+    /**
      * Get recent decision records for session analysis.
      * 
      * @param limit Maximum number of recent decisions to retrieve
