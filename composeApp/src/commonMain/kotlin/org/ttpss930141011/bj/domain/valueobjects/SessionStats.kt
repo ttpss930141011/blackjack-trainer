@@ -76,24 +76,24 @@ data class SessionStats(
      */
     fun recordDecision(decision: DecisionRecord): SessionStats {
         val newRecentDecisions = (recentDecisions + decision).takeLast(50) // Keep recent 50
-        val ruleVersion = decision.ruleVersion
+        val ruleHash = decision.ruleHash
         
         // Update rule segments
-        val currentSegment = ruleSegments[ruleVersion] ?: RuleSegmentStats(
-            ruleVersion = ruleVersion,
+        val currentSegment = ruleSegments[ruleHash] ?: RuleSegmentStats(
+            ruleVersion = ruleHash,
             gameRules = decision.gameRules,
             decisions = emptyList()
         )
         val updatedSegment = currentSegment.copy(
             decisions = (currentSegment.decisions + decision).takeLast(50)
         )
-        val newRuleSegments = ruleSegments + (ruleVersion to updatedSegment)
+        val newRuleSegments = ruleSegments + (ruleHash to updatedSegment)
         
         return copy(
             totalDecisions = totalDecisions + 1,
             correctDecisions = if (decision.isCorrect) correctDecisions + 1 else correctDecisions,
             recentDecisions = newRecentDecisions,
-            currentRuleVersion = ruleVersion,
+            currentRuleVersion = ruleHash,
             ruleSegments = newRuleSegments
         )
     }

@@ -5,6 +5,7 @@ import org.ttpss930141011.bj.domain.enums.Action
 import org.ttpss930141011.bj.domain.valueobjects.Rank
 import org.ttpss930141011.bj.domain.valueobjects.Suit
 import org.ttpss930141011.bj.domain.valueobjects.DecisionRecord
+import org.ttpss930141011.bj.domain.valueobjects.GameRules
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -39,6 +40,7 @@ class InMemoryLearningRepositoryTest {
             dealerUpCard = dealerCard,
             playerAction = action,
             isCorrect = isCorrect,
+            gameRules = GameRules(),
             timestamp = timestamp
         )
     }
@@ -127,7 +129,7 @@ class InMemoryLearningRepositoryTest {
         repository.save(hard12vs5)
         
         // When
-        val hard16Decisions = repository.findByScenario("Hard 16 vs 10")
+        val hard16Decisions = repository.findByScenario("H16 vs 10")
         
         // Then
         assertEquals(2, hard16Decisions.size)
@@ -136,57 +138,112 @@ class InMemoryLearningRepositoryTest {
     }
 
     @Test
-    fun `given decisions with errors when getWorstScenarios then should return scenarios sorted by error rate`() {
+    fun `given decisions with different rules when findByRule then should return rule-specific decisions`() {
         // Given
         val repository = createRepository()
+        val rules1 = GameRules(dealerHitsOnSoft17 = true)
+        val rules2 = GameRules(dealerHitsOnSoft17 = false)
         
-        // Scenario 1: Hard 16 vs 10 - 2/3 errors (66.7% error rate)
-        repository.save(createDecisionRecord(handValue = 16, dealerValue = 10, isCorrect = false))
-        repository.save(createDecisionRecord(handValue = 16, dealerValue = 10, isCorrect = false))
-        repository.save(createDecisionRecord(handValue = 16, dealerValue = 10, isCorrect = true))
+        val decision1 = DecisionRecord(
+            handCards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+            dealerUpCard = Card(Suit.CLUBS, Rank.TEN),
+            playerAction = Action.HIT,
+            isCorrect = false,
+            gameRules = rules1
+        )
         
-        // Scenario 2: Hard 12 vs 5 - 1/3 errors (33.3% error rate)
-        repository.save(createDecisionRecord(handValue = 12, dealerValue = 5, isCorrect = false))
-        repository.save(createDecisionRecord(handValue = 12, dealerValue = 5, isCorrect = true))
-        repository.save(createDecisionRecord(handValue = 12, dealerValue = 5, isCorrect = true))
+        val decision2 = DecisionRecord(
+            handCards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+            dealerUpCard = Card(Suit.CLUBS, Rank.TEN),
+            playerAction = Action.STAND,
+            isCorrect = true,
+            gameRules = rules2
+        )
         
-        // Scenario 3: Hard 20 vs 7 - 0/2 errors (0% error rate)
-        repository.save(createDecisionRecord(handValue = 20, dealerValue = 7, isCorrect = true))
-        repository.save(createDecisionRecord(handValue = 20, dealerValue = 7, isCorrect = true))
+        repository.save(decision1)
+        repository.save(decision2)
         
         // When
-        val worstScenarios = repository.getWorstScenarios(minSamples = 2)
+        val rule1Decisions = repository.findByRule(decision1.ruleHash)
+        val rule2Decisions = repository.findByRule(decision2.ruleHash)
         
         // Then
-        assertEquals(3, worstScenarios.size)
-        assertEquals("Hard 16 vs 10", worstScenarios[0].first)
-        assertEquals(2.0/3.0, worstScenarios[0].second, 0.001)
-        assertEquals("Hard 12 vs 5", worstScenarios[1].first)
-        assertEquals(1.0/3.0, worstScenarios[1].second, 0.001)
-        assertEquals("Pair 10s vs 7", worstScenarios[2].first)
-        assertEquals(0.0, worstScenarios[2].second, 0.001)
+        assertEquals(1, rule1Decisions.size)
+        assertEquals(decision1, rule1Decisions[0])
+        assertEquals(1, rule2Decisions.size)
+        assertEquals(decision2, rule2Decisions[0])
     }
 
     @Test
-    fun `given decisions below min samples when getWorstScenarios then should filter out`() {
+    fun `given decisions with errors when getErrorStatsByRule then should return rule-specific error stats`() {
         // Given
         val repository = createRepository()
+        val gameRules = GameRules(dealerHitsOnSoft17 = true)
         
-        // Scenario with only 2 samples (below minSamples = 3)
-        repository.save(createDecisionRecord(handValue = 16, dealerValue = 10, isCorrect = false))
-        repository.save(createDecisionRecord(handValue = 16, dealerValue = 10, isCorrect = false))
+        // Add decisions for H16 vs 10 - 2/3 errors
+        repository.save(DecisionRecord(
+            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+            Card(Suit.CLUBS, Rank.TEN),
+            Action.HIT, false, gameRules
+        ))
+        repository.save(DecisionRecord(
+            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+            Card(Suit.CLUBS, Rank.TEN),
+            Action.HIT, false, gameRules
+        ))
+        repository.save(DecisionRecord(
+            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+            Card(Suit.CLUBS, Rank.TEN),
+            Action.STAND, true, gameRules
+        ))
         
-        // Scenario with 3 samples (meets minSamples = 3)
-        repository.save(createDecisionRecord(handValue = 12, dealerValue = 5, isCorrect = false))
-        repository.save(createDecisionRecord(handValue = 12, dealerValue = 5, isCorrect = true))
-        repository.save(createDecisionRecord(handValue = 12, dealerValue = 5, isCorrect = true))
+        val ruleHash = gameRules.hashCode().toString(16).takeLast(6)
         
         // When
-        val worstScenarios = repository.getWorstScenarios(minSamples = 3)
+        val errorStats = repository.getErrorStatsByRule(ruleHash, minSamples = 3)
         
         // Then
-        assertEquals(1, worstScenarios.size)
-        assertEquals("Hard 12 vs 5", worstScenarios[0].first)
+        assertEquals(1, errorStats.size)
+        val stat = errorStats[0]
+        assertEquals("H16 vs 10", stat.baseScenarioKey)
+        assertEquals(3, stat.totalAttempts)
+        assertEquals(2, stat.errorCount)
+        assertEquals(2.0/3.0, stat.errorRate, 0.001)
+    }
+
+    @Test
+    fun `given decisions across rules when getErrorStatsAcrossRules then should return combined stats`() {
+        // Given
+        val repository = createRepository()
+        val rules1 = GameRules(dealerHitsOnSoft17 = true)
+        val rules2 = GameRules(dealerHitsOnSoft17 = false)
+        
+        // Add decisions for H16 vs 10 under different rules
+        repository.save(DecisionRecord(
+            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+            Card(Suit.CLUBS, Rank.TEN),
+            Action.HIT, false, rules1
+        ))
+        repository.save(DecisionRecord(
+            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+            Card(Suit.CLUBS, Rank.TEN),
+            Action.HIT, false, rules2
+        ))
+        repository.save(DecisionRecord(
+            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+            Card(Suit.CLUBS, Rank.TEN),
+            Action.STAND, true, rules1
+        ))
+        
+        // When
+        val errorStats = repository.getErrorStatsAcrossRules(minSamples = 3)
+        
+        // Then
+        assertEquals(1, errorStats.size)
+        val stat = errorStats[0]
+        assertEquals("H16 vs 10", stat.baseScenarioKey)
+        assertEquals(3, stat.totalAttempts)
+        assertEquals(2, stat.errorCount)
     }
 
     @Test
@@ -222,8 +279,8 @@ class InMemoryLearningRepositoryTest {
         
         // Then
         assertEquals(1, stats.size)
-        val hard16Stats = stats["Hard 16 vs 10"]!!
-        assertEquals("Hard 16 vs 10", hard16Stats.scenario)
+        val hard16Stats = stats["H16 vs 10"]!!
+        assertEquals("H16 vs 10", hard16Stats.scenario)
         assertEquals(3, hard16Stats.totalAttempts)
         assertEquals(1, hard16Stats.correctAttempts)
         assertEquals(2.0/3.0, hard16Stats.errorRate, 0.001)

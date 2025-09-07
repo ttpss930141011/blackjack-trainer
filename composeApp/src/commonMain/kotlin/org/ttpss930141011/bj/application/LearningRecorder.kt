@@ -73,10 +73,10 @@ class LearningRecorder(
      * Get cross-game learning analytics.
      * 
      * @param minSamples Minimum number of attempts required for meaningful statistics
-     * @return List of worst performing scenarios with error rates
+     * @return List of worst performing scenarios with error statistics
      */
-    fun getWorstScenarios(minSamples: Int = 3): List<Pair<String, Double>> {
-        return repository.getWorstScenarios(minSamples)
+    fun getWorstScenarios(minSamples: Int = 3): List<ScenarioErrorStat> {
+        return repository.getErrorStatsAcrossRules(minSamples)
     }
     
     /**

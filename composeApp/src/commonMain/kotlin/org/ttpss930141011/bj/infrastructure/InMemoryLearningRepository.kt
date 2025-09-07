@@ -1,20 +1,22 @@
 package org.ttpss930141011.bj.infrastructure
 
 import org.ttpss930141011.bj.domain.valueobjects.DecisionRecord
+import org.ttpss930141011.bj.domain.valueobjects.ScenarioErrorStat
 import org.ttpss930141011.bj.domain.services.LearningRepository
 
 /**
  * InMemoryLearningRepository - Infrastructure implementation of LearningRepository.
  * 
+ * Simplified implementation focused on user core needs:
+ * 1. Current rule decisions tracking
+ * 2. Cross-rule error statistics comparison
+ * 
  * This implementation stores decisions in memory for cross-game statistics.
  * In the future, this could be replaced with persistent storage implementations
  * for different platforms (SQLite, IndexedDB, etc.) without changing domain logic.
- * 
- * Thread-safe for concurrent access patterns.
  */
 class InMemoryLearningRepository : LearningRepository {
     
-    // Use synchronizedList for thread-safety in multiplatform context
     private val decisions: MutableList<DecisionRecord> = mutableListOf()
     
     override fun save(decision: DecisionRecord) {
@@ -31,19 +33,41 @@ class InMemoryLearningRepository : LearningRepository {
             .take(limit)
     }
     
-    override fun findByScenario(scenarioKey: String): List<DecisionRecord> {
-        return decisions.filter { it.scenarioKey == scenarioKey }
+    override fun findByRule(ruleHash: String): List<DecisionRecord> {
+        return decisions.filter { it.ruleHash == ruleHash }
     }
     
-    override fun getWorstScenarios(minSamples: Int): List<Pair<String, Double>> {
+    override fun findByScenario(baseScenarioKey: String): List<DecisionRecord> {
+        return decisions.filter { it.baseScenarioKey == baseScenarioKey }
+    }
+    
+    override fun getErrorStatsByRule(ruleHash: String, minSamples: Int): List<ScenarioErrorStat> {
         return decisions
-            .groupBy { it.scenarioKey }
+            .filter { it.ruleHash == ruleHash }
+            .groupBy { it.baseScenarioKey }
             .filter { (_, decisionList) -> decisionList.size >= minSamples }
             .map { (scenario, decisionList) ->
-                val errorRate = decisionList.count { !it.isCorrect }.toDouble() / decisionList.size
-                scenario to errorRate
+                ScenarioErrorStat(
+                    baseScenarioKey = scenario,
+                    totalAttempts = decisionList.size,
+                    errorCount = decisionList.count { !it.isCorrect }
+                )
             }
-            .sortedByDescending { it.second } // Sort by error rate (worst first)
+            .sortedByDescending { it.errorRate } // Sort by error rate (worst first)
+    }
+    
+    override fun getErrorStatsAcrossRules(minSamples: Int): List<ScenarioErrorStat> {
+        return decisions
+            .groupBy { it.baseScenarioKey }
+            .filter { (_, decisionList) -> decisionList.size >= minSamples }
+            .map { (scenario, decisionList) ->
+                ScenarioErrorStat(
+                    baseScenarioKey = scenario,
+                    totalAttempts = decisionList.size,
+                    errorCount = decisionList.count { !it.isCorrect }
+                )
+            }
+            .sortedByDescending { it.errorRate } // Sort by error rate (worst first)
     }
     
     override fun clear() {
@@ -57,11 +81,12 @@ class InMemoryLearningRepository : LearningRepository {
         get() = decisions.size
     
     /**
-     * Get detailed scenario statistics (for advanced analytics)
+     * Get scenario statistics organized by rule hash (for backward compatibility)
+     * Returns the old ScenarioStats format for existing UI components
      */
     fun getScenarioStats(): Map<String, ScenarioStats> {
         return decisions
-            .groupBy { it.scenarioKey }
+            .groupBy { it.baseScenarioKey }
             .mapValues { (scenario, decisionList) ->
                 ScenarioStats(
                     scenario = scenario,
@@ -75,7 +100,8 @@ class InMemoryLearningRepository : LearningRepository {
 }
 
 /**
- * ScenarioStats - Rich statistics for a specific learning scenario
+ * ScenarioStats - Legacy statistics format for backward compatibility
+ * TODO: Replace with ScenarioErrorStat in UI components
  */
 data class ScenarioStats(
     val scenario: String,

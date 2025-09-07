@@ -4,6 +4,7 @@ import org.ttpss930141011.bj.domain.valueobjects.Card
 import org.ttpss930141011.bj.domain.enums.Action
 import org.ttpss930141011.bj.domain.valueobjects.Rank
 import org.ttpss930141011.bj.domain.valueobjects.Suit
+import org.ttpss930141011.bj.domain.valueobjects.GameRules
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -23,11 +24,15 @@ class DecisionRecordTest {
             handCards = handCards,
             dealerUpCard = dealerUpCard,
             playerAction = playerAction,
-            isCorrect = isCorrect
+            isCorrect = isCorrect,
+            gameRules = GameRules()
         )
         
         // Then
-        assertEquals("Hard 16 vs K", decisionRecord.scenarioKey)
+        assertEquals("H16 vs K", decisionRecord.baseScenarioKey)
+        assertTrue(decisionRecord.scenarioKey.startsWith("H16 vs K ["))
+        assertTrue(decisionRecord.scenarioKey.endsWith("]"))
+        assertEquals(6, decisionRecord.ruleHash.length) // Should be 6-char hex
         assertEquals(playerAction, decisionRecord.playerAction)
         assertEquals(isCorrect, decisionRecord.isCorrect)
     }
@@ -45,11 +50,12 @@ class DecisionRecordTest {
             handCards = handCards,
             dealerUpCard = dealerUpCard,
             playerAction = playerAction,
-            isCorrect = isCorrect
+            isCorrect = isCorrect,
+            gameRules = GameRules()
         )
         
         // Then
-        assertEquals("Soft 17 vs 9", decisionRecord.scenarioKey)
+        assertEquals("S17 vs 9", decisionRecord.baseScenarioKey)
     }
 
     @Test
@@ -65,11 +71,12 @@ class DecisionRecordTest {
             handCards = handCards,
             dealerUpCard = dealerUpCard,
             playerAction = playerAction,
-            isCorrect = isCorrect
+            isCorrect = isCorrect,
+            gameRules = GameRules()
         )
         
         // Then
-        assertEquals("Pair 8s vs 5", decisionRecord.scenarioKey)
+        assertEquals("Pair 8s vs 5", decisionRecord.baseScenarioKey)
     }
 
     @Test
@@ -85,11 +92,12 @@ class DecisionRecordTest {
             handCards = handCards,
             dealerUpCard = dealerUpCard,
             playerAction = playerAction,
-            isCorrect = isCorrect
+            isCorrect = isCorrect,
+            gameRules = GameRules()
         )
         
         // Then
-        assertEquals("Blackjack vs 7", decisionRecord.scenarioKey)
+        assertEquals("BJ vs 7", decisionRecord.baseScenarioKey)
     }
 
     @Test
@@ -107,6 +115,7 @@ class DecisionRecordTest {
             dealerUpCard = dealerUpCard,
             playerAction = Action.HIT,
             isCorrect = false,
+            gameRules = GameRules(),
             timestamp = baseTime
         )
         
@@ -115,6 +124,7 @@ class DecisionRecordTest {
             dealerUpCard = dealerUpCard,
             playerAction = Action.STAND,
             isCorrect = true,
+            gameRules = GameRules(),
             timestamp = laterTime
         )
         
@@ -137,6 +147,7 @@ class DecisionRecordTest {
             dealerUpCard = dealerUpCard,
             playerAction = playerAction,
             isCorrect = isCorrect,
+            gameRules = GameRules(),
             timestamp = timestamp
         )
         
@@ -146,7 +157,7 @@ class DecisionRecordTest {
         assertEquals(playerAction, decisionRecord.playerAction)
         assertEquals(isCorrect, decisionRecord.isCorrect)
         assertEquals(timestamp, decisionRecord.timestamp)
-        assertEquals("Hard 12 vs A", decisionRecord.scenarioKey)
+        assertEquals("H12 vs A", decisionRecord.baseScenarioKey)
     }
 
     @Test
@@ -166,11 +177,12 @@ class DecisionRecordTest {
             handCards = handCards,
             dealerUpCard = dealerUpCard,
             playerAction = playerAction,
-            isCorrect = isCorrect
+            isCorrect = isCorrect,
+            gameRules = GameRules()
         )
         
         // Then
-        assertEquals("Hard 10 vs 6", decisionRecord.scenarioKey)
+        assertEquals("H10 vs 6", decisionRecord.baseScenarioKey)
     }
 
     @Test
@@ -190,10 +202,109 @@ class DecisionRecordTest {
             handCards = handCards,
             dealerUpCard = dealerUpCard,
             playerAction = playerAction,
-            isCorrect = isCorrect
+            isCorrect = isCorrect,
+            gameRules = GameRules()
         )
         
         // Then
-        assertEquals("Soft 17 vs 2", decisionRecord.scenarioKey)
+        assertEquals("S17 vs 2", decisionRecord.baseScenarioKey)
+    }
+
+    @Test
+    fun `given two decisions with same rules when comparing rules then should be same`() {
+        // Given
+        val gameRules = GameRules(dealerHitsOnSoft17 = true, doubleAfterSplitAllowed = false)
+        val handCards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX))
+        val dealerUpCard = Card(Suit.CLUBS, Rank.KING)
+        
+        val decision1 = DecisionRecord(
+            handCards = handCards,
+            dealerUpCard = dealerUpCard,
+            playerAction = Action.HIT,
+            isCorrect = true,
+            gameRules = gameRules
+        )
+        
+        val decision2 = DecisionRecord(
+            handCards = handCards,
+            dealerUpCard = dealerUpCard,
+            playerAction = Action.STAND,
+            isCorrect = false,
+            gameRules = gameRules
+        )
+        
+        // When & Then
+        assertTrue(decision1.hasSameRules(decision2))
+        assertTrue(decision2.hasSameRules(decision1))
+    }
+
+    @Test
+    fun `given two decisions with different rules when comparing rules then should not be same`() {
+        // Given
+        val rules1 = GameRules(dealerHitsOnSoft17 = true)
+        val rules2 = GameRules(dealerHitsOnSoft17 = false)
+        val handCards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX))
+        val dealerUpCard = Card(Suit.CLUBS, Rank.KING)
+        
+        val decision1 = DecisionRecord(
+            handCards = handCards,
+            dealerUpCard = dealerUpCard,
+            playerAction = Action.HIT,
+            isCorrect = true,
+            gameRules = rules1
+        )
+        
+        val decision2 = DecisionRecord(
+            handCards = handCards,
+            dealerUpCard = dealerUpCard,
+            playerAction = Action.STAND,
+            isCorrect = false,
+            gameRules = rules2
+        )
+        
+        // When & Then
+        kotlin.test.assertFalse(decision1.hasSameRules(decision2))
+        kotlin.test.assertFalse(decision2.hasSameRules(decision1))
+    }
+
+    @Test
+    fun `given two decisions with same base scenario when comparing scenarios then should be same`() {
+        // Given
+        val handCards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX))
+        val dealerUpCard = Card(Suit.CLUBS, Rank.KING)
+        
+        val decision1 = DecisionRecord(
+            handCards = handCards,
+            dealerUpCard = dealerUpCard,
+            playerAction = Action.HIT,
+            isCorrect = true,
+            gameRules = GameRules(dealerHitsOnSoft17 = true)
+        )
+        
+        val decision2 = DecisionRecord(
+            handCards = handCards,
+            dealerUpCard = dealerUpCard,
+            playerAction = Action.STAND,
+            isCorrect = false,
+            gameRules = GameRules(dealerHitsOnSoft17 = false) // Different rules, same scenario
+        )
+        
+        // When & Then
+        assertTrue(decision1.hasSameBaseScenario(decision2))
+        assertTrue(decision2.hasSameBaseScenario(decision1))
+    }
+
+    @Test
+    fun `given empty hand cards when creating DecisionRecord then should throw exception`() {
+        // Given & When & Then
+        kotlin.test.assertFailsWith<IllegalArgumentException> {
+            DecisionRecord(
+                handCards = emptyList(),
+                dealerUpCard = Card(Suit.CLUBS, Rank.KING),
+                playerAction = Action.HIT,
+                isCorrect = true,
+                gameRules = GameRules()
+            )
+        }
     }
 }

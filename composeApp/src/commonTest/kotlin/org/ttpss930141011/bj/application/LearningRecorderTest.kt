@@ -29,14 +29,13 @@ class LearningRecorderTest {
         val isCorrect = true
         
         // When
-        val decisionRecord = recorder.recordDecision(playerHand, dealerUpCard, playerAction, isCorrect)
+        val decisionRecord = recorder.recordDecision(playerHand, dealerUpCard, playerAction, isCorrect, GameRules())
         
         // Then
         assertEquals(playerHand.cards, decisionRecord.handCards)
         assertEquals(dealerUpCard, decisionRecord.dealerUpCard)
         assertEquals(playerAction, decisionRecord.playerAction)
         assertEquals(isCorrect, decisionRecord.isCorrect)
-        assertEquals("Hard 16 vs 10", decisionRecord.scenarioKey)
         
         // Verify it was saved
         val allDecisions = recorder.getAllDecisions()
@@ -53,8 +52,8 @@ class LearningRecorderTest {
         val dealerUpCard = Card(Suit.CLUBS, Rank.TEN)
         
         // When
-        recorder.recordDecision(playerHand1, dealerUpCard, Action.HIT, true)
-        recorder.recordDecision(playerHand2, dealerUpCard, Action.STAND, false)
+        recorder.recordDecision(playerHand1, dealerUpCard, Action.HIT, true, GameRules())
+        recorder.recordDecision(playerHand2, dealerUpCard, Action.STAND, false, GameRules())
         
         // Then
         val allDecisions = recorder.getAllDecisions()
@@ -70,7 +69,7 @@ class LearningRecorderTest {
         val isCorrect = true
         
         // When
-        val decisionRecord = recorder.recordDecision(game, playerAction, isCorrect)
+        val decisionRecord = recorder.recordDecision(game, playerAction, isCorrect, GameRules())
         
         // Then
         assertEquals(game.currentHand!!.cards, decisionRecord.handCards)
@@ -89,7 +88,7 @@ class LearningRecorderTest {
         
         // When/Then
         assertFailsWith<IllegalArgumentException> {
-            recorder.recordDecision(game, playerAction, isCorrect)
+            recorder.recordDecision(game, playerAction, isCorrect, GameRules())
         }
     }
 
@@ -103,7 +102,7 @@ class LearningRecorderTest {
         
         // When/Then
         assertFailsWith<IllegalArgumentException> {
-            recorder.recordDecision(game, playerAction, isCorrect)
+            recorder.recordDecision(game, playerAction, isCorrect, GameRules())
         }
     }
 
@@ -119,24 +118,24 @@ class LearningRecorderTest {
         val dealerUpCard = Card(Suit.CLUBS, Rank.TEN)
         
         // Scenario 1: Hard 16 vs 10 - 2/3 errors
-        recorder.recordDecision(playerHand16, dealerUpCard, Action.STAND, false)
-        recorder.recordDecision(playerHand16, dealerUpCard, Action.STAND, false)
-        recorder.recordDecision(playerHand16, dealerUpCard, Action.HIT, true)
+        recorder.recordDecision(playerHand16, dealerUpCard, Action.STAND, false, GameRules())
+        recorder.recordDecision(playerHand16, dealerUpCard, Action.STAND, false, GameRules())
+        recorder.recordDecision(playerHand16, dealerUpCard, Action.HIT, true, GameRules())
         
         // Scenario 2: Hard 12 vs 10 - 1/3 errors
-        recorder.recordDecision(playerHand12, dealerUpCard, Action.STAND, false)
-        recorder.recordDecision(playerHand12, dealerUpCard, Action.HIT, true)
-        recorder.recordDecision(playerHand12, dealerUpCard, Action.HIT, true)
+        recorder.recordDecision(playerHand12, dealerUpCard, Action.STAND, false, GameRules())
+        recorder.recordDecision(playerHand12, dealerUpCard, Action.HIT, true, GameRules())
+        recorder.recordDecision(playerHand12, dealerUpCard, Action.HIT, true, GameRules())
         
         // When
         val worstScenarios = recorder.getWorstScenarios(minSamples = 3)
         
         // Then
         assertEquals(2, worstScenarios.size)
-        assertEquals("Hard 16 vs 10", worstScenarios[0].first)
-        assertEquals(2.0/3.0, worstScenarios[0].second, 0.001)
-        assertEquals("Hard 12 vs 10", worstScenarios[1].first)
-        assertEquals(1.0/3.0, worstScenarios[1].second, 0.001)
+        assertEquals("H16 vs 10", worstScenarios[0].baseScenarioKey)
+        assertEquals(2.0/3.0, worstScenarios[0].errorRate, 0.001)
+        assertEquals("H12 vs 10", worstScenarios[1].baseScenarioKey)
+        assertEquals(1.0/3.0, worstScenarios[1].errorRate, 0.001)
     }
 
     @Test
@@ -148,7 +147,7 @@ class LearningRecorderTest {
         
         // Add 5 decisions
         repeat(5) {
-            recorder.recordDecision(playerHand, dealerUpCard, Action.HIT, true)
+            recorder.recordDecision(playerHand, dealerUpCard, Action.HIT, true, GameRules())
         }
         
         // When
@@ -156,7 +155,7 @@ class LearningRecorderTest {
         
         // Then
         assertEquals(3, recent.size)
-        assertTrue(recent.all { it.scenarioKey == "Hard 16 vs 10" })
+        assertTrue(recent.all { it.baseScenarioKey == "H16 vs 10" })
     }
 
     @Test
@@ -178,8 +177,8 @@ class LearningRecorderTest {
         val playerHand = PlayerHand(listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)), bet = 50)
         val dealerUpCard = Card(Suit.CLUBS, Rank.TEN)
         
-        recorder.recordDecision(playerHand, dealerUpCard, Action.HIT, true)
-        recorder.recordDecision(playerHand, dealerUpCard, Action.STAND, false)
+        recorder.recordDecision(playerHand, dealerUpCard, Action.HIT, true, GameRules())
+        recorder.recordDecision(playerHand, dealerUpCard, Action.STAND, false, GameRules())
         assertEquals(2, recorder.getAllDecisions().size)
         
         // When
