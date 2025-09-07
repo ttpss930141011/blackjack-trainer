@@ -48,8 +48,14 @@ fun CasinoGameScreen(
     var feedbackNotificationEnabled by remember { mutableStateOf(true) }
     var feedbackDurationSeconds by remember { mutableStateOf(2.5f) }
     
-    LaunchedEffect(gameRules) {
+    // Initialize game only once, then handle rule changes without reset
+    LaunchedEffect(Unit) {
         viewModel.initializeGame(gameRules, Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS))
+    }
+    
+    // Handle rule changes dynamically without resetting game state
+    LaunchedEffect(gameRules) {
+        viewModel.handleRuleChange(gameRules)
     }
     
     // Handle feedback - add to history and manage ambient feedback
@@ -288,6 +294,14 @@ private fun CasinoGameContent(
                         viewModel.clearError()
                     }
                 }
+                
+                // Rule change notification with auto-dismiss
+                viewModel.ruleChangeNotification?.let { notification ->
+                    LaunchedEffect(notification) {
+                        kotlinx.coroutines.delay(5000) // Show longer for rule changes
+                        viewModel.dismissRuleChangeNotification()
+                    }
+                }
             }
         }
         
@@ -299,6 +313,15 @@ private fun CasinoGameContent(
             onFeedbackConsumed = { viewModel.clearFeedback() },
             modifier = Modifier.align(Alignment.TopCenter)
         )
+        
+        // Rule change notification overlay
+        viewModel.ruleChangeNotification?.let { notification ->
+            RuleChangeNotificationToast(
+                message = notification,
+                onDismiss = { viewModel.dismissRuleChangeNotification() },
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
         
     }
 }
@@ -326,6 +349,42 @@ fun GameWithNavigationDrawer(
         }
     ) {
         gameContent()
+    }
+}
+
+@Composable
+private fun RuleChangeNotificationToast(
+    message: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxWidth(0.9f),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.weight(1f)
+            )
+            
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = "OK",
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+        }
     }
 }
 

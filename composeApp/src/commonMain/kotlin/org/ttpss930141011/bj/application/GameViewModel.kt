@@ -30,6 +30,9 @@ class GameViewModel(
     private var _errorMessage by mutableStateOf<String?>(null)
     val errorMessage: String? get() = _errorMessage
     
+    private var _ruleChangeNotification by mutableStateOf<String?>(null)
+    val ruleChangeNotification: String? get() = _ruleChangeNotification
+    
     // Game over integration from Domain layer
     val isGameOver: Boolean
         get() = _game?.isGameOver ?: false
@@ -224,6 +227,56 @@ class GameViewModel(
      */
     fun getScenarioStats(): Map<String, org.ttpss930141011.bj.infrastructure.ScenarioStats> {
         return learningRecorder.getScenarioStats()
+    }
+    
+    // === Rule-Aware Analytics Methods ===
+    
+    /**
+     * Handle game rule changes during active session.
+     * Shows notification about rule change impact on statistics.
+     */
+    fun handleRuleChange(newRules: GameRules) {
+        val currentGame = _game ?: return
+        
+        // Check if rules actually changed
+        if (currentGame.rules == newRules) {
+            _ruleChangeNotification = null
+            return
+        }
+        
+        // Check if this creates rule change notification
+        if (_sessionStats.hasRuleChanged(newRules)) {
+            _ruleChangeNotification = "⚠️ Rule change detected: Starting fresh analytics for new rule set"
+            
+            // Show comparison if available
+            _sessionStats.getRuleComparisonSummary()?.let { comparison ->
+                _ruleChangeNotification = "⚠️ $comparison"
+            }
+        }
+        
+        // Update game with new rules (without resetting state)
+        _game = currentGame.copy(rules = newRules)
+    }
+    
+    /**
+     * Get rule-specific worst scenarios (clean analytics).
+     */
+    fun getCurrentRuleWorstScenarios(minSamples: Int = 3): List<Pair<String, Double>> {
+        return _sessionStats.getCurrentRuleWorstScenarios(minSamples)
+    }
+    
+    /**
+     * Get statistics for current rule set only.
+     */
+    fun getCurrentRuleStats(): RuleSegmentStats? {
+        return _sessionStats.getCurrentRuleStats()
+    }
+    
+    /**
+     * Dismiss rule change notification.
+     */
+    fun dismissRuleChangeNotification() {
+        _ruleChangeNotification = null
     }
     
 }
