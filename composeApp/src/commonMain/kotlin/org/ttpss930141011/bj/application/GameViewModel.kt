@@ -87,6 +87,13 @@ class GameViewModel(
             _roundDecisions = _roundDecisions + playerDecision
             _errorMessage = null
             
+            // 自动触发庄家轮次（如果所有玩家手牌完成）
+            _game?.let { game ->
+                if (game.phase == GamePhase.DEALER_TURN && game.allHandsComplete) {
+                    dealerTurn()
+                }
+            }
+            
         } catch (e: Exception) {
             _errorMessage = e.message
         }
