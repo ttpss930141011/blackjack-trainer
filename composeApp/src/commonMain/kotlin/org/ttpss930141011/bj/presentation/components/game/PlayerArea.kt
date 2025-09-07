@@ -13,8 +13,11 @@ import org.ttpss930141011.bj.domain.services.*
 /**
  * Player area component that handles player hand display
  * Shows betting circle during betting phase, player hands during game
+ * 
+ * @param game Current game state
+ * @param viewModel Game view model for user interactions
+ * @param modifier Compose modifier for styling
  */
-
 @Composable
 fun PlayerArea(
     game: Game,
