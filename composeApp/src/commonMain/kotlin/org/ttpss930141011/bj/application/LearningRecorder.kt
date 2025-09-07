@@ -6,7 +6,7 @@ import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 
 /**
- * LearningRecorder - Application service for recording and managing learning decisions.
+ * Application service for recording and managing learning decisions.
  * 
  * This service handles the creation of DecisionRecords and coordinates with the
  * LearningRepository for persistence. Follows DDD Application layer patterns.
@@ -16,12 +16,13 @@ class LearningRecorder(
 ) {
     
     /**
-     * Record a player decision with full context for learning analysis.
+     * Records a player decision with full context for learning analysis.
      * 
      * @param handBeforeAction The player's hand state when the decision was made
      * @param dealerUpCard The dealer's visible card
      * @param playerAction The action the player chose
      * @param isCorrect Whether the player's action was optimal
+     * @param gameRules The game rules in effect
      * @return The created DecisionRecord
      */
     fun recordDecision(
@@ -44,12 +45,14 @@ class LearningRecorder(
     }
     
     /**
-     * Record a decision using Game state directly.
+     * Records a decision using Game state directly.
      * 
      * @param game The current game state
      * @param playerAction The action taken by the player
      * @param isCorrect Whether the action was optimal
+     * @param gameRules The game rules in effect
      * @return The created DecisionRecord
+     * @throws IllegalArgumentException if game state is invalid
      */
     fun recordDecision(
         game: Game,
@@ -70,7 +73,7 @@ class LearningRecorder(
     }
     
     /**
-     * Get cross-game learning analytics.
+     * Gets cross-game learning analytics.
      * 
      * @param minSamples Minimum number of attempts required for meaningful statistics
      * @return List of worst performing scenarios with error statistics
@@ -80,8 +83,8 @@ class LearningRecorder(
     }
     
     /**
-     * Get worst scenarios for a specific rule set (Phase 2).
-     * Clean rule-specific analytics without cross-rule contamination.
+     * Gets worst scenarios for a specific rule set.
+     * Provides clean rule-specific analytics without cross-rule contamination.
      * 
      * @param gameRules The specific rule set to analyze (null returns empty list)
      * @param minSamples Minimum attempts required for meaningful statistics
@@ -95,7 +98,7 @@ class LearningRecorder(
     }
     
     /**
-     * Get recent decision records for session analysis.
+     * Gets recent decision records for session analysis.
      * 
      * @param limit Maximum number of recent decisions to retrieve
      * @return List of recent DecisionRecords
@@ -105,7 +108,7 @@ class LearningRecorder(
     }
     
     /**
-     * Get all recorded decisions (for comprehensive analysis).
+     * Gets all recorded decisions for comprehensive analysis.
      * 
      * @return All stored DecisionRecords
      */
@@ -114,14 +117,14 @@ class LearningRecorder(
     }
     
     /**
-     * Clear all learning data (for testing or reset).
+     * Clears all learning data for testing or reset purposes.
      */
     fun clearAllData() {
         repository.clear()
     }
     
     /**
-     * Get detailed scenario statistics for analytics.
+     * Gets detailed scenario statistics for analytics.
      * 
      * @return Map of scenario keys to ScenarioStats
      */

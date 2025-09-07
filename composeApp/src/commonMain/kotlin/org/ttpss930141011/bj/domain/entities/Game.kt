@@ -10,13 +10,30 @@ import org.ttpss930141011.bj.domain.services.SettlementService
 
 enum class RoundOutcome { WIN, LOSS, PUSH, UNKNOWN }
 
-// Game - Simplified aggregate root replacing Table → Seat → SeatHand complexity
+/**
+ * Core game aggregate root that manages the complete blackjack game state.
+ * Simplifies the complex Table → Seat → SeatHand architecture into a single cohesive entity.
+ * 
+ * Encapsulates player management, betting logic, hand progression, and game phase transitions.
+ * Delegates complex operations to domain services while maintaining invariants.
+ * 
+ * @property player Currently active player (null if no player joined)
+ * @property playerHands List of player hands (multiple when splitting)
+ * @property currentHandIndex Index of the hand currently being played
+ * @property pendingBet Uncommitted bet amount during betting phase
+ * @property currentBet Committed bet amount after dealing starts
+ * @property dealer Dealer entity with cards and game logic
+ * @property deck Current deck state for card dealing
+ * @property rules Game rules configuration affecting gameplay
+ * @property phase Current game phase (betting, dealing, playing, etc.)
+ * @property isSettled Whether the current round has been settled
+ */
 data class Game(
     val player: Player?,
     val playerHands: List<PlayerHand>,
     val currentHandIndex: Int,
-    val pendingBet: Int = 0,      // Uncommitted bet amount during betting phase
-    val currentBet: Int,          // Committed bet amount after dealing
+    val pendingBet: Int = 0,
+    val currentBet: Int,
     val dealer: Dealer,
     val deck: Deck,
     val rules: GameRules,
@@ -25,6 +42,10 @@ data class Game(
 ) {
     
     companion object {
+        /**
+         * Creates a new game with the specified rules and shuffled deck.
+         * Initializes all game state to start-of-game values.
+         */
         fun create(rules: GameRules): Game {
             return Game(
                 player = null,
@@ -38,6 +59,10 @@ data class Game(
             )
         }
         
+        /**
+         * Creates a game with predetermined deck for testing.
+         * Identical to create() except uses the provided test deck.
+         */
         fun createForTest(rules: GameRules, testDeck: Deck): Game {
             return Game(
                 player = null,
@@ -52,29 +77,43 @@ data class Game(
         }
     }
     
-    // Domain queries
     val hasPlayer: Boolean = player != null
     val hasPendingBet: Boolean = pendingBet > 0
     val hasCommittedBet: Boolean = currentBet > 0
-    val hasBet: Boolean = currentBet > 0  // Keep for backward compatibility
+    val hasBet: Boolean = currentBet > 0
     val canDealCards: Boolean = hasPendingBet && phase == GamePhase.WAITING_FOR_BETS
     val currentHand: PlayerHand? = playerHands.getOrNull(currentHandIndex)
     val canAct: Boolean = hasPlayer && currentHand != null && currentHand.status == HandStatus.ACTIVE
     val allHandsComplete: Boolean = playerHands.all { it.isCompleted }
     
-    // Game Over logic - domain-driven minimum bet requirement
-    // Only check game over when waiting for bets (between rounds)
+    /**
+     * Determines if game should end due to insufficient chips.
+     * Only considers game over when waiting for bets (between rounds).
+     */
     val isGameOver: Boolean 
         get() = player?.let { p -> 
             p.chips < rules.minimumBet && phase == GamePhase.WAITING_FOR_BETS 
         } ?: false
     
-    // Rich domain behavior - player management
+    /**
+     * Adds a player to the game.
+     * 
+     * @param newPlayer Player to join the game
+     * @return New Game instance with the player added
+     * @throws IllegalArgumentException if game already has a player
+     */
     fun addPlayer(newPlayer: Player): Game {
         require(!hasPlayer) { "Game already has a player" }
         return copy(player = newPlayer)
     }
     
+    /**
+     * Places a direct bet, deducting chips immediately.
+     * 
+     * @param amount Bet amount to place
+     * @return New Game with bet placed and chips deducted
+     * @throws IllegalArgumentException if invalid bet or insufficient chips
+     */
     fun placeBet(amount: Int): Game {
         require(hasPlayer) { "No player in game" }
         require(amount > 0) { "Bet must be positive" }
@@ -87,11 +126,17 @@ data class Game(
         )
     }
     
+    /**
+     * Clears the current bet and restores chips to player.
+     * Only allowed during betting phase.
+     * 
+     * @return New Game with bet cleared and chips restored
+     * @throws IllegalArgumentException if not in betting phase
+     */
     fun clearBet(): Game {
         require(hasPlayer) { "No player in game" }
         require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear bet during betting phase" }
         
-        // Restore chips to player if there was a bet
         val updatedPlayer = if (currentBet > 0) {
             player!!.addChips(currentBet)
         } else {
@@ -104,7 +149,14 @@ data class Game(
         )
     }
     
-    // New pending bet behavior - for BettingTableState replacement
+    /**
+     * Adds amount to pending bet without deducting chips immediately.
+     * Allows building up a bet before commitment.
+     * 
+     * @param amount Amount to add to pending bet
+     * @return New Game with increased pending bet
+     * @throws IllegalArgumentException if invalid or insufficient chips
+     */
     fun addToPendingBet(amount: Int): Game {
         require(hasPlayer) { "No player in game" }
         require(phase == GamePhase.WAITING_FOR_BETS) { "Can only add to pending bet during betting phase" }
@@ -116,11 +168,23 @@ data class Game(
         return copy(pendingBet = pendingBet + amount)
     }
     
+    /**
+     * Clears the pending bet without affecting player chips.
+     * 
+     * @return New Game with pending bet reset to zero
+     * @throws IllegalArgumentException if not in betting phase
+     */
     fun clearPendingBet(): Game {
         require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear pending bet during betting phase" }
         return copy(pendingBet = 0)
     }
     
+    /**
+     * Commits the pending bet by deducting chips and setting as current bet.
+     * 
+     * @return New Game with pending bet committed and chips deducted
+     * @throws IllegalArgumentException if no pending bet or insufficient chips
+     */
     fun commitPendingBet(): Game {
         require(hasPendingBet) { "No pending bet to commit" }
         require(hasPlayer) { "No player in game" }
@@ -135,8 +199,11 @@ data class Game(
     }
     
     /**
-     * Try to add chip to pending bet with validation
-     * Returns result indicating success/failure with updated game state
+     * Attempts to add a chip to the pending bet with comprehensive validation.
+     * Returns result object indicating success/failure with updated game state.
+     * 
+     * @param chipValue Chip denomination to add to pending bet
+     * @return AddChipResult with success status and updated game state
      */
     fun tryAddChipToPendingBet(chipValue: ChipValue): AddChipResult {
         if (!hasPlayer) {
@@ -179,46 +246,66 @@ data class Game(
         }
     }
     
-    // Delegate to domain services for complex operations
+    /**
+     * Initiates a new round by dealing cards to player and dealer.
+     * Delegates to RoundManager for complex dealing logic.
+     */
     fun dealRound(): Game = RoundManager().dealRound(this)
     
+    /**
+     * Processes a player action (hit, stand, double, split, surrender).
+     * Delegates to RoundManager for action validation and execution.
+     */
     fun playerAction(action: Action): Game = RoundManager().processPlayerAction(this, action)
     
+    /**
+     * Executes dealer's automated play according to house rules.
+     * Delegates to RoundManager for dealer logic.
+     */
     fun dealerPlayAutomated(): Game = RoundManager().processDealerTurn(this)
     
+    /**
+     * Settles the round by comparing hands and awarding chips.
+     * Delegates to SettlementService for payout calculations.
+     */
     fun settleRound(): Game = SettlementService().settleRound(this)
     
-    // Reset for new round - preserve player, clear game state
+    /**
+     * Resets game state for a new round while preserving the current player.
+     * Clears hands, bets, and resets phase to betting.
+     * 
+     * @return New Game ready for the next round
+     */
     fun resetForNewRound(): Game {
         return copy(
-            playerHands = emptyList(),           // 清空所有手牌
-            currentHandIndex = 0,                // 重設手牌索引
-            pendingBet = 0,                      // 清空待確認賭注
-            currentBet = 0,                      // 清空已確認賭注
-            dealer = Dealer(),                   // 重設dealer (清空hand)
-            deck = Deck.shuffled(),              // 新牌組
-            phase = GamePhase.WAITING_FOR_BETS, // 回到下注階段
-            isSettled = false                   // 重設結算狀態
-            // player = player (保持不變，透過copy的預設行為)
+            playerHands = emptyList(),
+            currentHandIndex = 0,
+            pendingBet = 0,
+            currentBet = 0,
+            dealer = Dealer(),
+            deck = Deck.shuffled(),
+            phase = GamePhase.WAITING_FOR_BETS,
+            isSettled = false
         )
     }
     
-    // Available actions for current hand
+    /**
+     * Determines available actions for the current hand.
+     * Applies both hand-level and game-level constraints.
+     * 
+     * @return Set of actions the player can legally take
+     */
     fun availableActions(): Set<Action> {
         if (!canAct) return emptySet()
         
         val baseActions = currentHand!!.availableActions(rules)
-        
-        // Additional game-level constraints
         val constrainedActions = baseActions.toMutableSet()
         
-        // Remove split if max splits reached
         if (baseActions.contains(Action.SPLIT) && 
             playerHands.size >= rules.maxSplits + 1) {
             constrainedActions.remove(Action.SPLIT)
         }
         
-        // Remove double if player cannot afford it
         if (baseActions.contains(Action.DOUBLE) && 
             (player?.chips ?: 0) < (currentHand?.bet ?: 0)) {
             constrainedActions.remove(Action.DOUBLE)
@@ -227,7 +314,13 @@ data class Game(
         return constrainedActions
     }
     
-    // Round outcome determination - domain logic belongs here
+    /**
+     * Determines the overall outcome of the current round.
+     * Based on the status of the primary (first) player hand.
+     * 
+     * @return Round outcome for game statistics
+     * @throws IllegalArgumentException if not in settlement phase
+     */
     fun getRoundOutcome(): RoundOutcome {
         require(phase == GamePhase.SETTLEMENT) { "Game must be in settlement phase" }
         
@@ -243,7 +336,12 @@ data class Game(
         } else RoundOutcome.UNKNOWN
     }
     
-    // Auto-advance logic - Game knows when it should progress
+    /**
+     * Determines if the game should automatically advance to the next phase.
+     * Used by UI to trigger automatic progression.
+     * 
+     * @return True if game can advance without player input
+     */
     fun shouldAutoAdvance(): Boolean {
         return when (phase) {
             GamePhase.DEALER_TURN -> allHandsComplete
