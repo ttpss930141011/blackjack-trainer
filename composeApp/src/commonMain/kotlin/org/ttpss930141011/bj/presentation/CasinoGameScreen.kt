@@ -124,6 +124,7 @@ fun CasinoGameScreen(
                             Header(
                                 balance = currentPlayer.chips,
                                 currentPage = currentPage,
+                                gameRules = viewModel.currentGameRules,
                                 drawerButton = {
                                     TextButton(
                                         onClick = {
@@ -204,6 +205,7 @@ fun CasinoGameScreen(
                             Header(
                                 balance = currentPlayer.chips,
                                 currentPage = currentPage,
+                                gameRules = viewModel.currentGameRules,
                                 drawerButton = {
                                     TextButton(
                                         onClick = {
@@ -291,6 +293,7 @@ private fun CasinoGameContent(
             Header(
                 balance = currentPlayer.chips,
                 currentPage = currentPage,
+                gameRules = viewModel.currentGameRules,
                 drawerButton = drawerState?.let { drawer ->
                     {
                         HistoryDrawerButton(
