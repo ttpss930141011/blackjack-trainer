@@ -26,13 +26,13 @@ object CasinoTheme {
     val CasinoSurfaceLight = Color(0xFF334155)   // Light slate for contrast
     val CasinoBackground = Color(0xFF020617)    // Deep background
     
-    // Clean backgrounds for different areas - updated to #216125
-    val PageBackground = Color(0xFFBEE3DB)     // Light mint green for pages
-    val CardTableBackground = Color(0xFF216125) // Dark green for card table
+    // Consistent backgrounds for all areas - unified dark green theme #216125
+    val PageBackground = Color(0xFF216125)      // Dark green - consistent across all pages
+    val CardTableBackground = Color(0xFF216125) // Dark green for card table (same as pages)
     val HitButtonBackground = Color(0xFF4CAF50) // Bright green for better contrast on table  
-    val BalanceBadgeBackground = Color(0xFF59876B) // Medium green for badge
+    val BalanceBadgeBackground = Color(0xFF7BA087) // Light green for badge (shallower tone)
     val HoverEffectColor = Color(0xFFBCDCC4)   // Hover effect color
-    val HeaderBackground = Color(0xFF216125)   // Dark green for header
+    val HeaderBackground = Color(0xFF216125)   // Dark green for header (consistent)
     
     // Status colors - modern and clear
     val CasinoSuccess = Color(0xFF22C55E)      // Fresh success green
@@ -40,10 +40,10 @@ object CasinoTheme {
     val CasinoWarning = Color(0xFFF59E0B)      // Warm warning amber
     val CasinoInfo = Color(0xFF3B82F6)         // Clean info blue
     
-    // Navigation - clean modern design
-    val NavigationSurface = Color(0xFF1E293B)     // Clean slate surface
-    val NavigationSelected = Color(0xFFE11D48)    // Premium rose accent
-    val NavigationUnselected = Color(0xFF64748B)  // Subtle slate gray
+    // Navigation - consistent casino theme
+    val NavigationSurface = Color(0xFF216125)     // Dark green surface (consistent)
+    val NavigationSelected = Color(0xFF4CAF50)    // Bright green for selected items
+    val NavigationUnselected = Color.White        // White text for visibility on dark green
     val NavigationBackground = Color(0xFF216125)  // Dark green background for navbar
     
     // Interactive elements

@@ -2,6 +2,8 @@ package org.ttpss930141011.bj.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -10,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.ttpss930141011.bj.application.GameViewModel
@@ -83,81 +86,97 @@ fun CasinoGameScreen(
     
     Layout { screenWidth ->
         if (screenWidth.isCompact) {
-            // Mobile: NavigationBar at bottom
-            Scaffold(
-                containerColor = CasinoTheme.PageBackground,
-                bottomBar = {
-                    GameNavigationBar(
+            // Mobile: NavigationBar at bottom with drawer support  
+            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+            val scope = rememberCoroutineScope()
+            
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    GameNavigationDrawer(
                         currentPage = currentPage ?: NavigationPage.HOME,
-                        onPageSelected = { currentPage = it }
+                        onPageSelected = { currentPage = it },
+                        onCloseDrawer = {
+                            scope.launch {
+                                drawerState.close()
+                            }
+                        }
                     )
                 }
-            ) { paddingValues ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                ) {
-                    when (currentPage) {
-                        NavigationPage.STRATEGY -> Layout { screenWidth ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(CasinoTheme.PageBackground)
-                            ) {
+            ) {
+                Scaffold(
+                    containerColor = CasinoTheme.PageBackground,
+                    bottomBar = {
+                        GameNavigationBar(
+                            currentPage = currentPage ?: NavigationPage.HOME,
+                            onPageSelected = { currentPage = it }
+                        )
+                    }
+                ) { paddingValues ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(CasinoTheme.PageBackground)
+                            .padding(paddingValues)
+                    ) {
+                        // Add header for non-Home pages
+                        if (currentPage != NavigationPage.HOME && currentPage != null) {
+                            Header(
+                                balance = currentPlayer.chips,
+                                currentPage = currentPage,
+                                drawerButton = {
+                                    TextButton(
+                                        onClick = {
+                                            scope.launch { drawerState.open() }
+                                        }
+                                    ) {
+                                        Text(
+                                            text = "☰",
+                                            color = Color.White,
+                                            style = MaterialTheme.typography.titleLarge
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                        
+                        when (currentPage) {
+                            NavigationPage.STRATEGY -> Layout { screenWidth ->
                                 StrategyPage(
                                     gameRules = gameRules,
                                     screenWidth = screenWidth
                                 )
                             }
-                        }
-                        NavigationPage.HISTORY -> Layout { screenWidth ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(CasinoTheme.PageBackground)
-                            ) {
+                            NavigationPage.HISTORY -> Layout { screenWidth ->
                                 HistoryPage(
-                                    decisionHistory = viewModel.getRecentDecisions(),
+                                    decisionHistory = viewModel.getRecentDecisionsForCurrentRule(),
                                     onClearHistory = { viewModel.clearAllLearningData() },
                                     screenWidth = screenWidth
                                 )
                             }
-                        }
-                        NavigationPage.STATISTICS -> Layout { screenWidth ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(CasinoTheme.PageBackground)
-                            ) {
+                            NavigationPage.STATISTICS -> Layout { screenWidth ->
                                 StatisticsPage(
-                                    scenarioStats = viewModel.getScenarioStats(),
+                                    scenarioStats = viewModel.getCurrentRuleWorstScenarios(),
                                     screenWidth = screenWidth
                                 )
                             }
-                        }
-                        NavigationPage.SETTINGS -> Layout { screenWidth ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(CasinoTheme.PageBackground)
-                            ) {
+                            NavigationPage.SETTINGS -> Layout { screenWidth ->
                                 SettingsPage(
                                     screenWidth = screenWidth
                                 )
                             }
-                        }
-                        NavigationPage.HOME, null -> {
-                            // Default to game content (Home)
-                            CasinoGameContent(
-                                game = game,
-                                viewModel = viewModel,
-                                currentPlayer = currentPlayer,
-                                feedback = viewModel.feedback,
-                                currentPage = currentPage,
-                                feedbackNotificationEnabled = feedbackNotificationEnabled,
-                                feedbackDurationSeconds = feedbackDurationSeconds
-                            )
+                            NavigationPage.HOME, null -> {
+                                // Default to game content (Home)
+                                CasinoGameContent(
+                                    game = game,
+                                    viewModel = viewModel,
+                                    currentPlayer = currentPlayer,
+                                    feedback = viewModel.feedback,
+                                    currentPage = currentPage,
+                                    feedbackNotificationEnabled = feedbackNotificationEnabled,
+                                    feedbackDurationSeconds = feedbackDurationSeconds
+                                )
+                            }
                         }
                     }
                 }
@@ -172,67 +191,74 @@ fun CasinoGameScreen(
                 onPageSelected = { currentPage = it },
                 drawerState = drawerState
             ) {
-                when (currentPage) {
-                    NavigationPage.STRATEGY -> Layout { screenWidth ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(CasinoTheme.PageBackground)
-                        ) {
-                            StrategyPage(
-                                gameRules = gameRules,
-                                screenWidth = screenWidth
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(CasinoTheme.PageBackground) // Consistent background
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        // Add header for non-Home pages  
+                        if (currentPage != NavigationPage.HOME && currentPage != null) {
+                            Header(
+                                balance = currentPlayer.chips,
+                                currentPage = currentPage,
+                                drawerButton = {
+                                    TextButton(
+                                        onClick = {
+                                            scope.launch { drawerState.open() }
+                                        }
+                                    ) {
+                                        Text(
+                                            text = "☰",
+                                            color = Color.White,
+                                            style = MaterialTheme.typography.titleLarge
+                                        )
+                                    }
+                                }
                             )
                         }
-                    }
-                    NavigationPage.HISTORY -> Layout { screenWidth ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(CasinoTheme.PageBackground)
-                        ) {
-                            HistoryPage(
-                                decisionHistory = viewModel.getRecentDecisions(),
-                                onClearHistory = { viewModel.clearAllLearningData() },
-                                screenWidth = screenWidth
-                            )
+                        
+                        when (currentPage) {
+                            NavigationPage.STRATEGY -> Layout { screenWidth ->
+                                StrategyPage(
+                                    gameRules = gameRules,
+                                    screenWidth = screenWidth
+                                )
+                            }
+                            NavigationPage.HISTORY -> Layout { screenWidth ->
+                                HistoryPage(
+                                    decisionHistory = viewModel.getRecentDecisionsForCurrentRule(),
+                                    onClearHistory = { viewModel.clearAllLearningData() },
+                                    screenWidth = screenWidth
+                                )
+                            }
+                            NavigationPage.STATISTICS -> Layout { screenWidth ->
+                                StatisticsPage(
+                                    scenarioStats = viewModel.getCurrentRuleWorstScenarios(),
+                                    screenWidth = screenWidth
+                                )
+                            }
+                            NavigationPage.SETTINGS -> Layout { screenWidth ->
+                                SettingsPage(
+                                    screenWidth = screenWidth
+                                )
+                            }
+                            NavigationPage.HOME, null -> {
+                                // Default to game content (Home)
+                                CasinoGameContent(
+                                    game = game,
+                                    viewModel = viewModel,
+                                    currentPlayer = currentPlayer,
+                                    feedback = viewModel.feedback,
+                                    currentPage = currentPage,
+                                    feedbackNotificationEnabled = feedbackNotificationEnabled,
+                                    feedbackDurationSeconds = feedbackDurationSeconds,
+                                    drawerState = drawerState
+                                )
+                            }
                         }
-                    }
-                    NavigationPage.STATISTICS -> Layout { screenWidth ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(CasinoTheme.PageBackground)
-                        ) {
-                            StatisticsPage(
-                                scenarioStats = viewModel.getScenarioStats(),
-                                screenWidth = screenWidth
-                            )
-                        }
-                    }
-                    NavigationPage.SETTINGS -> Layout { screenWidth ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(CasinoTheme.PageBackground)
-                        ) {
-                            SettingsPage(
-                                screenWidth = screenWidth
-                            )
-                        }
-                    }
-                    NavigationPage.HOME, null -> {
-                        // Default to game content (Home)
-                        CasinoGameContent(
-                            game = game,
-                            viewModel = viewModel,
-                            currentPlayer = currentPlayer,
-                            feedback = viewModel.feedback,
-                            currentPage = currentPage,
-                            feedbackNotificationEnabled = feedbackNotificationEnabled,
-                            feedbackDurationSeconds = feedbackDurationSeconds,
-                            drawerState = drawerState
-                        )
                     }
                 }
             }

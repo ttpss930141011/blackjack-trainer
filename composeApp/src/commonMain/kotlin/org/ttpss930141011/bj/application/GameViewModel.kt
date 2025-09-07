@@ -223,6 +223,17 @@ class GameViewModel(
     }
     
     /**
+     * Get recent decisions for current rule set only (Phase 3).
+     * Clean rule-filtered history for UI consumption.
+     */
+    fun getRecentDecisionsForCurrentRule(limit: Int = 50): List<DecisionRecord> {
+        val currentRules = currentGameRules ?: return emptyList()
+        return learningRecorder.getRecentDecisions(limit * 2) // Get more to filter
+            .filter { it.gameRules == currentRules }
+            .take(limit)
+    }
+    
+    /**
      * Get scenario statistics from the learning repository
      */
     fun getScenarioStats(): Map<String, org.ttpss930141011.bj.infrastructure.ScenarioStats> {

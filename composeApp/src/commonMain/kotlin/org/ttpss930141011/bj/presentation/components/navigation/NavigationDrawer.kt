@@ -2,11 +2,15 @@ package org.ttpss930141011.bj.presentation.components.navigation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import org.ttpss930141011.bj.presentation.design.CasinoTheme
 
 enum class NavigationPage {
     HOME, STRATEGY, HISTORY, STATISTICS, SETTINGS
@@ -15,7 +19,7 @@ enum class NavigationPage {
 data class NavigationItem(
     val title: String,
     val page: NavigationPage?,
-    val isSpecial: Boolean = false // For spacers or special items
+    val icon: String
 )
 
 @Composable
@@ -28,20 +32,17 @@ fun GameNavigationDrawer(
     // Use fixed width for multiplatform compatibility
     val drawerWidth = 280.dp
     
-    val mainNavigationItems = listOf(
-        NavigationItem("Home", NavigationPage.HOME),
-        NavigationItem("Strategy Chart", NavigationPage.STRATEGY),
-        NavigationItem("Decision History", NavigationPage.HISTORY),
-        NavigationItem("Statistics", NavigationPage.STATISTICS)
-    )
-    
-    val settingsItems = listOf(
-        NavigationItem("Settings", NavigationPage.SETTINGS)
+    val allNavigationItems = listOf(
+        NavigationItem("Home", NavigationPage.HOME, "🏠"),
+        NavigationItem("Strategy Chart", NavigationPage.STRATEGY, "📊"),
+        NavigationItem("Decision History", NavigationPage.HISTORY, "📝"),
+        NavigationItem("Statistics", NavigationPage.STATISTICS, "📈"),
+        NavigationItem("Settings", NavigationPage.SETTINGS, "⚙️")
     )
     
     Surface(
         modifier = modifier.width(drawerWidth),
-        color = MaterialTheme.colorScheme.surface
+        color = CasinoTheme.NavigationBackground  // Dark green background
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -52,33 +53,14 @@ fun GameNavigationDrawer(
                 DrawerHeader()
             }
             
-            // Main Navigation Items
-            item {
-                NavigationSection(
-                    title = "Navigation",
-                    items = mainNavigationItems,
-                    currentPage = currentPage,
-                    onItemClick = { page ->
-                        page?.let { onPageSelected(it) }
-                        onCloseDrawer()
-                    }
-                )
-            }
-            
-            // Spacer
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            
-            // Settings Section
-            item {
-                NavigationSection(
-                    title = "Settings",
-                    items = settingsItems,
-                    currentPage = currentPage,
-                    onItemClick = { page ->
-                        page?.let { onPageSelected(it) }
-                        onCloseDrawer()
+            // All Navigation Items (no sections)
+            items(allNavigationItems) { item ->
+                NavigationItem(
+                    item = item,
+                    selected = currentPage == item.page,
+                    onClick = { 
+                        item.page?.let { onPageSelected(it) }
+                        onCloseDrawer() 
                     }
                 )
             }
@@ -89,54 +71,18 @@ fun GameNavigationDrawer(
 @Composable
 private fun DrawerHeader() {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 24.dp)
+        modifier = Modifier.padding(16.dp)
     ) {
         Text(
-            text = "Blackjack Strategy Trainer",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
+            text = "🎲 Blackjack Trainer",
+            style = MaterialTheme.typography.titleLarge,
+            color = Color.White,
+            fontWeight = FontWeight.Bold
         )
-        
-        Text(
-            text = "Learn Basic Strategy",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            modifier = Modifier.padding(top = 4.dp)
+        HorizontalDivider(
+            modifier = Modifier.padding(top = 16.dp),
+            color = Color.White.copy(alpha = 0.3f)
         )
-    }
-    
-    HorizontalDivider(
-        modifier = Modifier.padding(horizontal = 16.dp),
-        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-    )
-}
-
-@Composable
-private fun NavigationSection(
-    title: String,
-    items: List<NavigationItem>,
-    currentPage: NavigationPage,
-    onItemClick: (NavigationPage?) -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-        )
-        
-        items.forEach { item ->
-            NavigationItem(
-                item = item,
-                selected = item.page?.let { currentPage == it } ?: false,
-                onClick = { onItemClick(item.page) }
-            )
-        }
     }
 }
 
@@ -147,9 +93,28 @@ private fun NavigationItem(
     onClick: () -> Unit
 ) {
     NavigationDrawerItem(
-        label = { Text(text = item.title) },
+        icon = {
+            Text(
+                text = item.icon,
+                fontSize = 20.sp
+            )
+        },
+        label = { 
+            Text(
+                text = item.title,
+                color = if (selected) Color.White else CasinoTheme.NavigationUnselected,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+            )
+        },
         selected = selected,
         onClick = onClick,
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+        colors = NavigationDrawerItemDefaults.colors(
+            selectedContainerColor = CasinoTheme.NavigationSelected,
+            selectedTextColor = Color.White,
+            unselectedTextColor = CasinoTheme.NavigationUnselected,
+            selectedIconColor = Color.White,
+            unselectedIconColor = CasinoTheme.NavigationUnselected
+        )
     )
 }

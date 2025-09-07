@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.ttpss930141011.bj.domain.valueobjects.DecisionRecord
 import org.ttpss930141011.bj.domain.valueobjects.GameRules
-import org.ttpss930141011.bj.infrastructure.ScenarioStats
+import org.ttpss930141011.bj.domain.valueobjects.ScenarioErrorStat
 import org.ttpss930141011.bj.presentation.layout.Layout
 import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 import org.ttpss930141011.bj.presentation.design.Tokens
@@ -23,7 +23,7 @@ import org.ttpss930141011.bj.presentation.design.Tokens
 fun GameWithHistoryDrawer(
     gameRules: GameRules,
     decisionHistory: List<DecisionRecord>,
-    scenarioStats: Map<String, ScenarioStats>,
+    scenarioStats: List<ScenarioErrorStat>,
     onClearHistory: () -> Unit,
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     modifier: Modifier = Modifier,
@@ -85,7 +85,7 @@ fun HistoryDrawerButton(
 fun HistoryDrawerContent(
     gameRules: GameRules,
     decisionHistory: List<DecisionRecord>,
-    scenarioStats: Map<String, ScenarioStats>,
+    scenarioStats: List<ScenarioErrorStat>,
     onClearHistory: () -> Unit,
     screenWidth: ScreenWidth
 ) {

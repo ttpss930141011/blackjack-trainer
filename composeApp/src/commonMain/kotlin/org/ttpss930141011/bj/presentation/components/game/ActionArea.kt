@@ -118,13 +118,16 @@ private fun ChipSelection(
         // Use fixed width to ensure scrolling works on mobile (7 chips * 80dp + spacing ≈ 624dp)
         val mobileContentWidth = Tokens.Size.chipDiameter * 8 // Buffer for spacing and padding
         
-        Box(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
             Row(
                 modifier = Modifier
                     .width(mobileContentWidth)
                     .horizontalScroll(scrollState)
                     .padding(horizontal = Tokens.Space.s),
-                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s),
+                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 availableChips.forEach { chipValue ->

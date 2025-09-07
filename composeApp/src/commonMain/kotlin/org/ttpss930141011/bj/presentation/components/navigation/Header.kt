@@ -44,7 +44,7 @@ fun Header(
         else -> {
             // Minimal header for other pages
             BreakpointLayout(
-                compact = { MinimalHeader(currentPage) },
+                compact = { MinimalHeader(currentPage, drawerButton) },
                 expanded = { MinimalExpandedHeader(currentPage, drawerButton) }
             )
         }
@@ -56,24 +56,14 @@ private fun HomeCompactHeader(
     balance: Int,
 ) {
     Layout { screenWidth ->
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(CasinoTheme.HeaderBackground)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            contentAlignment = Alignment.Center
         ) {
-            // 左側：空間保留對稱
-            Box(modifier = Modifier.weight(1f))
-            
-            // 中間：現代化餘額顯示
-            Box(
-                modifier = Modifier.weight(2f),
-                contentAlignment = Alignment.Center
-            ) {
-                ModernBalanceBadge(balance, screenWidth)
-            }
+            ModernBalanceBadge(balance, screenWidth)
         }
     }
 }
@@ -125,20 +115,40 @@ private fun HomeExpandedHeader(
 }
 
 @Composable
-private fun MinimalHeader(currentPage: NavigationPage?) {
-    Row(
+private fun MinimalHeader(
+    currentPage: NavigationPage?,
+    drawerButton: (@Composable () -> Unit)? = null
+) {
+    // Match Home page header style with proper background and padding
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(CasinoTheme.NavigationBackground)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .background(CasinoTheme.HeaderBackground)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = getPageTitle(currentPage),
-            style = MaterialTheme.typography.titleMedium,
-            color = Color.White,
-            fontWeight = FontWeight.Medium
-        )
+        // Hamburger menu positioned on the left
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left: Hamburger menu
+            Box(modifier = Modifier.width(48.dp)) {
+                drawerButton?.invoke()
+            }
+            
+            // Center: Page title
+            Text(
+                text = getPageTitle(currentPage),
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+            
+            // Right: Balance space for symmetry  
+            Box(modifier = Modifier.width(48.dp))
+        }
     }
 }
 
@@ -147,35 +157,47 @@ private fun MinimalExpandedHeader(
     currentPage: NavigationPage?,
     drawerButton: (@Composable () -> Unit)?
 ) {
+    // Match Home page header style with proper background and padding
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(CasinoTheme.NavigationBackground)
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+            .background(CasinoTheme.HeaderBackground)
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        // Left: Hamburger menu
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.CenterStart
         ) {
             drawerButton?.invoke()
+        }
+        
+        // Center: Page title with icon (matching Home page style)
+        Box(
+            modifier = Modifier.weight(2f),
+            contentAlignment = Alignment.Center
+        ) {
             Text(
                 text = getPageTitle(currentPage),
                 style = MaterialTheme.typography.titleLarge,
                 color = Color.White,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Bold
             )
         }
+        
+        // Right: Empty space for symmetry (matching Home page layout)
+        Box(modifier = Modifier.weight(1f))
     }
 }
 
 private fun getPageTitle(page: NavigationPage?): String {
     return when (page) {
-        NavigationPage.STRATEGY -> "Strategy Guide"
-        NavigationPage.HISTORY -> "Game History"
-        NavigationPage.STATISTICS -> "Statistics"
-        NavigationPage.SETTINGS -> "Settings"
+        NavigationPage.STRATEGY -> "📊 Strategy Guide"
+        NavigationPage.HISTORY -> "📝 Game History"
+        NavigationPage.STATISTICS -> "📈 Statistics"
+        NavigationPage.SETTINGS -> "⚙️ Settings"
         else -> ""
     }
 }
@@ -198,7 +220,7 @@ private fun ModernBalanceBadge(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1B5E20).copy(alpha = 0.9f)
+            containerColor = CasinoTheme.BalanceBadgeBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -214,7 +236,7 @@ private fun ModernBalanceBadge(
             Text(
                 text = "$$balance",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color(0xFF81C784),
+                color = Color.White,
                 fontWeight = FontWeight.Bold
             )
         }

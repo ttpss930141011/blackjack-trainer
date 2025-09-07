@@ -13,7 +13,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
-import org.ttpss930141011.bj.infrastructure.ScenarioStats
+import org.ttpss930141011.bj.domain.valueobjects.ScenarioErrorStat
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 
@@ -23,7 +23,7 @@ enum class StatsSortBy {
 
 @Composable
 fun StatisticsSection(
-    scenarioStats: Map<String, ScenarioStats>,
+    scenarioStats: List<ScenarioErrorStat>,
     screenWidth: ScreenWidth,
     modifier: Modifier = Modifier
 ) {
@@ -31,9 +31,9 @@ fun StatisticsSection(
     
     val sortedStats = remember(scenarioStats, sortBy) {
         when (sortBy) {
-            StatsSortBy.ERROR_RATE -> scenarioStats.values.sortedByDescending { it.errorRate }
-            StatsSortBy.TOTAL_ATTEMPTS -> scenarioStats.values.sortedByDescending { it.totalAttempts }
-            StatsSortBy.SCENARIO_NAME -> scenarioStats.values.sortedBy { it.scenario }
+            StatsSortBy.ERROR_RATE -> scenarioStats.sortedByDescending { it.errorRate }
+            StatsSortBy.TOTAL_ATTEMPTS -> scenarioStats.sortedByDescending { it.totalAttempts }
+            StatsSortBy.SCENARIO_NAME -> scenarioStats.sortedBy { it.baseScenarioKey }
         }
     }
     
@@ -72,7 +72,7 @@ fun StatisticsSection(
 
 @Composable
 fun StatisticsSummary(
-    scenarioStats: Map<String, ScenarioStats>,
+    scenarioStats: List<ScenarioErrorStat>,
     screenWidth: ScreenWidth
 ) {
     Card(
@@ -92,13 +92,13 @@ fun StatisticsSummary(
             )
             
             if (scenarioStats.isNotEmpty()) {
-                val totalDecisions = scenarioStats.values.sumOf { it.totalAttempts }
-                val totalCorrect = scenarioStats.values.sumOf { it.correctAttempts }
+                val totalDecisions = scenarioStats.sumOf { it.totalAttempts }
+                val totalCorrect = scenarioStats.sumOf { it.correctCount }
                 val overallAccuracy = if (totalDecisions > 0) {
                     (totalCorrect * 100) / totalDecisions
                 } else 0
                 
-                val needsPracticeCount = scenarioStats.values.count { it.needsPractice }
+                val needsPracticeCount = scenarioStats.count { it.needsPractice }
                 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -304,7 +304,7 @@ fun StatsTableHeader(screenWidth: ScreenWidth) {
 
 @Composable
 fun StatsTableRow(
-    stat: ScenarioStats,
+    stat: ScenarioErrorStat,
     screenWidth: ScreenWidth
 ) {
     Card(
@@ -332,7 +332,7 @@ fun StatsTableRow(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = stat.scenario,
+                    text = stat.baseScenarioKey,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -354,7 +354,7 @@ fun StatsTableRow(
             )
             
             // Wrong count
-            val wrongCount = stat.totalAttempts - stat.correctAttempts
+            val wrongCount = stat.errorCount
             Text(
                 text = wrongCount.toString(),
                 style = MaterialTheme.typography.bodyMedium,
