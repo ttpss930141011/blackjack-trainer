@@ -76,7 +76,8 @@ class GameViewModel(
                 handBeforeAction = result.handBeforeAction,
                 dealerUpCard = currentGame.dealer.upCard!!,
                 playerAction = action,
-                isCorrect = feedback.isCorrect
+                isCorrect = feedback.isCorrect,
+                gameRules = currentGame.rules
             )
             
             val playerDecision = PlayerDecision(action, feedback.isCorrect)

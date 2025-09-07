@@ -28,13 +28,15 @@ class LearningRecorder(
         handBeforeAction: PlayerHand,
         dealerUpCard: Card,
         playerAction: Action,
-        isCorrect: Boolean
+        isCorrect: Boolean,
+        gameRules: GameRules
     ): DecisionRecord {
         val decisionRecord = DecisionRecord(
             handCards = handBeforeAction.cards,
             dealerUpCard = dealerUpCard,
             playerAction = playerAction,
-            isCorrect = isCorrect
+            isCorrect = isCorrect,
+            gameRules = gameRules
         )
         
         repository.save(decisionRecord)
@@ -52,7 +54,8 @@ class LearningRecorder(
     fun recordDecision(
         game: Game,
         playerAction: Action,
-        isCorrect: Boolean
+        isCorrect: Boolean,
+        gameRules: GameRules
     ): DecisionRecord {
         require(game.currentHand != null) { "No current hand to record decision for" }
         require(game.dealer.upCard != null) { "Dealer up card not available" }
@@ -61,7 +64,8 @@ class LearningRecorder(
             handBeforeAction = game.currentHand,
             dealerUpCard = game.dealer.upCard,
             playerAction = playerAction,
-            isCorrect = isCorrect
+            isCorrect = isCorrect,
+            gameRules = gameRules
         )
     }
     
