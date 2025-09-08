@@ -131,3 +131,7 @@ compose.desktop {
         }
     }
 }
+
+room {
+    schemaDirectory("$projectDir/schemas")
+}
