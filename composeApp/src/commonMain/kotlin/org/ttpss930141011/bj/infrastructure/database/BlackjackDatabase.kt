@@ -1,32 +1,33 @@
 package org.ttpss930141011.bj.infrastructure.database
 
+import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import org.ttpss930141011.bj.infrastructure.database.dao.SessionStatsDao
+import org.ttpss930141011.bj.infrastructure.database.dao.GameSessionDao
 import org.ttpss930141011.bj.infrastructure.database.entities.GameSessionEntity
-import org.ttpss930141011.bj.infrastructure.database.entities.DecisionRecordEntity
 
 /**
- * Room Database class for Blackjack Strategy Trainer
+ * Room database for blackjack strategy trainer.
+ *
+ * Following official Android Room KMP documentation:
+ * https://developer.android.com/kotlin/multiplatform/room#defining-database
  */
-@Database(
-    entities = [
-        GameSessionEntity::class,
-        DecisionRecordEntity::class
-    ],
-    version = 1,
-    exportSchema = false
-)
+@Database(entities = [GameSessionEntity::class], version = 1, exportSchema = true)
+@ConstructedBy(BlackjackDatabaseConstructor::class)
 abstract class BlackjackDatabase : RoomDatabase() {
-    abstract fun sessionStatsDao(): SessionStatsDao
+    abstract fun gameSessionDao(): GameSessionDao
 }
 
-/**
- * Get database instance with proper configuration
- */
+// The Room compiler generates the `actual` implementations.
+@Suppress("KotlinNoActualForExpect")
+expect object BlackjackDatabaseConstructor : RoomDatabaseConstructor<BlackjackDatabase> {
+    override fun initialize(): BlackjackDatabase
+}
+
 fun getRoomDatabase(
     builder: RoomDatabase.Builder<BlackjackDatabase>
 ): BlackjackDatabase {

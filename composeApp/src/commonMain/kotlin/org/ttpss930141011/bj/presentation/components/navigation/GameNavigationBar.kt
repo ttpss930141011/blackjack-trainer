@@ -1,5 +1,7 @@
 package org.ttpss930141011.bj.presentation.components.navigation
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
@@ -33,9 +35,9 @@ fun GameNavigationBar(
             selected = currentPage == NavigationPage.STRATEGY,
             onClick = { onPageSelected(NavigationPage.STRATEGY) },
             icon = {
-                NavigationIcon(
-                    text = "📋",
-                    selected = currentPage == NavigationPage.STRATEGY
+                Icon(
+                    imageVector = Icons.Filled.PlaylistPlay,
+                    contentDescription = NAV_LABEL_STRATEGY
                 )
             },
             label = {
@@ -58,9 +60,9 @@ fun GameNavigationBar(
             selected = currentPage == NavigationPage.HISTORY,
             onClick = { onPageSelected(NavigationPage.HISTORY) },
             icon = {
-                NavigationIcon(
-                    text = "📖",
-                    selected = currentPage == NavigationPage.HISTORY
+                Icon(
+                    imageVector = Icons.Filled.History,
+                    contentDescription = NAV_LABEL_HISTORY
                 )
             },
             label = {
@@ -83,9 +85,9 @@ fun GameNavigationBar(
             selected = currentPage == NavigationPage.HOME,
             onClick = { onPageSelected(NavigationPage.HOME) },
             icon = {
-                NavigationIcon(
-                    text = "🏠",
-                    selected = currentPage == NavigationPage.HOME
+                Icon(
+                    imageVector = Icons.Filled.Home,
+                    contentDescription = NAV_LABEL_HOME
                 )
             },
             label = {
@@ -108,9 +110,9 @@ fun GameNavigationBar(
             selected = currentPage == NavigationPage.STATISTICS,
             onClick = { onPageSelected(NavigationPage.STATISTICS) },
             icon = {
-                NavigationIcon(
-                    text = "📊",
-                    selected = currentPage == NavigationPage.STATISTICS
+                Icon(
+                    imageVector = Icons.Filled.BarChart,
+                    contentDescription = NAV_LABEL_STATISTICS
                 )
             },
             label = {
@@ -133,9 +135,9 @@ fun GameNavigationBar(
             selected = currentPage == NavigationPage.SETTINGS,
             onClick = { onPageSelected(NavigationPage.SETTINGS) },
             icon = {
-                NavigationIcon(
-                    text = "⚙️",
-                    selected = currentPage == NavigationPage.SETTINGS
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = NAV_LABEL_SETTINGS
                 )
             },
             label = {
@@ -155,16 +157,6 @@ fun GameNavigationBar(
     }
 }
 
-@Composable
-private fun NavigationIcon(
-    text: String,
-    selected: Boolean
-) {
-    Text(
-        text = text,
-        fontSize = if (selected) 22.sp else 20.sp
-    )
-}
 
 @Composable  
 private fun NavigationLabel(

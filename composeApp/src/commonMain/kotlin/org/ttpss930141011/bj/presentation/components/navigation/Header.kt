@@ -200,10 +200,10 @@ private fun MinimalExpandedHeader(
 
 private fun getPageTitle(page: NavigationPage?): String {
     return when (page) {
-        NavigationPage.STRATEGY -> "📊 Strategy Guide"
-        NavigationPage.HISTORY -> "📝 Game History"
-        NavigationPage.STATISTICS -> "📈 Statistics"
-        NavigationPage.SETTINGS -> "⚙️ Settings"
+        NavigationPage.STRATEGY -> "Strategy Guide"
+        NavigationPage.HISTORY -> "Game History"
+        NavigationPage.STATISTICS -> "Statistics"
+        NavigationPage.SETTINGS -> "Settings"
         else -> ""
     }
 }
@@ -212,7 +212,7 @@ private fun getPageTitle(page: NavigationPage?): String {
 @Composable
 private fun ModernTitle() {
     Text(
-        text = "🎲 Blackjack Trainer",
+        text = "Blackjack Trainer",
         style = MaterialTheme.typography.titleLarge,
         color = Color.White,
         fontWeight = FontWeight.Bold
@@ -235,10 +235,6 @@ private fun ModernBalanceBadge(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(
-                text = "💰",
-                fontSize = 16.sp
-            )
             Text(
                 text = "$$balance",
                 style = MaterialTheme.typography.titleMedium,
@@ -266,8 +262,10 @@ private fun RuleInfoBadge(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
-                text = "📋",
-                fontSize = 14.sp
+                text = "•",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = FontWeight.Bold
             )
             Column {
                 Text(

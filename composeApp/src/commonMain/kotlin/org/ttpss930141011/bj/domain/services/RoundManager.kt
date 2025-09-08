@@ -25,7 +25,7 @@ class RoundManager {
         val (playerCards, tempDeck1) = game.deck.dealCards(2)
         val (dealerCards, newDeck) = tempDeck1.dealCards(2)
         
-        val playerHand = PlayerHand.initial(playerCards, game.currentBet)
+        val playerHand = PlayerHand.initial(playerCards, game.betState.amount)
         val playerHands = listOf(playerHand)
         
         val newDealer = game.dealer.dealInitialCards(

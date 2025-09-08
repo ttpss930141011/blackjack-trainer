@@ -17,11 +17,12 @@ enum class RoundOutcome { WIN, LOSS, PUSH, UNKNOWN }
  * Encapsulates player management, betting logic, hand progression, and game phase transitions.
  * Delegates complex operations to domain services while maintaining invariants.
  * 
+ * Enhanced with BetState support for better UX while maintaining backward compatibility.
+ * 
  * @property player Currently active player (null if no player joined)
  * @property playerHands List of player hands (multiple when splitting)
  * @property currentHandIndex Index of the hand currently being played
- * @property pendingBet Uncommitted bet amount during betting phase
- * @property currentBet Committed bet amount after dealing starts
+ * @property betState Simple betting state with amount and commit status
  * @property dealer Dealer entity with cards and game logic
  * @property deck Current deck state for card dealing
  * @property rules Game rules configuration affecting gameplay
@@ -32,8 +33,7 @@ data class Game(
     val player: Player?,
     val playerHands: List<PlayerHand>,
     val currentHandIndex: Int,
-    val pendingBet: Int = 0,
-    val currentBet: Int,
+    val betState: BetState = BetState(),
     val dealer: Dealer,
     val deck: Deck,
     val rules: GameRules,
@@ -51,37 +51,29 @@ data class Game(
                 player = null,
                 playerHands = emptyList(),
                 currentHandIndex = 0,
-                pendingBet = 0,
-                currentBet = 0,
+                betState = BetState(),
                 dealer = Dealer(),
                 deck = Deck.shuffled(),
-                rules = rules
-            )
-        }
-        
-        /**
-         * Creates a game with predetermined deck for testing.
-         * Identical to create() except uses the provided test deck.
-         */
-        fun createForTest(rules: GameRules, testDeck: Deck): Game {
-            return Game(
-                player = null,
-                playerHands = emptyList(),
-                currentHandIndex = 0,
-                pendingBet = 0,
-                currentBet = 0,
-                dealer = Dealer(),
-                deck = testDeck,
                 rules = rules
             )
         }
     }
     
     val hasPlayer: Boolean = player != null
-    val hasPendingBet: Boolean = pendingBet > 0
-    val hasCommittedBet: Boolean = currentBet > 0
-    val hasBet: Boolean = currentBet > 0
-    val canDealCards: Boolean = hasPendingBet && phase == GamePhase.WAITING_FOR_BETS
+    
+    // Backward compatibility properties (deprecated)
+    @Deprecated("Use betState.isPending instead")
+    val hasPendingBet: Boolean = betState.isPending
+    
+    @Deprecated("Use betState.hasCommittedBet instead") 
+    val hasCommittedBet: Boolean = betState.hasCommittedBet
+    
+    @Deprecated("Use betState.hasCommittedBet instead")
+    val hasBet: Boolean = betState.hasCommittedBet
+    
+    // New preferred properties
+    val hasAnyBet: Boolean = betState.hasCommittedBet || betState.isPending
+    val canDealCards: Boolean = betState.isPending && phase == GamePhase.WAITING_FOR_BETS
     val currentHand: PlayerHand? = playerHands.getOrNull(currentHandIndex)
     val canAct: Boolean = hasPlayer && currentHand != null && currentHand.status == HandStatus.ACTIVE
     val allHandsComplete: Boolean = playerHands.all { it.isCompleted }
@@ -120,9 +112,11 @@ data class Game(
         require(player!!.chips >= amount) { "Insufficient chips" }
         
         val updatedPlayer = player.deductChips(amount)
+        val committedBet = BetState(amount, isCommitted = true)
+        
         return copy(
             player = updatedPlayer,
-            currentBet = amount
+            betState = committedBet
         )
     }
     
@@ -137,15 +131,17 @@ data class Game(
         require(hasPlayer) { "No player in game" }
         require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear bet during betting phase" }
         
-        val updatedPlayer = if (currentBet > 0) {
-            player!!.addChips(currentBet)
+        val amountToRestore = betState.amount
+        
+        val updatedPlayer = if (amountToRestore > 0) {
+            player!!.addChips(amountToRestore)
         } else {
             player!!
         }
         
         return copy(
             player = updatedPlayer,
-            currentBet = 0
+            betState = BetState()
         )
     }
     
@@ -161,11 +157,10 @@ data class Game(
         require(hasPlayer) { "No player in game" }
         require(phase == GamePhase.WAITING_FOR_BETS) { "Can only add to pending bet during betting phase" }
         require(amount > 0) { "Amount must be positive" }
-        require(player!!.chips >= (pendingBet + amount)) { 
-            "Insufficient chips for additional bet" 
-        }
+        require(player!!.chips >= (betState.amount + amount)) { "Insufficient chips" }
         
-        return copy(pendingBet = pendingBet + amount)
+        val newBetState = betState.add(amount)
+        return copy(betState = newBetState)
     }
     
     /**
@@ -176,7 +171,8 @@ data class Game(
      */
     fun clearPendingBet(): Game {
         require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear pending bet during betting phase" }
-        return copy(pendingBet = 0)
+        
+        return copy(betState = betState.clear())
     }
     
     /**
@@ -188,13 +184,14 @@ data class Game(
     fun commitPendingBet(): Game {
         require(hasPendingBet) { "No pending bet to commit" }
         require(hasPlayer) { "No player in game" }
-        require(player!!.chips >= pendingBet) { "Insufficient chips" }
+        require(betState.isAffordable(player!!.chips)) { "Insufficient chips" }
         
-        val updatedPlayer = player.deductChips(pendingBet)
+        val updatedPlayer = player.deductChips(betState.amount)
+        val committedBetState = betState.commit()
+        
         return copy(
             player = updatedPlayer,
-            currentBet = pendingBet,
-            pendingBet = 0
+            betState = committedBetState
         )
     }
     
@@ -222,7 +219,7 @@ data class Game(
             )
         }
         
-        if (player!!.chips < (pendingBet + chipValue.value)) {
+        if (player!!.chips < (betState.amount + chipValue.value)) {
             return AddChipResult(
                 success = false,
                 errorMessage = "Insufficient chips",
@@ -270,6 +267,24 @@ data class Game(
      */
     fun settleRound(): Game = SettlementService().settleRound(this)
     
+    // === Simplified Betting Methods ===
+    
+    /**
+     * Adds chip value to the current bet (simplified version).
+     * 
+     * @param chipValue Chip denomination to add
+     * @param count Number of chips to add (default 1)
+     * @return Updated Game with amount added to bet
+     * @throws IllegalArgumentException if insufficient chips or invalid state
+     */
+    fun addChipToBet(chipValue: ChipValue, count: Int = 1): Game {
+        return addToPendingBet(chipValue.value * count)
+    }
+    
+    
+    
+    
+    
     /**
      * Resets game state for a new round while preserving the current player.
      * Clears hands, bets, and resets phase to betting.
@@ -280,8 +295,7 @@ data class Game(
         return copy(
             playerHands = emptyList(),
             currentHandIndex = 0,
-            pendingBet = 0,
-            currentBet = 0,
+            betState = BetState(),
             dealer = Dealer(),
             deck = Deck.shuffled(),
             phase = GamePhase.WAITING_FOR_BETS,

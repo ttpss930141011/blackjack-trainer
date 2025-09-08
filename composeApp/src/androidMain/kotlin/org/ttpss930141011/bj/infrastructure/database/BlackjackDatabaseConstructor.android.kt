@@ -4,13 +4,11 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-/**
- * Android platform-specific database builder
- */
 fun getDatabaseBuilder(context: Context): RoomDatabase.Builder<BlackjackDatabase> {
-    val dbFile = context.getDatabasePath("blackjack_room.db")
+    val appContext = context.applicationContext
+    val dbFile = appContext.getDatabasePath("blackjack_room.db")
     return Room.databaseBuilder<BlackjackDatabase>(
-        context = context,
+        context = appContext,
         name = dbFile.absolutePath
     )
 }

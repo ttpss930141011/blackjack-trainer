@@ -8,6 +8,8 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import org.ttpss930141011.bj.domain.entities.Game
 import org.ttpss930141011.bj.domain.entities.Player
+import org.ttpss930141011.bj.domain.valueobjects.BetState
+import org.ttpss930141011.bj.domain.enums.ChipValue
 import org.ttpss930141011.bj.domain.entities.Dealer
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
@@ -23,12 +25,18 @@ class RoundManagerTest {
         deckCards: List<Card> = createTestDeck(),
         rules: GameRules = GameRules()
     ): Game {
+        // Create BetState if bet is committed
+        val betState = if (hasCommittedBet) {
+            BetState(amount = currentBet, isCommitted = true)
+        } else {
+            BetState()
+        }
+        
         return Game(
             player = Player(id = "test-player", chips = 1000),
             playerHands = emptyList(),
             currentHandIndex = 0,
-            pendingBet = 0,
-            currentBet = if (hasCommittedBet) currentBet else 0,
+            betState = betState,
             dealer = Dealer(),
             deck = Deck.createTestDeck(deckCards),
             rules = rules,

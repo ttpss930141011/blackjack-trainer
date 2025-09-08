@@ -19,9 +19,10 @@ class GameTest {
         // When
         val game = Game.create(rules)
         
-        // Then
-        assertEquals(0, game.pendingBet)
-        assertEquals(0, game.currentBet)
+        // Then - Using BetState
+        assertEquals(0, game.betState.amount)
+        assertFalse(game.betState.hasCommittedBet)
+        
         assertEquals(GamePhase.WAITING_FOR_BETS, game.phase)
         assertFalse(game.hasPlayer)
         assertFalse(game.hasPendingBet)
@@ -52,9 +53,11 @@ class GameTest {
         // When
         val updatedGame = game.addToPendingBet(50)
         
-        // Then
-        assertEquals(150, updatedGame.pendingBet)
-        assertEquals(0, updatedGame.currentBet)
+        // Then - Using BetState
+        assertEquals(150, updatedGame.betState.amount)
+        assertTrue(updatedGame.betState.isPending)
+        assertFalse(updatedGame.betState.hasCommittedBet)
+        
         assertEquals(1000, updatedGame.player?.chips) // Chips not deducted yet
         assertTrue(updatedGame.hasPendingBet)
         assertTrue(updatedGame.canDealCards)
@@ -81,8 +84,10 @@ class GameTest {
         // When
         val clearedGame = game.clearPendingBet()
         
-        // Then
-        assertEquals(0, clearedGame.pendingBet)
+        // Then - Using BetState
+        assertEquals(0, clearedGame.betState.amount)
+        assertFalse(clearedGame.betState.isPending)
+        
         assertFalse(clearedGame.hasPendingBet)
         assertFalse(clearedGame.canDealCards)
     }
@@ -97,9 +102,11 @@ class GameTest {
         // When
         val committedGame = game.commitPendingBet()
         
-        // Then
-        assertEquals(0, committedGame.pendingBet)
-        assertEquals(300, committedGame.currentBet)
+        // Then - Using BetState
+        assertEquals(300, committedGame.betState.amount)
+        assertTrue(committedGame.betState.hasCommittedBet)
+        assertFalse(committedGame.betState.isPending)
+        
         assertEquals(700, committedGame.player?.chips) // 1000 - 300 = 700
         assertFalse(committedGame.hasPendingBet)
         assertTrue(committedGame.hasCommittedBet)
@@ -160,9 +167,11 @@ class GameTest {
         // When
         val newRoundGame = game.resetForNewRound()
         
-        // Then
-        assertEquals(0, newRoundGame.pendingBet)
-        assertEquals(0, newRoundGame.currentBet)
+        // Then - Using BetState
+        assertEquals(0, newRoundGame.betState.amount)
+        assertFalse(newRoundGame.betState.isPending)
+        assertFalse(newRoundGame.betState.hasCommittedBet)
+        
         assertEquals(GamePhase.WAITING_FOR_BETS, newRoundGame.phase)
         assertFalse(newRoundGame.hasPendingBet)
         assertFalse(newRoundGame.hasCommittedBet)
@@ -210,7 +219,7 @@ class GameTest {
             .addToPendingBet(25)
         
         // Then
-        assertEquals(200, finalGame.pendingBet)
+        assertEquals(200, finalGame.betState.amount)
         assertEquals(1000, finalGame.player?.chips) // Still not deducted
     }
     
@@ -226,7 +235,7 @@ class GameTest {
         val clearedGame = game.clearPendingBet()
         
         // Then
-        assertEquals(0, clearedGame.pendingBet)
+        assertEquals(0, clearedGame.betState.amount)
         assertEquals(1000, clearedGame.player?.chips) // No chips should be affected
     }
     
@@ -241,7 +250,7 @@ class GameTest {
         // Then
         assertTrue(result.success)
         assertEquals(null, result.errorMessage)
-        assertEquals(100, result.updatedGame.pendingBet)
+        assertEquals(100, result.updatedGame.betState.amount)
         assertEquals(1000, result.updatedGame.player?.chips) // Chips not deducted yet
     }
     
@@ -271,7 +280,7 @@ class GameTest {
         // Then
         assertFalse(result.success)
         assertEquals("Insufficient chips", result.errorMessage)
-        assertEquals(0, result.updatedGame.pendingBet) // No change in pending bet
+        assertEquals(0, result.updatedGame.betState.amount) // No change in pending bet
     }
     
     @Test
@@ -287,7 +296,7 @@ class GameTest {
         // Then
         assertTrue(result.success)
         assertEquals(null, result.errorMessage)
-        assertEquals(150, result.updatedGame.pendingBet)
+        assertEquals(150, result.updatedGame.betState.amount)
     }
     
     @Test
@@ -303,6 +312,6 @@ class GameTest {
         // Then
         assertFalse(result.success)
         assertEquals("Insufficient chips", result.errorMessage)
-        assertEquals(950, result.updatedGame.pendingBet) // Pending bet unchanged
+        assertEquals(950, result.updatedGame.betState.amount) // Bet unchanged
     }
 }

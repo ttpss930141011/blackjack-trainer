@@ -43,11 +43,15 @@ fun ActionArea(
                 availableChips = ChipImageMapper.standardChipValues,
                 playerChips = game.player?.chips ?: 0,
                 currentBet = viewModel.currentBetAmount,
+                lastBetAmount = viewModel.lastBetAmount,
                 onChipSelected = { chipValue ->
                     ChipValue.fromValue(chipValue)?.let { viewModel.addChipToBet(it) }
                 },
                 onDealCards = {
                     viewModel.dealCards()
+                },
+                onRepeatLastBet = {
+                    viewModel.repeatLastBet()
                 },
                 modifier = modifier
             )
@@ -92,11 +96,22 @@ private fun ChipSelection(
     availableChips: List<Int>,
     playerChips: Int,
     currentBet: Int,
+    lastBetAmount: Int?,
     onChipSelected: (Int) -> Unit,
     onDealCards: () -> Unit,
+    onRepeatLastBet: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    
+    // Auto-apply last bet when entering betting phase
+    LaunchedEffect(lastBetAmount, currentBet) {
+        if (lastBetAmount != null && lastBetAmount > 0 && currentBet == 0) {
+            // Only auto-apply if user hasn't started betting manually
+            onRepeatLastBet()
+        }
+    }
+    
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Tokens.Space.l)

@@ -1,5 +1,6 @@
 package org.ttpss930141011.bj.domain.valueobjects
 
+import kotlinx.serialization.Serializable
 import org.ttpss930141011.bj.domain.DomainConstants
 
 /**
@@ -17,6 +18,7 @@ import org.ttpss930141011.bj.domain.DomainConstants
  * @property earlyVsLateSurrender Early surrender (before dealer check) vs late surrender
  * @property minimumBet Minimum bet amount required to play
  */
+@Serializable
 data class GameRules(
     val dealerHitsOnSoft17: Boolean = true,
     val doubleAfterSplitAllowed: Boolean = true,

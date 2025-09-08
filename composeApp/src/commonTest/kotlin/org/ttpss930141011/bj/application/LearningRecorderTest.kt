@@ -193,12 +193,14 @@ class LearningRecorderTest {
         val playerHand = PlayerHand(listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)), bet = 50)
         val dealer = Dealer().dealInitialCard(Card(Suit.CLUBS, Rank.TEN))
         
+        // Create committed BetState with 50 chips
+        val betState = BetState(amount = 50, isCommitted = true)
+        
         return Game(
             player = Player("Test", 1000),
             playerHands = listOf(playerHand),
             currentHandIndex = 0,
-            pendingBet = 0,
-            currentBet = 50,
+            betState = betState,
             dealer = dealer,
             deck = Deck.shuffled(),
             rules = GameRules()
@@ -208,12 +210,14 @@ class LearningRecorderTest {
     private fun createGameWithoutCurrentHand(): Game {
         val dealer = Dealer().dealInitialCard(Card(Suit.CLUBS, Rank.TEN))
         
+        // Create committed BetState with 50 chips
+        val betState = BetState(amount = 50, isCommitted = true)
+        
         return Game(
             player = Player("Test", 1000),
             playerHands = emptyList(),
             currentHandIndex = 0,
-            pendingBet = 0,
-            currentBet = 50,
+            betState = betState,
             dealer = dealer,
             deck = Deck.shuffled(),
             rules = GameRules()
@@ -224,12 +228,14 @@ class LearningRecorderTest {
         val playerHand = PlayerHand(listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)), bet = 50)
         val dealer = Dealer() // No cards dealt to dealer
         
+        // Create committed BetState with 50 chips
+        val betState = BetState(amount = 50, isCommitted = true)
+        
         return Game(
             player = Player("Test", 1000),
             playerHands = listOf(playerHand),
             currentHandIndex = 0,
-            pendingBet = 0,
-            currentBet = 50,
+            betState = betState,
             dealer = dealer,
             deck = Deck.shuffled(),
             rules = GameRules()

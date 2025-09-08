@@ -40,6 +40,11 @@ class GameViewModel(
     
     val isGameOver: Boolean get() = gameStateManager.isGameOver
     
+    // Last bet memory for UX improvement
+    private var _lastBetAmount by mutableStateOf<Int?>(null)
+    private var _userClearedBet by mutableStateOf(false)
+    val lastBetAmount: Int? get() = _lastBetAmount
+    
     /**
      * Initializes a new game with specified rules and player
      * 
@@ -139,6 +144,8 @@ class GameViewModel(
             is GameStateResult.Success -> {
                 feedbackManager.startNewRound()
                 uiStateManager.clearError()
+                // Reset user clear flag for new round
+                _userClearedBet = false
             }
             is GameStateResult.Error -> uiStateManager.setError(result.message)
         }
@@ -158,7 +165,7 @@ class GameViewModel(
         feedbackManager.clearFeedback()
     }
     /** Current pending bet amount */
-    val currentBetAmount: Int get() = game?.pendingBet ?: 0
+    val currentBetAmount: Int get() = game?.betState?.amount ?: 0
     
     /** True if cards can be dealt (bet placed and game ready) */
     val canDealCards: Boolean get() = game?.canDealCards ?: false
@@ -187,7 +194,11 @@ class GameViewModel(
      */
     fun clearBet() {
         when (val result = gameStateManager.clearBet()) {
-            is GameStateResult.Success -> uiStateManager.clearError()
+            is GameStateResult.Success -> {
+                // User explicitly cleared bet - prevent auto-repeat this round
+                _userClearedBet = true
+                uiStateManager.clearError()
+            }
             is GameStateResult.Error -> uiStateManager.setError(result.message)
         }
     }
@@ -196,6 +207,9 @@ class GameViewModel(
      * Deals initial cards to start the round
      */
     fun dealCards() {
+        // Remember the current bet amount before dealing
+        rememberLastBet()
+        
         when (val result = gameStateManager.dealCards()) {
             is GameStateResult.Success -> {
                 feedbackManager.reset()
@@ -295,5 +309,51 @@ class GameViewModel(
      */
     fun dismissRuleChangeNotification() {
         uiStateManager.dismissRuleChangeNotification()
+    }
+    
+    /**
+     * Records the current bet amount for later use
+     * Called when player commits to a bet amount
+     */
+    private fun rememberLastBet() {
+        _lastBetAmount = game?.betState?.amount?.takeIf { it > 0 }
+    }
+    
+    /**
+     * Attempts to repeat the last bet amount
+     * Simple approach - just add chips one by one using existing logic
+     * 
+     * @return True if last bet was successfully repeated
+     */
+    fun repeatLastBet(): Boolean {
+        val lastAmount = _lastBetAmount ?: return false
+        val currentGame = game ?: return false
+        
+        // Don't auto-repeat if user explicitly cleared bet this round
+        if (_userClearedBet) return false
+        
+        // Basic checks - let user handle edge cases manually
+        if (currentGame.player?.chips ?: 0 < lastAmount) return false
+        if (currentGame.phase != GamePhase.WAITING_FOR_BETS) return false
+        if (currentGame.betState.amount > 0) return false // Already has a bet
+        
+        // Use the simplest approach: convert amount to largest chip denominations
+        var remainingAmount = lastAmount
+        val chipValues = ChipValue.values().sortedByDescending { it.value }
+        
+        for (chipValue in chipValues) {
+            val chipsNeeded = remainingAmount / chipValue.value
+            repeat(chipsNeeded) {
+                val result = gameStateManager.addChipToBet(chipValue)
+                if (result is GameStateResult.Error) {
+                    return false
+                }
+                remainingAmount -= chipValue.value
+            }
+            if (remainingAmount == 0) break
+        }
+        
+        uiStateManager.clearError()
+        return remainingAmount == 0
     }
 }

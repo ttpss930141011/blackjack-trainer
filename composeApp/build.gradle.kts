@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room)
 }
@@ -35,50 +36,63 @@ kotlin {
     
     jvm()
     
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        outputModuleName.set("composeApp")
-        browser {
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
-            commonWebpackConfig {
-                outputFileName = "composeApp.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
-                }
-            }
-        }
-        binaries.executable()
-    }
+    // Temporarily disable wasmJs to test Room configuration
+    // @OptIn(ExperimentalWasmDsl::class)
+    // wasmJs {
+    //     outputModuleName.set("composeApp")
+    //     browser {
+    //         val rootDirPath = project.rootDir.path
+    //         val projectDirPath = project.projectDir.path
+    //         commonWebpackConfig {
+    //             outputFileName = "composeApp.js"
+    //             devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+    //                 static = (static ?: mutableListOf()).apply {
+    //                     // Serve sources to debug inside browser
+    //                     add(rootDirPath)
+    //                     add(projectDirPath)
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     binaries.executable()
+    // }
     
     sourceSets {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.androidx.sqlite.bundled)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation("org.jetbrains.compose.material3:material3-window-size-class:1.7.3")
+            implementation(libs.kotlinx.serialization.json)
+            
+            // Room dependencies for KMP (wasmJs excluded)
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.sqlite.bundled)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        iosMain.dependencies {
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.androidx.sqlite.bundled)
+        }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.androidx.sqlite.bundled)
         }
     }
 }
@@ -133,5 +147,16 @@ compose.desktop {
 }
 
 room {
-    schemaDirectory("$projectDir/schemas")
+    room {
+        schemaDirectory("$projectDir/schemas/common")
+        schemaDirectory("jvm", "$projectDir/schemas/jvm")
+
+        schemaDirectory("androidDebug",   "$projectDir/schemas/androidDebug")
+        schemaDirectory("androidRelease", "$projectDir/schemas/androidRelease")
+
+         schemaDirectory("iosArm64",          "$projectDir/schemas/iosArm64")
+         schemaDirectory("iosX64",            "$projectDir/schemas/iosX64")
+         schemaDirectory("iosSimulatorArm64", "$projectDir/schemas/iosSimArm64")
+    }
+
 }

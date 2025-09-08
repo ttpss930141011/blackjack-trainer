@@ -1,8 +1,11 @@
 package org.ttpss930141011.bj.domain.valueobjects
 
+import kotlinx.serialization.Serializable
+
 /**
  * Card suit enumeration for blackjack cards
  */
+@Serializable
 enum class Suit {
     HEARTS, DIAMONDS, CLUBS, SPADES
 }
@@ -13,6 +16,7 @@ enum class Suit {
  * 
  * @param blackjackValue The point value for blackjack calculation
  */
+@Serializable
 enum class Rank(val blackjackValue: Int) {
     ACE(1),
     TWO(2), THREE(3), FOUR(4), FIVE(5), SIX(6), SEVEN(7), EIGHT(8), NINE(9), TEN(10),
@@ -25,6 +29,7 @@ enum class Rank(val blackjackValue: Int) {
  * @param suit The card suit
  * @param rank The card rank with associated blackjack value
  */
+@Serializable
 data class Card(val suit: Suit, val rank: Rank) {
     /** The blackjack point value of this card */
     val blackjackValue: Int get() = rank.blackjackValue
