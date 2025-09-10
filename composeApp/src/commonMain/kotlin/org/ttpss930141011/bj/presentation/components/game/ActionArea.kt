@@ -220,7 +220,8 @@ private fun ActionButtons(
                     ActionButton(
                         action = action,
                         onAction = onAction,
-                        feedback = feedback
+                        feedback = feedback,
+                        modifier = Modifier.weight(1f) // 让按钮平均分配宽度
                     )
                 }
             }
@@ -282,25 +283,46 @@ private fun ActionButton(
         shape = RoundedCornerShape(Tokens.Space.m),
         modifier = modifier
             .height(Tokens.Size.buttonHeight)
-            .widthIn(min = Tokens.Size.chipDiameter)
+            // 移除固定最小宽度，让按钮能够响应式调整
     ) {
         BreakpointLayout(
             compact = {
-                // Compact: Show icon + hint
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = icon,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                    if (showHint) {
+                // Compact: Show icon + hint, 对Double按钮特殊处理
+                if (action == Action.DOUBLE) {
+                    // Double按钮保持水平布局避免×2分离
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = "💡",
-                            fontSize = 12.sp
+                            text = icon,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
                         )
+                        if (showHint) {
+                            Text(
+                                text = "💡",
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                } else {
+                    // 其他按钮使用垂直布局优化空间利用
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = icon,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        if (showHint) {
+                            Text(
+                                text = "💡",
+                                fontSize = 10.sp
+                            )
+                        }
                     }
                 }
             },

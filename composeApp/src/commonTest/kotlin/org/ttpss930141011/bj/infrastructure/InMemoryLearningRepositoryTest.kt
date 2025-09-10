@@ -6,6 +6,8 @@ import org.ttpss930141011.bj.domain.valueobjects.Rank
 import org.ttpss930141011.bj.domain.valueobjects.Suit
 import org.ttpss930141011.bj.domain.valueobjects.DecisionRecord
 import org.ttpss930141011.bj.domain.valueobjects.GameRules
+import org.ttpss930141011.bj.domain.valueobjects.HandSnapshot
+import org.ttpss930141011.bj.domain.valueobjects.ActionResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -36,11 +38,14 @@ class InMemoryLearningRepositoryTest {
         }
         
         return DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerCard,
-            playerAction = action,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerCard,
+                gameRules = GameRules()
+            ),
+            action = action,
+            afterAction = ActionResult.Stand(handCards), // Placeholder for tests
             isCorrect = isCorrect,
-            gameRules = GameRules(),
             timestamp = timestamp
         )
     }
@@ -145,19 +150,27 @@ class InMemoryLearningRepositoryTest {
         val rules2 = GameRules(dealerHitsOnSoft17 = false)
         
         val decision1 = DecisionRecord(
-            handCards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
-            dealerUpCard = Card(Suit.CLUBS, Rank.TEN),
-            playerAction = Action.HIT,
+            beforeAction = HandSnapshot(
+                cards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+                dealerUpCard = Card(Suit.CLUBS, Rank.TEN),
+                gameRules = rules1
+            ),
+            action = Action.HIT,
+            afterAction = ActionResult.Stand(listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX))),
             isCorrect = false,
-            gameRules = rules1
+            timestamp = System.currentTimeMillis()
         )
         
         val decision2 = DecisionRecord(
-            handCards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
-            dealerUpCard = Card(Suit.CLUBS, Rank.TEN),
-            playerAction = Action.STAND,
+            beforeAction = HandSnapshot(
+                cards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
+                dealerUpCard = Card(Suit.CLUBS, Rank.TEN),
+                gameRules = rules2
+            ),
+            action = Action.STAND,
+            afterAction = ActionResult.Stand(listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX))),
             isCorrect = true,
-            gameRules = rules2
+            timestamp = System.currentTimeMillis()
         )
         
         repository.save(decision1)
@@ -181,20 +194,29 @@ class InMemoryLearningRepositoryTest {
         val gameRules = GameRules(dealerHitsOnSoft17 = true)
         
         // Add decisions for H16 vs 10 - 2/3 errors
+        val handCards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX))
+        val dealerCard = Card(Suit.CLUBS, Rank.TEN)
+        
         repository.save(DecisionRecord(
-            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
-            Card(Suit.CLUBS, Rank.TEN),
-            Action.HIT, false, gameRules
+            beforeAction = HandSnapshot(handCards, dealerCard, gameRules),
+            action = Action.HIT,
+            afterAction = ActionResult.Stand(handCards),
+            isCorrect = false,
+            timestamp = System.currentTimeMillis()
         ))
         repository.save(DecisionRecord(
-            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
-            Card(Suit.CLUBS, Rank.TEN),
-            Action.HIT, false, gameRules
+            beforeAction = HandSnapshot(handCards, dealerCard, gameRules),
+            action = Action.HIT,
+            afterAction = ActionResult.Stand(handCards),
+            isCorrect = false,
+            timestamp = System.currentTimeMillis()
         ))
         repository.save(DecisionRecord(
-            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
-            Card(Suit.CLUBS, Rank.TEN),
-            Action.STAND, true, gameRules
+            beforeAction = HandSnapshot(handCards, dealerCard, gameRules),
+            action = Action.STAND,
+            afterAction = ActionResult.Stand(handCards),
+            isCorrect = true,
+            timestamp = System.currentTimeMillis()
         ))
         
         val ruleHash = gameRules.hashCode().toString(16).takeLast(6)
@@ -219,20 +241,29 @@ class InMemoryLearningRepositoryTest {
         val rules2 = GameRules(dealerHitsOnSoft17 = false)
         
         // Add decisions for H16 vs 10 under different rules
+        val handCards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX))
+        val dealerCard = Card(Suit.CLUBS, Rank.TEN)
+        
         repository.save(DecisionRecord(
-            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
-            Card(Suit.CLUBS, Rank.TEN),
-            Action.HIT, false, rules1
+            beforeAction = HandSnapshot(handCards, dealerCard, rules1),
+            action = Action.HIT,
+            afterAction = ActionResult.Stand(handCards),
+            isCorrect = false,
+            timestamp = System.currentTimeMillis()
         ))
         repository.save(DecisionRecord(
-            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
-            Card(Suit.CLUBS, Rank.TEN),
-            Action.HIT, false, rules2
+            beforeAction = HandSnapshot(handCards, dealerCard, rules2),
+            action = Action.HIT,
+            afterAction = ActionResult.Stand(handCards),
+            isCorrect = false,
+            timestamp = System.currentTimeMillis()
         ))
         repository.save(DecisionRecord(
-            listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX)),
-            Card(Suit.CLUBS, Rank.TEN),
-            Action.STAND, true, rules1
+            beforeAction = HandSnapshot(handCards, dealerCard, rules1),
+            action = Action.STAND,
+            afterAction = ActionResult.Stand(handCards),
+            isCorrect = true,
+            timestamp = System.currentTimeMillis()
         ))
         
         // When

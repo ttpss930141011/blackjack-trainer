@@ -37,17 +37,11 @@ class RoomPersistenceRepository(
                     sessionId = data.sessionId,
                     timestamp = data.timestamp,
                     gameRulesJson = json.encodeToString(data.gameRules),
-                    betAmount = data.betAmount,
-                    initialPlayerHandsJson = json.encodeToString(data.initialPlayerHands),
-                    finalPlayerHandsJson = json.encodeToString(data.finalPlayerHands),
-                    dealerVisibleCardJson = json.encodeToString(data.dealerVisibleCard),
-                    dealerFinalHandJson = json.encodeToString(data.dealerFinalHand),
+                    initialBet = data.initialBet,
                     decisionsJson = json.encodeToString(data.decisions),
                     roundResult = data.roundResult,
                     netChipChange = data.netChipChange,
-                    roundDurationMs = data.roundDurationMs,
-                    correctDecisionCount = data.correctDecisionCount,
-                    totalDecisionCount = data.totalDecisionCount
+                    roundDurationMs = data.roundDurationMs
                 )
                 database.roundHistoryDao().insertRound(entity)
             }
@@ -179,17 +173,11 @@ class RoomPersistenceRepository(
             sessionId = entity.sessionId,
             timestamp = entity.timestamp,
             gameRules = json.decodeFromString(entity.gameRulesJson),
-            betAmount = entity.betAmount,
-            initialPlayerHands = json.decodeFromString(entity.initialPlayerHandsJson),
-            finalPlayerHands = json.decodeFromString(entity.finalPlayerHandsJson),
-            dealerVisibleCard = json.decodeFromString(entity.dealerVisibleCardJson),
-            dealerFinalHand = json.decodeFromString(entity.dealerFinalHandJson),
+            initialBet = entity.initialBet,
             decisions = json.decodeFromString(entity.decisionsJson),
             roundResult = entity.roundResult,
             netChipChange = entity.netChipChange,
-            roundDurationMs = entity.roundDurationMs,
-            correctDecisionCount = entity.correctDecisionCount,
-            totalDecisionCount = entity.totalDecisionCount
+            roundDurationMs = entity.roundDurationMs
         )
     }
     
@@ -199,11 +187,14 @@ class RoomPersistenceRepository(
      */
     private fun convertDecisionEntityToDomain(entity: DecisionRecordEntity): DecisionRecord {
         return DecisionRecord(
-            handCards = json.decodeFromString(entity.handCardsJson),
-            dealerUpCard = json.decodeFromString(entity.dealerUpCardJson),
-            playerAction = entity.playerAction,
+            beforeAction = HandSnapshot(
+                cards = json.decodeFromString(entity.handCardsJson),
+                dealerUpCard = json.decodeFromString(entity.dealerUpCardJson),
+                gameRules = GameRules() // Default rules - in real implementation could be stored separately
+            ),
+            action = entity.playerAction,
+            afterAction = ActionResult.Stand(json.decodeFromString(entity.handCardsJson)), // Placeholder
             isCorrect = entity.isCorrect,
-            gameRules = GameRules(), // Default rules - in real implementation could be stored separately
             timestamp = entity.timestamp
         )
     }

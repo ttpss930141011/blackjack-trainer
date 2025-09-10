@@ -33,11 +33,17 @@ class LearningRecorder(
         gameRules: GameRules
     ): DecisionRecord {
         val decisionRecord = DecisionRecord(
-            handCards = handBeforeAction.cards,
-            dealerUpCard = dealerUpCard,
-            playerAction = playerAction,
+            beforeAction = HandSnapshot(
+                cards = handBeforeAction.cards,
+                dealerUpCard = dealerUpCard,
+                gameRules = gameRules,
+                handIndex = 0,
+                isFromSplit = handBeforeAction.isFromSplit
+            ),
+            action = playerAction,
+            afterAction = ActionResult.Stand(handBeforeAction.cards), // Placeholder
             isCorrect = isCorrect,
-            gameRules = gameRules
+            timestamp = TimeProvider.currentTimeMillis()
         )
         
         repository.save(decisionRecord)

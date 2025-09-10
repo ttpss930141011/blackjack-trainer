@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "00cbb2f36238785d591b171c9070f451",
+    "identityHash": "6abbe71fb76a82a210fb113ee0a62540",
     "entities": [
       {
         "tableName": "game_sessions",
@@ -59,7 +59,7 @@
       },
       {
         "tableName": "round_history",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`roundId` TEXT NOT NULL, `sessionId` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `gameRulesJson` TEXT NOT NULL, `betAmount` INTEGER NOT NULL, `initialPlayerHandsJson` TEXT NOT NULL, `finalPlayerHandsJson` TEXT NOT NULL, `dealerVisibleCardJson` TEXT NOT NULL, `dealerFinalHandJson` TEXT NOT NULL, `decisionsJson` TEXT NOT NULL, `roundResult` TEXT NOT NULL, `netChipChange` INTEGER NOT NULL, `roundDurationMs` INTEGER NOT NULL, `correctDecisionCount` INTEGER NOT NULL, `totalDecisionCount` INTEGER NOT NULL, PRIMARY KEY(`roundId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`roundId` TEXT NOT NULL, `sessionId` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `gameRulesJson` TEXT NOT NULL, `initialBet` INTEGER NOT NULL, `decisionsJson` TEXT NOT NULL, `roundResult` TEXT NOT NULL, `netChipChange` INTEGER NOT NULL, `roundDurationMs` INTEGER NOT NULL, PRIMARY KEY(`roundId`))",
         "fields": [
           {
             "fieldPath": "roundId",
@@ -86,33 +86,9 @@
             "notNull": true
           },
           {
-            "fieldPath": "betAmount",
-            "columnName": "betAmount",
+            "fieldPath": "initialBet",
+            "columnName": "initialBet",
             "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "initialPlayerHandsJson",
-            "columnName": "initialPlayerHandsJson",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "finalPlayerHandsJson",
-            "columnName": "finalPlayerHandsJson",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "dealerVisibleCardJson",
-            "columnName": "dealerVisibleCardJson",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "dealerFinalHandJson",
-            "columnName": "dealerFinalHandJson",
-            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -136,18 +112,6 @@
           {
             "fieldPath": "roundDurationMs",
             "columnName": "roundDurationMs",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "correctDecisionCount",
-            "columnName": "correctDecisionCount",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "totalDecisionCount",
-            "columnName": "totalDecisionCount",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -240,7 +204,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '00cbb2f36238785d591b171c9070f451')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6abbe71fb76a82a210fb113ee0a62540')"
     ]
   }
 }

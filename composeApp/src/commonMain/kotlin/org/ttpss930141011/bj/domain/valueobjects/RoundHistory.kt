@@ -2,50 +2,40 @@ package org.ttpss930141011.bj.domain.valueobjects
 
 import kotlinx.serialization.Serializable
 import org.ttpss930141011.bj.domain.enums.RoundResult
+import org.ttpss930141011.bj.domain.enums.Action
 import kotlin.random.Random
 
 /**
- * RoundHistory - Complete blackjack round record for user replay and analysis
+ * RoundHistory - BREAKING CHANGE: Completely redesigned for accurate decision tracking
  * 
- * This is the primary data structure for the History page, containing ALL context
- * needed to fully reconstruct and understand a blackjack round.
+ * Core principle: A round is a sequence of decisions, nothing more.
+ * No complex inference, no guessing about hand evolution.
+ * Just: what decisions were made and what were the outcomes.
  * 
  * Design principles:
- * - Complete round lifecycle: from initial deal to final settlement
- * - Immutable value object: all data captured at round completion
- * - Self-contained: no external dependencies for display
- * - DecisionRecord composition: incorporates individual decisions with full context
- * 
- * Data relationship: RoundHistory = List<DecisionRecord> + Complete Context
+ * - Decision-first: Everything revolves around the decision sequence
+ * - No state duplication: Don't store both initial/final hands AND decisions
+ * - Simple derivation: All other info can be derived from decisions
+ * - Clear ownership: This is the definitive record of what happened
  */
 @Serializable
 data class RoundHistory(
     // Round identification
-    val sessionId: String,
     val roundId: String = generateRoundId(),
     val timestamp: Long,
+    val sessionId: String,
     
-    // Game context
+    // Basic context
     val gameRules: GameRules,
-    val betAmount: Int,
+    val initialBet: Int,
     
-    // Complete hand evolution
-    val initialPlayerHands: List<PlayerHand>,   // State after initial deal
-    val finalPlayerHands: List<PlayerHand>,     // State after all actions
-    val dealerVisibleCard: Card,                // What player saw during decisions
-    val dealerFinalHand: Hand,                  // Complete dealer hand after dealer turn
-    
-    // Decision sequence - the core learning data
+    // The core data: what actually happened
     val decisions: List<DecisionRecord>,
     
-    // Round outcome
+    // Final outcome
     val roundResult: RoundResult,
-    val netChipChange: Int,                     // Positive = win, negative = loss
-    
-    // Performance metrics
-    val roundDurationMs: Long = 0,
-    val correctDecisionCount: Int = decisions.count { it.isCorrect },
-    val totalDecisionCount: Int = decisions.size
+    val netChipChange: Int,
+    val roundDurationMs: Long = 0
 ) {
     
     companion object {
@@ -55,106 +45,44 @@ data class RoundHistory(
     
     init {
         require(sessionId.isNotBlank()) { "Session ID cannot be blank" }
-        require(betAmount > 0) { "Bet amount must be positive" }
-        require(initialPlayerHands.isNotEmpty()) { "Must have at least one player hand" }
-        require(finalPlayerHands.size >= initialPlayerHands.size) { "Final hands cannot be fewer than initial hands" }
+        require(initialBet > 0) { "Initial bet must be positive" }
         require(decisions.isNotEmpty()) { "Round must have at least one decision" }
         require(decisions.all { it.timestamp >= timestamp }) { "Decision timestamps must be after round start" }
-        require(decisions.all { it.ruleHash == DomainConstants.generateRuleHash(gameRules) }) { 
-            "All decisions must use same rules as round" 
-        }
     }
     
-    // Convenience properties for UI display
-    val roundAccuracy: Double 
-        get() = if (totalDecisionCount > 0) correctDecisionCount.toDouble() / totalDecisionCount else 0.0
+    // Derived properties - everything can be calculated from decisions
+    val correctDecisionCount: Int get() = decisions.count { it.isCorrect }
+    val totalDecisionCount: Int get() = decisions.size
+    val roundAccuracy: Double get() = if (totalDecisionCount > 0) correctDecisionCount.toDouble() / totalDecisionCount else 0.0
     
-    val isWinningRound: Boolean 
-        get() = roundResult == RoundResult.PLAYER_WIN || roundResult == RoundResult.PLAYER_BLACKJACK
+    val isWinningRound: Boolean get() = roundResult == RoundResult.PLAYER_WIN || roundResult == RoundResult.PLAYER_BLACKJACK
+    val isPushRound: Boolean get() = roundResult == RoundResult.PUSH
     
-    val isPushRound: Boolean 
-        get() = roundResult == RoundResult.PUSH
-    
-    val primaryHand: PlayerHand 
-        get() = finalPlayerHands.first()
-    
-    val hasSplitHands: Boolean 
-        get() = finalPlayerHands.size > 1
-    
-    val splitHandCount: Int 
-        get() = finalPlayerHands.size
-    
-    // Rule consistency check
-    val isRuleConsistent: Boolean
-        get() = decisions.all { it.ruleHash == DomainConstants.generateRuleHash(gameRules) }
+    // Split detection - much simpler now
+    val hasSplit: Boolean get() = decisions.any { it.action == Action.SPLIT }
+    val splitCount: Int get() = decisions.count { it.action == Action.SPLIT }
+    val finalHandCount: Int get() = 1 + splitCount  // One initial hand + one per split
     
     // Round summary for quick display
-    val summaryText: String
-        get() {
-            val handSummary = if (hasSplitHands) {
-                "Split (${splitHandCount} hands)"
-            } else {
-                primaryHand.hand.displayValue
-            }
-            val resultText = when (roundResult) {
-                RoundResult.PLAYER_WIN, RoundResult.PLAYER_BLACKJACK -> "WIN (+$netChipChange)"
-                RoundResult.DEALER_WIN -> "LOSS ($netChipChange)"
-                RoundResult.PUSH -> "PUSH"
-                RoundResult.SURRENDER -> "SURRENDER ($netChipChange)"
-            }
-            return "$handSummary vs ${dealerFinalHand.displayValue} → $resultText"
+    val summaryText: String get() {
+        val handSummary = if (hasSplit) {
+            "Split ($finalHandCount hands)"
+        } else {
+            val firstDecision = decisions.first()
+            "${firstDecision.beforeAction.handValue}"
         }
-    
-    /**
-     * Validates that this round history is internally consistent
-     */
-    fun validateConsistency(): List<String> {
-        val errors = mutableListOf<String>()
-        
-        // Check decision timestamps
-        decisions.forEach { decision ->
-            if (decision.timestamp < timestamp) {
-                errors.add("Decision timestamp ${decision.timestamp} is before round timestamp $timestamp")
-            }
+        val resultText = when (roundResult) {
+            RoundResult.PLAYER_WIN, RoundResult.PLAYER_BLACKJACK -> "WIN (+$netChipChange)"
+            RoundResult.DEALER_WIN -> "LOSS ($netChipChange)"
+            RoundResult.PUSH -> "PUSH"
+            RoundResult.SURRENDER -> "SURRENDER ($netChipChange)"
         }
-        
-        // Check rule consistency
-        if (!isRuleConsistent) {
-            errors.add("Not all decisions use the same game rules")
+        val dealerUpCard = decisions.firstOrNull()?.beforeAction?.dealerUpCard
+        return if (dealerUpCard != null) {
+            "$handSummary vs ${dealerUpCard.rank.name} → $resultText"
+        } else {
+            "$handSummary → $resultText"
         }
-        
-        // Check hand count consistency
-        if (initialPlayerHands.size != finalPlayerHands.size) {
-            errors.add("Initial hand count (${initialPlayerHands.size}) != final hand count (${finalPlayerHands.size})")
-        }
-        
-        // Check decision count consistency
-        if (correctDecisionCount > totalDecisionCount) {
-            errors.add("Correct decisions ($correctDecisionCount) > total decisions ($totalDecisionCount)")
-        }
-        
-        return errors
-    }
-    
-    /**
-     * Creates a simplified version for serialization or storage
-     */
-    fun toStorageFormat(): Map<String, Any> {
-        return mapOf(
-            "sessionId" to sessionId,
-            "roundId" to roundId,
-            "timestamp" to timestamp,
-            "gameRules" to gameRules,
-            "betAmount" to betAmount,
-            "initialPlayerHands" to initialPlayerHands,
-            "finalPlayerHands" to finalPlayerHands,
-            "dealerVisibleCard" to dealerVisibleCard,
-            "dealerFinalHand" to dealerFinalHand,
-            "decisions" to decisions,
-            "roundResult" to roundResult,
-            "netChipChange" to netChipChange,
-            "roundDurationMs" to roundDurationMs
-        )
     }
 }
 

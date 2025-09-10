@@ -26,7 +26,7 @@ import org.ttpss930141011.bj.infrastructure.database.entities.RoundHistoryEntity
         RoundHistoryEntity::class,
         DecisionRecordEntity::class
     ], 
-    version = 2, 
+    version = 3, 
     exportSchema = true
 )
 @ConstructedBy(BlackjackDatabaseConstructor::class)
@@ -35,6 +35,7 @@ abstract class BlackjackDatabase : RoomDatabase() {
     abstract fun roundHistoryDao(): RoundHistoryDao
     abstract fun decisionRecordDao(): DecisionRecordDao
 }
+
 
 // The Room compiler generates the `actual` implementations.
 @Suppress("KotlinNoActualForExpect")
@@ -48,5 +49,6 @@ fun getRoomDatabase(
     return builder
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
+        .fallbackToDestructiveMigration(dropAllTables = true)
         .build()
 }

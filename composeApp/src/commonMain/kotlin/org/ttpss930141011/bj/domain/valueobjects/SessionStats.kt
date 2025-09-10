@@ -1,5 +1,7 @@
 package org.ttpss930141011.bj.domain.valueobjects
 
+import org.ttpss930141011.bj.application.TimeProvider
+
 /**
  * Statistics for a specific rule set within a session.
  */
@@ -105,11 +107,15 @@ data class SessionStats(
         return decisions.fold(this) { stats, playerDecision ->
             // Create a synthetic DecisionRecord for backward compatibility
             val decisionRecord = DecisionRecord(
-                handCards = listOf(Card(Suit.HEARTS, Rank.TWO)), // Minimal data for compatibility
-                dealerUpCard = Card(Suit.HEARTS, Rank.TWO), // Placeholder
-                playerAction = playerDecision.action,
+                beforeAction = HandSnapshot(
+                    cards = listOf(Card(Suit.HEARTS, Rank.TWO)), // Minimal data for compatibility
+                    dealerUpCard = Card(Suit.HEARTS, Rank.TWO), // Placeholder
+                    gameRules = GameRules() // Default rules for backward compatibility
+                ),
+                action = playerDecision.action,
+                afterAction = ActionResult.Stand(listOf(Card(Suit.HEARTS, Rank.TWO))), // Placeholder
                 isCorrect = playerDecision.isCorrect,
-                gameRules = GameRules() // Default rules for backward compatibility
+                timestamp = TimeProvider.currentTimeMillis()
             )
             stats.recordDecision(decisionRecord)
         }

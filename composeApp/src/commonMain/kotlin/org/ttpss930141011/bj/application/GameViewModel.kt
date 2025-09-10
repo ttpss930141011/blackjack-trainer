@@ -135,10 +135,18 @@ class GameViewModel(
      * BREAKING CHANGE: Uses new AnalyticsManager.recordPlayerAction
      */
     fun playerAction(action: Action) {
+        // Capture hand state BEFORE action execution for accurate recording (deep copy cards!)
+        val handBeforeAction = game?.currentHand?.copy(cards = game?.currentHand?.cards?.toList() ?: emptyList())
+        val dealerUpCard = game?.dealer?.upCard
+        val gameRules = game?.rules
+        
         executePlayerAction(action)
+        
         // Only record if action execution set feedback (meaning it succeeded)
-        if (feedback != null) {
-            recordDecisionForLearning(action)
+        if (feedback != null && handBeforeAction != null && dealerUpCard != null && gameRules != null) {
+            val handAfterAction = game?.currentHand
+            val actionResult = createActionResult(action, handBeforeAction, handAfterAction)
+            recordDecisionForLearning(action, handBeforeAction, dealerUpCard, gameRules, actionResult)
         }
         handleAutoTransitions()
     }
@@ -330,16 +338,58 @@ class GameViewModel(
         }
     }
     
-    private fun recordDecisionForLearning(action: Action) {
-        val currentGame = game ?: return
+    private fun createActionResult(
+        action: Action, 
+        handBeforeAction: PlayerHand, 
+        handAfterAction: PlayerHand?
+    ): ActionResult {
+        return when (action) {
+            Action.HIT -> {
+                if (handAfterAction != null && handAfterAction.cards.size > handBeforeAction.cards.size) {
+                    val newCard = handAfterAction.cards.last()
+                    ActionResult.Hit(newCard, handAfterAction.cards)
+                } else {
+                    ActionResult.Hit(handBeforeAction.cards.first(), handBeforeAction.cards) // Fallback
+                }
+            }
+            Action.DOUBLE -> {
+                if (handAfterAction != null && handAfterAction.cards.size > handBeforeAction.cards.size) {
+                    val newCard = handAfterAction.cards.last()
+                    ActionResult.Double(newCard, handAfterAction.cards)
+                } else {
+                    ActionResult.Double(handBeforeAction.cards.first(), handBeforeAction.cards) // Fallback
+                }
+            }
+            Action.STAND -> ActionResult.Stand(handBeforeAction.cards)
+            Action.SURRENDER -> ActionResult.Surrender(handBeforeAction.cards)
+            Action.SPLIT -> {
+                // For split, we'd need to access the split hands from game state
+                // For now, use a placeholder that shows the original pair
+                ActionResult.Split(
+                    originalPair = handBeforeAction.cards,
+                    hand1 = handBeforeAction.cards,
+                    hand2 = handBeforeAction.cards
+                )
+            }
+        }
+    }
+    
+    private fun recordDecisionForLearning(
+        action: Action, 
+        handBeforeAction: PlayerHand, 
+        dealerUpCard: Card, 
+        gameRules: GameRules,
+        actionResult: ActionResult
+    ) {
         val feedback = this.feedback ?: return
         
         analyticsManager.recordPlayerAction(
-            handBeforeAction = currentGame.currentHand!!,
-            dealerUpCard = currentGame.dealer.upCard!!,
+            handBeforeAction = handBeforeAction,
+            dealerUpCard = dealerUpCard,
             playerAction = action,
             isCorrect = feedback.isCorrect,
-            gameRules = currentGame.rules
+            gameRules = gameRules,
+            actionResult = actionResult
         )
         
         // Refresh scenario stats using same pattern as round history

@@ -5,9 +5,9 @@ import androidx.room.PrimaryKey
 import org.ttpss930141011.bj.domain.enums.RoundResult
 
 /**
- * Room entity for complete blackjack round history.
+ * Room entity for complete blackjack round history - CLEANED UP VERSION
  * 
- * Stores complete round context for user replay in History page.
+ * Simplified data structure focused on decision sequence.
  * Follows Linus principle: simple data structure, no special cases.
  */
 @Entity(tableName = "round_history")
@@ -19,25 +19,15 @@ data class RoundHistoryEntity(
     val sessionId: String,
     val timestamp: Long,
     
-    // Game context (serialized as JSON strings - Room KSP 問題，暫時用字串)
+    // Game context (serialized as JSON strings)
     val gameRulesJson: String,
-    val betAmount: Int,
+    val initialBet: Int,
     
-    // Hand evolution (JSON arrays)
-    val initialPlayerHandsJson: String,
-    val finalPlayerHandsJson: String,
-    val dealerVisibleCardJson: String,
-    val dealerFinalHandJson: String,
-    
-    // Embedded decisions (JSON array)
+    // The core data: decision sequence (JSON array)
     val decisionsJson: String,
     
     // Round outcome
     val roundResult: RoundResult,
     val netChipChange: Int,
-    
-    // Performance metrics
-    val roundDurationMs: Long,
-    val correctDecisionCount: Int,
-    val totalDecisionCount: Int
+    val roundDurationMs: Long
 )

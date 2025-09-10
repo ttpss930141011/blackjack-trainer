@@ -64,14 +64,20 @@ internal class AnalyticsManager(
         dealerUpCard: Card,
         playerAction: Action,
         isCorrect: Boolean,
-        gameRules: GameRules
+        gameRules: GameRules,
+        actionResult: ActionResult
     ) {
         val decision = DecisionRecord(
-            handCards = handBeforeAction.cards,
-            dealerUpCard = dealerUpCard,
-            playerAction = playerAction,
+            beforeAction = HandSnapshot(
+                cards = handBeforeAction.cards,
+                dealerUpCard = dealerUpCard,
+                gameRules = gameRules,
+                handIndex = 0,
+                isFromSplit = handBeforeAction.isFromSplit
+            ),
+            action = playerAction,
+            afterAction = actionResult,
             isCorrect = isCorrect,
-            gameRules = gameRules,
             timestamp = TimeProvider.currentTimeMillis()
         )
         
@@ -101,11 +107,7 @@ internal class AnalyticsManager(
             sessionId = currentSessionId,
             timestamp = context.startTimestamp,
             gameRules = context.gameRules,
-            betAmount = context.betAmount,
-            initialPlayerHands = context.initialPlayerHands,
-            finalPlayerHands = finalPlayerHands,
-            dealerVisibleCard = context.dealerVisibleCard,
-            dealerFinalHand = dealerFinalHand,
+            initialBet = context.betAmount,
             decisions = currentRoundDecisions.toList(),
             roundResult = roundResult,
             netChipChange = netChipChange,
