@@ -33,14 +33,13 @@ fun Header(
     balance: Int,
     drawerButton: (@Composable () -> Unit)? = null,
     currentPage: NavigationPage? = null,
-    gameRules: GameRules? = null
 ) {
     when (currentPage) {
         NavigationPage.HOME -> {
             // Full header only on HOME page - Stats button removed since Stats/History available via navigation
             BreakpointLayout(
                 compact = { HomeCompactHeader(balance) },
-                expanded = { HomeExpandedHeader(balance, drawerButton, gameRules) }
+                expanded = { HomeExpandedHeader(balance, drawerButton) }
             )
         }
         else -> {
@@ -65,7 +64,7 @@ private fun HomeCompactHeader(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {
-            ModernBalanceBadge(balance, screenWidth)
+            ModernBalanceBadge(balance)
         }
     }
 }
@@ -73,8 +72,7 @@ private fun HomeCompactHeader(
 @Composable
 private fun HomeExpandedHeader(
     balance: Int,
-    drawerButton: (@Composable () -> Unit)?,
-    gameRules: GameRules?
+    drawerButton: (@Composable () -> Unit)?
 ) {
     Layout { screenWidth ->
         Row(
@@ -110,10 +108,7 @@ private fun HomeExpandedHeader(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    gameRules?.let { rules ->
-                        RuleInfoBadge(rules, screenWidth)
-                    }
-                    ModernBalanceBadge(balance, screenWidth)
+                    ModernBalanceBadge(balance)
                 }
             }
         }
@@ -222,7 +217,6 @@ private fun ModernTitle() {
 @Composable 
 private fun ModernBalanceBadge(
     balance: Int, 
-    screenWidth: org.ttpss930141011.bj.presentation.layout.ScreenWidth
 ) {
     Card(
         colors = CardDefaults.cardColors(
@@ -244,51 +238,3 @@ private fun ModernBalanceBadge(
         }
     }
 }
-
-@Composable
-private fun RuleInfoBadge(
-    gameRules: GameRules,
-    screenWidth: org.ttpss930141011.bj.presentation.layout.ScreenWidth
-) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text = "•",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                fontWeight = FontWeight.Bold
-            )
-            Column {
-                Text(
-                    text = buildRulesSummary(gameRules),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-
-private fun buildRulesSummary(rules: GameRules): String {
-    val items = mutableListOf<String>()
-    
-    // Key rule differences from standard
-    if (rules.dealerHitsOnSoft17) items.add("H17") else items.add("S17")
-    if (!rules.surrenderAllowed) items.add("NoSur") 
-    if (!rules.doubleAfterSplitAllowed) items.add("NoDAS")
-    if (rules.blackjackPayout != 1.5) items.add("${(rules.blackjackPayout * 2).toInt()}:2")
-    
-    return if (items.isEmpty()) "Standard" else items.joinToString(" • ")
-}
-

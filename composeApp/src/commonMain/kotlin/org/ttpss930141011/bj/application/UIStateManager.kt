@@ -11,7 +11,7 @@ import org.ttpss930141011.bj.domain.services.ChipCompositionService
  * 
  * Linus: "Handle error messages and UI state. No game logic shit, no analytics shit."
  */
-internal class UIStateManager(
+class UIStateManager(
     private val chipCompositionService: ChipCompositionService
 ) {
     private var _errorMessage by mutableStateOf<String?>(null)
@@ -55,12 +55,7 @@ internal class UIStateManager(
             return
         }
         
-        if (sessionStats.hasRuleChanged(newRules)) {
-            _ruleChangeNotification = "⚠️ Rule change detected: Starting fresh analytics for new rule set"
-            
-            sessionStats.getRuleComparisonSummary()?.let { comparison ->
-                _ruleChangeNotification = "⚠️ $comparison"
-            }
-        }
+        // Simple rule change notification without complex rule tracking
+        _ruleChangeNotification = "⚠️ Rule change detected: Starting fresh analytics for new rule set"
     }
 }

@@ -41,7 +41,7 @@ class GameService {
      * @throws IllegalArgumentException if no bet is placed
      */
     fun dealRound(game: Game): Game {
-        require(game.hasBet) { "No bet placed" }
+        require(game.hasAnyBet) { "No bet placed" }
         return game.dealRound()
     }
     

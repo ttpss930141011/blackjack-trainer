@@ -1,14 +1,15 @@
 package org.ttpss930141011.bj.infrastructure
 
-import org.ttpss930141011.bj.domain.services.StatsRepository
+import org.ttpss930141011.bj.domain.services.PersistenceRepository
 
 /**
- * iOS implementation of StatsRepositoryFactory.
+ * iOS implementation of PersistenceRepositoryFactory.
  * 
- * Uses in-memory storage for simplicity. Room implementation can be added later.
+ * Uses elegant in-memory storage with 3-method interface.
+ * CoreData implementation can be added later for iOS persistence.
  */
-actual object StatsRepositoryFactory {
-    actual fun create(): StatsRepository {
-        return InMemoryStatsRepository()
+actual object PersistenceRepositoryFactory {
+    actual fun create(): PersistenceRepository {
+        return InMemoryPersistenceRepository()
     }
 }

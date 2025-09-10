@@ -19,7 +19,7 @@ class RoundManager {
      * @throws IllegalArgumentException if preconditions are not met
      */
     fun dealRound(game: Game): Game {
-        require(game.hasCommittedBet) { "No bet committed" }
+        require(game.betState.isCommitted) { "No bet committed" }
         require(game.phase == GamePhase.WAITING_FOR_BETS) { "Round already started" }
         
         val (playerCards, tempDeck1) = game.deck.dealCards(2)

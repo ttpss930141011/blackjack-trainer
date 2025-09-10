@@ -1,5 +1,6 @@
 package org.ttpss930141011.bj.domain.valueobjects
 
+import kotlinx.serialization.Serializable
 import org.ttpss930141011.bj.domain.enums.HandStatus
 import org.ttpss930141011.bj.domain.enums.Action
 import org.ttpss930141011.bj.domain.DomainConstants
@@ -17,6 +18,7 @@ import org.ttpss930141011.bj.domain.DomainConstants
  * @property isFromSplit Whether this hand was created from splitting a pair
  * @property hasDoubled Whether player has doubled down on this hand
  */
+@Serializable
 data class PlayerHand(
     val cards: List<Card>,
     val bet: Int,

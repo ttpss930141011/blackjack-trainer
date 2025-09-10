@@ -65,6 +65,47 @@ object DomainConstants {
     }
     
     /**
+     * Parse scenario key back to display format.
+     * Reverse of generateScenarioKey for UI display purposes.
+     */
+    fun parseScenarioKey(scenarioKey: String): Pair<String, String> {
+        val parts = scenarioKey.split(" vs ")
+        if (parts.size != 2) {
+            return Pair("Unknown", "Unknown")
+        }
+        
+        val handType = parts[0].trim()
+        val dealerRank = parts[1].trim()
+        
+        val playerDisplay = when {
+            handType.startsWith("Pair ") && handType.length > 6 -> {
+                val rank = handType.substring(5, handType.length - 1) // Remove "Pair " and "s"
+                "$rank$rank (Pair)"
+            }
+            handType.startsWith("S") && handType.length > 1 -> {
+                val value = handType.substring(1)
+                "Soft $value"
+            }
+            handType.startsWith("H") && handType.length > 1 -> {
+                val value = handType.substring(1)
+                "Hard $value"
+            }
+            handType == "BJ" -> "Blackjack!"
+            else -> handType
+        }
+        
+        val dealerDisplay = when (dealerRank) {
+            "A" -> "Ace"
+            "K" -> "King"
+            "Q" -> "Queen" 
+            "J" -> "Jack"
+            else -> dealerRank
+        }
+        
+        return Pair(playerDisplay, dealerDisplay)
+    }
+    
+    /**
      * Validation constants for domain constraints
      */
     object Constraints {

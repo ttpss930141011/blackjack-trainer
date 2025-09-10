@@ -1,8 +1,11 @@
 package org.ttpss930141011.bj.domain.enums
 
+import kotlinx.serialization.Serializable
+
 /**
  * Player actions available in blackjack
  */
+@Serializable
 enum class Action {
     /** Request additional card */
     HIT,

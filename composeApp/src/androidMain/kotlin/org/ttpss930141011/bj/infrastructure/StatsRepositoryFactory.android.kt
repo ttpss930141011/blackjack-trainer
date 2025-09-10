@@ -1,16 +1,27 @@
 package org.ttpss930141011.bj.infrastructure
 
 import android.content.Context
-import org.ttpss930141011.bj.domain.services.StatsRepository
+import org.ttpss930141011.bj.domain.services.PersistenceRepository
+import org.ttpss930141011.bj.infrastructure.database.BlackjackDatabase
+import org.ttpss930141011.bj.infrastructure.database.getRoomDatabase
+import org.ttpss930141011.bj.infrastructure.database.getDatabaseBuilder
 
 /**
- * Android implementation of StatsRepositoryFactory.
+ * Android implementation of PersistenceRepositoryFactory.
  * 
- * For now, uses in-memory storage. Room implementation can be added later
- * when we have proper Android context injection.
+ * 使用 Room SQLite 數據庫進行持久化存儲
+ * 按照 Android Room KMP 最佳實踐：context管理
  */
-actual object StatsRepositoryFactory {
-    actual fun create(): StatsRepository {
-        return InMemoryStatsRepository()
+actual object PersistenceRepositoryFactory {
+    
+    private var database: BlackjackDatabase? = null
+    
+    actual fun create(): PersistenceRepository {
+        if (database == null) {
+            val context = PlatformContext.get() as? Context
+                ?: throw IllegalStateException("Android context not initialized. Call PlatformContext.initialize() first.")
+            database = getRoomDatabase(getDatabaseBuilder(context))
+        }
+        return RoomPersistenceRepository(database!!)
     }
 }

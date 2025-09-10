@@ -1,5 +1,6 @@
 package org.ttpss930141011.bj.domain.valueobjects
 
+import kotlinx.serialization.Serializable
 import org.ttpss930141011.bj.domain.DomainConstants
 
 /**
@@ -7,6 +8,7 @@ import org.ttpss930141011.bj.domain.DomainConstants
  * 
  * @param cards List of cards in the hand (must not be empty)
  */
+@Serializable
 data class Hand(internal val cards: List<Card>) {
     
     init {
@@ -46,6 +48,9 @@ data class Hand(internal val cards: List<Card>) {
     
     /** True if hand is natural blackjack (21 with exactly two cards) */
     val isBlackjack: Boolean = cards.size == DomainConstants.HandLimits.BLACKJACK_HAND_SIZE && bestValue == DomainConstants.BlackjackValues.BLACKJACK_TOTAL
+    
+    /** String representation for display (shows best value and soft indicator) */
+    val displayValue: String = if (isSoft) "${bestValue}S" else bestValue.toString()
     
     /**
      * Creates a new hand with an additional card

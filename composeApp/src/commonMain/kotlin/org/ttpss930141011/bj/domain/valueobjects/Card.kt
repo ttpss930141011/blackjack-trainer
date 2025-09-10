@@ -33,4 +33,9 @@ enum class Rank(val blackjackValue: Int) {
 data class Card(val suit: Suit, val rank: Rank) {
     /** The blackjack point value of this card */
     val blackjackValue: Int get() = rank.blackjackValue
+    
+    companion object {
+        /** Unknown card placeholder for incomplete game states */
+        val UNKNOWN_CARD = Card(Suit.SPADES, Rank.ACE)
+    }
 }

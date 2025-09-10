@@ -1,8 +1,11 @@
 package org.ttpss930141011.bj.domain.enums
 
+import kotlinx.serialization.Serializable
+
 /**
  * Status of a player hand during and after play
  */
+@Serializable
 enum class HandStatus {
     /** Hand can still take actions */
     ACTIVE,

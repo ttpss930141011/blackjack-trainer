@@ -4,6 +4,7 @@ import kotlin.test.*
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.ChipValue
+import org.ttpss930141011.bj.infrastructure.InMemoryPersistenceRepository
 
 class GameViewModelGameOverTest {
     
@@ -12,7 +13,9 @@ class GameViewModelGameOverTest {
     
     @BeforeTest
     fun setUp() {
-        viewModel = GameViewModel()
+        val testRepository = InMemoryPersistenceRepository()
+        val testPersistenceService = PersistenceService(testRepository)
+        viewModel = GameViewModel(persistenceService = testPersistenceService)
     }
     
     @Test

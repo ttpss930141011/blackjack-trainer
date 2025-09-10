@@ -35,32 +35,45 @@ import org.ttpss930141011.bj.presentation.pages.*
 import org.ttpss930141011.bj.presentation.design.AppConstants
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 
+/**
+ * Main casino game screen with responsive navigation
+ * 
+ * Provides the main game interface with adaptive navigation based on screen size:
+ * - Compact screens: Bottom navigation bar
+ * - Large screens: Side navigation drawer
+ * 
+ * Manages game state through GameViewModel and handles screen navigation between
+ * game, history, statistics, and settings screens.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CasinoGameScreen(
-    gameRules: GameRules = GameRules(),
-    onRulesChanged: (GameRules) -> Unit = {}
-) {
+fun CasinoGameScreen() {
     val viewModel = remember { GameViewModel() }
     val notificationState = rememberNotificationState()
-    
+
     // Navigation state (HOME is default)
     var currentPage by remember { mutableStateOf<NavigationPage?>(NavigationPage.HOME) }
-    
+
     // Feedback notification settings
     var feedbackNotificationEnabled by remember { mutableStateOf(true) }
     var feedbackDurationSeconds by remember { mutableStateOf(2.5f) }
-    
-    // Initialize game only once, then handle rule changes without reset
+
+    // Get current game rules from user preferences (persistent storage)
+    val currentGameRules = viewModel.userPreferences.preferredRules
+
+    // Initialize game only once, using user's preferred rules
     LaunchedEffect(Unit) {
-        viewModel.initializeGame(gameRules, Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS))
+        viewModel.initializeGame(
+            currentGameRules,
+            Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS)
+        )
     }
-    
-    // Handle rule changes dynamically without resetting game state
-    LaunchedEffect(gameRules) {
-        viewModel.handleRuleChange(gameRules)
+
+    // Handle rule changes from user preferences (not external gameRules parameter)
+    LaunchedEffect(currentGameRules) {
+        viewModel.handleRuleChange(currentGameRules)
     }
-    
+
     // Handle feedback - add to history and manage ambient feedback
     LaunchedEffect(viewModel.feedback) {
         viewModel.feedback?.let { feedback ->
@@ -68,7 +81,7 @@ fun CasinoGameScreen(
             // 不立即清除 feedback，讓 ActionButton 可以顯示視覺反饋
         }
     }
-    
+
     // Delayed transition feedback - ensures ActionButton feedback is visible before phase changes
     DelayedTransitionFeedback(
         feedback = viewModel.feedback,
@@ -77,13 +90,16 @@ fun CasinoGameScreen(
             // This gives users time to see the feedback before transitioning to dealer turn
         }
     )
-    
+
     // Note: FeedbackSystem removed to prevent race condition with PersistentFeedbackToast
     // PersistentFeedbackToast now handles all feedback timing and cleanup
-    
+
     val game = viewModel.game
-    val currentPlayer = game?.player ?: Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS)
-    
+    val currentPlayer = game?.player ?: Player(
+        id = AppConstants.Defaults.PLAYER_ID,
+        chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS
+    )
+
     Layout { screenWidth ->
         if (screenWidth.isCompact) {
             // Mobile: NavigationBar at bottom (NO drawer for compact)
@@ -107,36 +123,56 @@ fun CasinoGameScreen(
                         Header(
                             balance = currentPlayer.chips,
                             currentPage = currentPage,
-                            gameRules = viewModel.currentGameRules,
                             drawerButton = null // No drawer in compact layout
                         )
                     }
-                    
+
                     when (currentPage) {
                         NavigationPage.STRATEGY -> Layout { screenWidth ->
                             StrategyPage(
-                                gameRules = gameRules,
+                                gameRules = currentGameRules,
                                 screenWidth = screenWidth
                             )
                         }
+
                         NavigationPage.HISTORY -> Layout { screenWidth ->
+                            // 使用新的載入方式
+                            LaunchedEffect(Unit) {
+                                viewModel.loadRecentRounds()
+                            }
+                            
                             HistoryPage(
-                                decisionHistory = viewModel.getRecentDecisionsForCurrentRule(),
-                                onClearHistory = { viewModel.clearAllLearningData() },
+                                roundHistory = viewModel.recentRounds,
                                 screenWidth = screenWidth
                             )
                         }
+
                         NavigationPage.STATISTICS -> Layout { screenWidth ->
+                            // Load scenario statistics using ViewModel's centralized data management
+                            LaunchedEffect(Unit) {
+                                viewModel.loadScenarioStats()
+                            }
+                            
                             StatisticsPage(
-                                scenarioStats = viewModel.getCurrentRuleWorstScenarios(),
+                                scenarioStats = viewModel.scenarioStats,
                                 screenWidth = screenWidth
                             )
                         }
+
                         NavigationPage.SETTINGS -> Layout { screenWidth ->
+                            // 載入用戶偏好設定
+                            LaunchedEffect(Unit) {
+                                viewModel.loadUserPreferences()
+                            }
+                            
                             SettingsPage(
-                                screenWidth = screenWidth
+                                userPreferences = viewModel.userPreferences,
+                                onPreferencesChanged = { newPreferences ->
+                                    viewModel.updateUserPreferences(newPreferences)
+                                }
                             )
                         }
+
                         NavigationPage.HOME, null -> {
                             // Default to game content (Home) - no drawer state in compact
                             CasinoGameContent(
@@ -156,7 +192,7 @@ fun CasinoGameScreen(
             // Desktop: Full screen with feedback drawer
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
             val scope = rememberCoroutineScope()
-            
+
             GameWithNavigationDrawer(
                 currentPage = currentPage,
                 onPageSelected = { currentPage = it },
@@ -175,7 +211,6 @@ fun CasinoGameScreen(
                             Header(
                                 balance = currentPlayer.chips,
                                 currentPage = currentPage,
-                                gameRules = viewModel.currentGameRules,
                                 drawerButton = {
                                     TextButton(
                                         onClick = {
@@ -191,32 +226,53 @@ fun CasinoGameScreen(
                                 }
                             )
                         }
-                        
+
                         when (currentPage) {
                             NavigationPage.STRATEGY -> Layout { screenWidth ->
                                 StrategyPage(
-                                    gameRules = gameRules,
+                                    gameRules = currentGameRules,
                                     screenWidth = screenWidth
                                 )
                             }
+
                             NavigationPage.HISTORY -> Layout { screenWidth ->
+                                // 使用新的載入方式
+                                LaunchedEffect(Unit) {
+                                    viewModel.loadRecentRounds()
+                                }
+                                
                                 HistoryPage(
-                                    decisionHistory = viewModel.getRecentDecisionsForCurrentRule(),
-                                    onClearHistory = { viewModel.clearAllLearningData() },
+                                    roundHistory = viewModel.recentRounds,
                                     screenWidth = screenWidth
                                 )
                             }
+
                             NavigationPage.STATISTICS -> Layout { screenWidth ->
+                                // Load scenario statistics using ViewModel's centralized data management
+                                LaunchedEffect(Unit) {
+                                    viewModel.loadScenarioStats()
+                                }
+                                
                                 StatisticsPage(
-                                    scenarioStats = viewModel.getCurrentRuleWorstScenarios(),
+                                    scenarioStats = viewModel.scenarioStats,
                                     screenWidth = screenWidth
                                 )
                             }
+
                             NavigationPage.SETTINGS -> Layout { screenWidth ->
+                                // 載入用戶偏好設定
+                                LaunchedEffect(Unit) {
+                                    viewModel.loadUserPreferences()
+                                }
+                                
                                 SettingsPage(
-                                    screenWidth = screenWidth
+                                    userPreferences = viewModel.userPreferences,
+                                    onPreferencesChanged = { newPreferences ->
+                                        viewModel.updateUserPreferences(newPreferences)
+                                    }
                                 )
                             }
+
                             NavigationPage.HOME, null -> {
                                 // Default to game content (Home)
                                 CasinoGameContent(
@@ -263,21 +319,20 @@ private fun CasinoGameContent(
             Header(
                 balance = currentPlayer.chips,
                 currentPage = currentPage,
-                gameRules = viewModel.currentGameRules,
                 drawerButton = drawerState?.let { drawer ->
                     {
                         HistoryDrawerButton(
-                            decisionCount = viewModel.getRecentDecisions().size,
+                            decisionCount = viewModel.recentRounds.size, // Use recentRounds instead
                             onOpenDrawer = {
-                                scope.launch { 
-                                    drawer.open() 
+                                scope.launch {
+                                    drawer.open()
                                 }
                             }
                         )
                     }
                 }
             )
-            
+
             // 遊戲區域直接填滿剩餘空間，移除多餘包裝
             game?.let { currentGame ->
                 GamePhaseManager(
@@ -285,7 +340,7 @@ private fun CasinoGameContent(
                     viewModel = viewModel,
                     feedback = feedback
                 )
-                
+
                 // Error handling with auto-dismiss
                 viewModel.errorMessage?.let { error ->
                     LaunchedEffect(error) {
@@ -293,17 +348,17 @@ private fun CasinoGameContent(
                         viewModel.clearError()
                     }
                 }
-                
+
                 // Rule change notification with auto-dismiss
-                viewModel.ruleChangeNotification?.let { notification ->
+                viewModel.uiStateManager.ruleChangeNotification?.let { notification ->
                     LaunchedEffect(notification) {
                         kotlinx.coroutines.delay(5000) // Show longer for rule changes
-                        viewModel.dismissRuleChangeNotification()
+                        viewModel.uiStateManager.dismissRuleChangeNotification()
                     }
                 }
             }
         }
-        
+
         // Persistent feedback toast overlay - shows feedback across phase transitions
         PersistentFeedbackToast(
             feedback = feedback,
@@ -312,16 +367,16 @@ private fun CasinoGameContent(
             onFeedbackConsumed = { viewModel.clearFeedback() },
             modifier = Modifier.align(Alignment.TopCenter)
         )
-        
+
         // Rule change notification overlay
-        viewModel.ruleChangeNotification?.let { notification ->
+        viewModel.uiStateManager.ruleChangeNotification?.let { notification ->
             RuleChangeNotificationToast(
                 message = notification,
-                onDismiss = { viewModel.dismissRuleChangeNotification() },
+                onDismiss = { viewModel.uiStateManager.dismissRuleChangeNotification() },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
-        
+
     }
 }
 
@@ -376,7 +431,7 @@ private fun RuleChangeNotificationToast(
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                 modifier = Modifier.weight(1f)
             )
-            
+
             TextButton(onClick = onDismiss) {
                 Text(
                     text = "OK",

@@ -21,12 +21,12 @@ class GameTest {
         
         // Then - Using BetState
         assertEquals(0, game.betState.amount)
-        assertFalse(game.betState.hasCommittedBet)
+        assertFalse(game.betState.isCommitted)
         
         assertEquals(GamePhase.WAITING_FOR_BETS, game.phase)
         assertFalse(game.hasPlayer)
-        assertFalse(game.hasPendingBet)
-        assertFalse(game.hasCommittedBet)
+        assertFalse(game.betState.isPending)
+        assertFalse(game.betState.isCommitted)
         assertFalse(game.canDealCards)
     }
     
@@ -56,10 +56,10 @@ class GameTest {
         // Then - Using BetState
         assertEquals(150, updatedGame.betState.amount)
         assertTrue(updatedGame.betState.isPending)
-        assertFalse(updatedGame.betState.hasCommittedBet)
+        assertFalse(updatedGame.betState.isCommitted)
         
         assertEquals(1000, updatedGame.player?.chips) // Chips not deducted yet
-        assertTrue(updatedGame.hasPendingBet)
+        assertTrue(updatedGame.betState.isPending)
         assertTrue(updatedGame.canDealCards)
     }
     
@@ -88,7 +88,7 @@ class GameTest {
         assertEquals(0, clearedGame.betState.amount)
         assertFalse(clearedGame.betState.isPending)
         
-        assertFalse(clearedGame.hasPendingBet)
+        assertFalse(clearedGame.betState.isPending)
         assertFalse(clearedGame.canDealCards)
     }
     
@@ -104,12 +104,12 @@ class GameTest {
         
         // Then - Using BetState
         assertEquals(300, committedGame.betState.amount)
-        assertTrue(committedGame.betState.hasCommittedBet)
+        assertTrue(committedGame.betState.isCommitted)
         assertFalse(committedGame.betState.isPending)
         
         assertEquals(700, committedGame.player?.chips) // 1000 - 300 = 700
-        assertFalse(committedGame.hasPendingBet)
-        assertTrue(committedGame.hasCommittedBet)
+        assertFalse(committedGame.betState.isPending)
+        assertTrue(committedGame.betState.isCommitted)
     }
     
     @Test
@@ -170,11 +170,11 @@ class GameTest {
         // Then - Using BetState
         assertEquals(0, newRoundGame.betState.amount)
         assertFalse(newRoundGame.betState.isPending)
-        assertFalse(newRoundGame.betState.hasCommittedBet)
+        assertFalse(newRoundGame.betState.isCommitted)
         
         assertEquals(GamePhase.WAITING_FOR_BETS, newRoundGame.phase)
-        assertFalse(newRoundGame.hasPendingBet)
-        assertFalse(newRoundGame.hasCommittedBet)
+        assertFalse(newRoundGame.betState.isPending)
+        assertFalse(newRoundGame.betState.isCommitted)
         assertTrue(newRoundGame.hasPlayer) // Player should be preserved
         assertEquals(800, newRoundGame.player?.chips) // Chips remain as deducted
     }
@@ -201,8 +201,8 @@ class GameTest {
         
         // Then - Test all domain queries
         assertTrue(game.hasPlayer)
-        assertTrue(game.hasPendingBet)
-        assertFalse(game.hasCommittedBet)
+        assertTrue(game.betState.isPending)
+        assertFalse(game.betState.isCommitted)
         assertTrue(game.canDealCards)
         assertEquals(GamePhase.WAITING_FOR_BETS, game.phase)
     }

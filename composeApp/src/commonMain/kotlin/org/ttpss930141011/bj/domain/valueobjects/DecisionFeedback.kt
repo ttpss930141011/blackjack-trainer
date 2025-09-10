@@ -3,6 +3,17 @@ package org.ttpss930141011.bj.domain.valueobjects
 import org.ttpss930141011.bj.domain.enums.Action
 import org.ttpss930141011.bj.domain.services.StrategyEngine
 
+/**
+ * Provides feedback on a player's blackjack decision compared to optimal strategy
+ * 
+ * This value object encapsulates the evaluation of a player's action against the optimal
+ * strategy, including correctness assessment and educational explanation.
+ * 
+ * @param playerAction The action chosen by the player
+ * @param optimalAction The optimal action according to basic strategy
+ * @param isCorrect Whether the player's action matches the optimal action
+ * @param explanation Human-readable explanation of the strategy reasoning
+ */
 data class DecisionFeedback(
     val playerAction: Action,
     val optimalAction: Action,
@@ -10,6 +21,16 @@ data class DecisionFeedback(
     val explanation: String
 ) {
     companion object {
+        /**
+         * Evaluates a player's decision against optimal strategy
+         * 
+         * @param playerHand The player's current hand
+         * @param dealerUpCard The dealer's visible up card
+         * @param playerAction The action chosen by the player
+         * @param strategyEngine Engine to determine optimal strategy
+         * @param rules Game rules context for strategy evaluation
+         * @return DecisionFeedback containing evaluation results and explanation
+         */
         fun evaluate(
             playerHand: Hand,
             dealerUpCard: Card,
@@ -36,6 +57,16 @@ data class DecisionFeedback(
             )
         }
         
+        /**
+         * Generates a human-readable explanation of the strategy decision
+         * 
+         * @param playerHand The player's current hand
+         * @param dealerUpCard The dealer's visible up card
+         * @param playerAction The action chosen by the player
+         * @param optimalAction The optimal action according to strategy
+         * @param isCorrect Whether the player's action was correct
+         * @return Formatted explanation string with strategy reasoning
+         */
         private fun generateExplanation(
             playerHand: Hand,
             dealerUpCard: Card,
@@ -68,6 +99,14 @@ data class DecisionFeedback(
             }
         }
         
+        /**
+         * Provides specific strategy reasoning based on hand type and action
+         * 
+         * @param playerHand The player's current hand
+         * @param dealerUpCard The dealer's visible up card
+         * @param action The recommended optimal action
+         * @return Strategy-specific reasoning explanation
+         */
         private fun getStrategyReasoning(
             playerHand: Hand,
             dealerUpCard: Card,

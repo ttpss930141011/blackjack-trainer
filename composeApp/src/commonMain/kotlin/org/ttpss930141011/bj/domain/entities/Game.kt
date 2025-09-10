@@ -61,15 +61,7 @@ data class Game(
     
     val hasPlayer: Boolean = player != null
     
-    // Backward compatibility properties (deprecated)
-    @Deprecated("Use betState.isPending instead")
-    val hasPendingBet: Boolean = betState.isPending
-    
-    @Deprecated("Use betState.hasCommittedBet instead") 
-    val hasCommittedBet: Boolean = betState.hasCommittedBet
-    
-    @Deprecated("Use betState.hasCommittedBet instead")
-    val hasBet: Boolean = betState.hasCommittedBet
+    // Deprecated properties removed - use betState.* directly
     
     // New preferred properties
     val hasAnyBet: Boolean = betState.hasCommittedBet || betState.isPending
@@ -182,7 +174,7 @@ data class Game(
      * @throws IllegalArgumentException if no pending bet or insufficient chips
      */
     fun commitPendingBet(): Game {
-        require(hasPendingBet) { "No pending bet to commit" }
+        require(betState.isPending) { "No pending bet to commit" }
         require(hasPlayer) { "No player in game" }
         require(betState.isAffordable(player!!.chips)) { "Insufficient chips" }
         

@@ -1,5 +1,6 @@
 package org.ttpss930141011.bj.domain.valueobjects
 
+import kotlinx.serialization.Serializable
 import org.ttpss930141011.bj.domain.valueobjects.Card
 import org.ttpss930141011.bj.domain.valueobjects.GameRules
 import org.ttpss930141011.bj.domain.valueobjects.Hand
@@ -17,6 +18,7 @@ import org.ttpss930141011.bj.domain.enums.Action
  * - Clear separation of concerns
  * - Easy to test and maintain
  */
+@Serializable
 data class DecisionRecord(
     val handCards: List<Card>,
     val dealerUpCard: Card,

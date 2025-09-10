@@ -40,6 +40,7 @@ data class UserPreferences(
     
     /**
      * Updates display settings.
+     * Currently a no-op since no display settings are implemented.
      * 
      * @param newDisplaySettings New display settings to apply
      * @return Updated UserPreferences with new display settings
@@ -75,30 +76,11 @@ data class UserPreferences(
 /**
  * DisplaySettings - UI customization preferences.
  * 
- * Separates display concerns from game logic for clean architecture.
+ * LINUS PRINCIPLE: This class exists for future features.
+ * Currently empty because no display settings are actually implemented.
+ * Add settings ONLY when the feature is working.
  */
 data class DisplaySettings(
-    val showCardValues: Boolean = true,
-    val animationSpeed: Float = 1.0f,
-    val soundEnabled: Boolean = true,
-    val showProbabilities: Boolean = false,
-    val autoAdvanceRounds: Boolean = false,
-    val compactLayout: Boolean = false
-) {
-    
-    init {
-        require(animationSpeed in 0.1f..3.0f) { 
-            "Animation speed must be between 0.1 and 3.0" 
-        }
-    }
-    
-    /**
-     * Updates a specific display setting.
-     */
-    fun withShowCardValues(show: Boolean): DisplaySettings = copy(showCardValues = show)
-    fun withAnimationSpeed(speed: Float): DisplaySettings = copy(animationSpeed = speed)
-    fun withSoundEnabled(enabled: Boolean): DisplaySettings = copy(soundEnabled = enabled)
-    fun withShowProbabilities(show: Boolean): DisplaySettings = copy(showProbabilities = show)
-    fun withAutoAdvanceRounds(auto: Boolean): DisplaySettings = copy(autoAdvanceRounds = auto)
-    fun withCompactLayout(compact: Boolean): DisplaySettings = copy(compactLayout = compact)
-}
+    // Placeholder for future settings - currently empty
+    private val placeholder: Boolean = true
+)

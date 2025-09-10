@@ -196,62 +196,53 @@ private fun ActionButtons(
 ) {
     BreakpointLayout(
         compact = {
-            // Compact: Two rows - HIT/STAND on first row, DOUBLE/SURRENDER/SPLIT on second row
-            val (primaryActions, secondaryActions) = availableActions.partition { action ->
-                action == Action.HIT || action == Action.STAND
+            // Compact: Single row with custom ordering: Double, Hit, Stand, Split, Surrender
+            val orderedActions = availableActions.sortedWith { a, b ->
+                val order = mapOf(
+                    Action.DOUBLE to 1,
+                    Action.HIT to 2, 
+                    Action.STAND to 3,
+                    Action.SPLIT to 4,
+                    Action.SURRENDER to 5
+                )
+                (order[a] ?: 99) - (order[b] ?: 99)
             }
             
-            Column(
+            Row(
                 modifier = modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Tokens.Space.s),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalArrangement = Arrangement.spacedBy(
+                    Tokens.Space.s,
+                    Alignment.CenterHorizontally
+                ),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // First row: HIT and STAND
-                if (primaryActions.isNotEmpty()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(
-                            Tokens.Space.s,
-                            Alignment.CenterHorizontally
-                        ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        primaryActions.forEach { action ->
-                            ActionButton(
-                                action = action,
-                                onAction = onAction,
-                                feedback = feedback
-                            )
-                        }
-                    }
-                }
-                
-                // Second row: DOUBLE, SURRENDER, SPLIT
-                if (secondaryActions.isNotEmpty()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(
-                            Tokens.Space.s,
-                            Alignment.CenterHorizontally
-                        ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        secondaryActions.forEach { action ->
-                            ActionButton(
-                                action = action,
-                                onAction = onAction,
-                                feedback = feedback
-                            )
-                        }
-                    }
+                orderedActions.forEach { action ->
+                    ActionButton(
+                        action = action,
+                        onAction = onAction,
+                        feedback = feedback
+                    )
                 }
             }
         },
         expanded = {
-            // Expanded: LazyRow (unchanged)
+            // Expanded: LazyRow with same custom ordering: Double, Hit, Stand, Split, Surrender
+            val orderedActions = availableActions.sortedWith { a, b ->
+                val order = mapOf(
+                    Action.DOUBLE to 1,
+                    Action.HIT to 2, 
+                    Action.STAND to 3,
+                    Action.SPLIT to 4,
+                    Action.SURRENDER to 5
+                )
+                (order[a] ?: 99) - (order[b] ?: 99)
+            }
+            
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(Tokens.Space.m, Alignment.CenterHorizontally),
                 modifier = modifier
             ) {
-                items(availableActions) { action ->
+                items(orderedActions) { action ->
                     ActionButton(
                         action = action,
                         onAction = onAction,
