@@ -77,14 +77,38 @@ data class UserPreferences(
 }
 
 /**
- * DisplaySettings - UI customization preferences.
+ * DisplaySettings - UI customization and audio preferences.
  * 
- * LINUS PRINCIPLE: This class exists for future features.
- * Currently empty because no display settings are actually implemented.
- * Add settings ONLY when the feature is working.
+ * LINUS PRINCIPLE: Simple data structure for working features.
+ * No complex nested objects, just the essential settings users need.
  */
 @Serializable
 data class DisplaySettings(
-    // Placeholder for future settings - currently empty
-    private val placeholder: Boolean = true
-)
+    /**
+     * Whether sound effects are enabled.
+     * Controls all game audio: card dealing, feedback sounds, etc.
+     */
+    val soundEnabled: Boolean = true,
+    
+    /**
+     * Audio volume level for all game sounds.
+     * Range: 0.0 (silent) to 1.0 (full volume)
+     */
+    val soundVolume: Float = 0.8f
+) {
+    /**
+     * Creates a copy with updated sound enabled state.
+     */
+    fun withSoundEnabled(enabled: Boolean): DisplaySettings {
+        return copy(soundEnabled = enabled)
+    }
+    
+    /**
+     * Creates a copy with updated sound volume.
+     * Volume is automatically clamped to valid range [0.0, 1.0].
+     */
+    fun withSoundVolume(volume: Float): DisplaySettings {
+        val clampedVolume = volume.coerceIn(0.0f, 1.0f)
+        return copy(soundVolume = clampedVolume)
+    }
+}

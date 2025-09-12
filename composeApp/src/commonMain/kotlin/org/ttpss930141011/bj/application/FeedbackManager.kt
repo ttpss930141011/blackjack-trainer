@@ -1,17 +1,24 @@
 package org.ttpss930141011.bj.application
 
 import androidx.compose.runtime.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
+import org.ttpss930141011.bj.domain.services.AudioManager
 
 /**
  * FeedbackManager - Focuses ONLY on decision feedback and evaluation
  * 
  * Linus: "Handle feedback, track decisions. No game state shit, no analytics shit."
+ * 
+ * ENHANCED: Now includes audio feedback for immediate user response
  */
 internal class FeedbackManager(
-    private val decisionEvaluator: DecisionEvaluator
+    private val decisionEvaluator: DecisionEvaluator,
+    private val audioManager: AudioManager,
+    private val coroutineScope: CoroutineScope
 ) {
     private var _feedback by mutableStateOf<DecisionFeedback?>(null)
     val feedback: DecisionFeedback? get() = _feedback
@@ -36,6 +43,15 @@ internal class FeedbackManager(
         // Track decision for round
         val playerDecision = PlayerDecision(playerAction, feedback.isCorrect)
         _roundDecisions = _roundDecisions + playerDecision
+        
+        // Play audio feedback - non-blocking
+        coroutineScope.launch {
+            if (feedback.isCorrect) {
+                audioManager.playCorrectSound()
+            } else {
+                audioManager.playWrongSound()
+            }
+        }
         
         return feedback
     }

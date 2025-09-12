@@ -12,6 +12,8 @@ import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.infrastructure.DataLoader
 import org.ttpss930141011.bj.infrastructure.CachingDataLoader
 import org.ttpss930141011.bj.infrastructure.InfrastructureConstants
+import org.ttpss930141011.bj.infrastructure.audio.AudioModule
+import org.ttpss930141011.bj.infrastructure.audio.AudioManagerImpl
 
 /**
  * GameViewModel - BREAKING CHANGE: Complete rewrite for RoundHistory integration
@@ -39,11 +41,12 @@ class GameViewModel(
     private val persistenceService: PersistenceService = PersistenceService(),
     private val chipCompositionService: ChipCompositionService = ChipCompositionService(),
     private val dataLoader: DataLoader = CachingDataLoader(),
+    private val audioManager: AudioManager = AudioModule.getAudioManager(),
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 ) {
     
     private val gameStateManager = GameStateManager(gameService)
-    private val feedbackManager = FeedbackManager(decisionEvaluator)
+    private val feedbackManager = FeedbackManager(decisionEvaluator, audioManager, coroutineScope)
     private val analyticsManager = AnalyticsManager(persistenceService)
     val uiStateManager = UIStateManager(chipCompositionService)
     
@@ -76,10 +79,23 @@ class GameViewModel(
     // ===== GAME LIFECYCLE =====
     
     /**
+     * Applies audio preferences from user settings.
+     * Called when user preferences change.
+     */
+    private fun applyAudioPreferences() {
+        audioManager.setEnabled(userPreferences.displaySettings.soundEnabled)
+        if (audioManager is AudioManagerImpl) {
+            audioManager.setVolume(userPreferences.displaySettings.soundVolume)
+        }
+    }
+    
+    /**
      * Initializes a new game with specified rules and player
      * BREAKING CHANGE: Resets both round history and decision analytics
      */
     fun initializeGame(gameRules: GameRules, player: Player) {
+        // Apply current audio preferences
+        applyAudioPreferences()
         gameStateManager.initializeGame(gameRules, player)
         feedbackManager.reset()
         analyticsManager.resetSession()
@@ -117,6 +133,11 @@ class GameViewModel(
             is GameStateResult.Success -> {
                 feedbackManager.reset()
                 uiStateManager.clearError()
+                
+                // Play card dealing sound
+                coroutineScope.launch {
+                    audioManager.playCardSound()
+                }
                 
                 // BREAKING CHANGE: Initialize round context after dealing
                 initializeRoundContext()
@@ -494,6 +515,9 @@ class GameViewModel(
     fun updateUserPreferences(newPreferences: UserPreferences) {
         _userPreferences = newPreferences
         _lastBetAmount = if (newPreferences.lastBetAmount > 0) newPreferences.lastBetAmount else null
+        
+        // Apply audio settings
+        applyAudioPreferences()
         
         // 使緩存失效，確保下次載入時獲取最新數據
         dataLoader.invalidate("user_preferences")

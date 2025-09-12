@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.application.GameViewModel
+import org.ttpss930141011.bj.application.ApplicationService
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
@@ -63,8 +64,12 @@ fun CasinoGameScreen() {
     // Get current game rules from user preferences (persistent storage)
     val currentGameRules = viewModel.userPreferences.preferredRules
 
-    // Initialize game only once, using user's preferred rules
+    // Initialize application services and game only once
     LaunchedEffect(Unit) {
+        // Initialize application-level services
+        ApplicationService.getInstance().initialize()
+        
+        // Initialize game with user's preferred rules
         viewModel.initializeGame(
             currentGameRules,
             Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS)

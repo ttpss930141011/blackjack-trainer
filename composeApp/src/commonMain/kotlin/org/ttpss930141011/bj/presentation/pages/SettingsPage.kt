@@ -44,6 +44,16 @@ fun SettingsPage(
                 }
             )
         }
+        
+        // Audio Settings
+        item {
+            AudioSettingsCard(
+                displaySettings = userPreferences.displaySettings,
+                onDisplaySettingsChanged = { newSettings ->
+                    onPreferencesChanged(userPreferences.updateDisplaySettings(newSettings))
+                }
+            )
+        }
     }
 }
 
@@ -212,6 +222,36 @@ private fun SettingsSlider(
                 inactiveTrackColor = Color.Gray.copy(alpha = 0.3f)
             )
         )
+    }
+}
+
+@Composable
+private fun AudioSettingsCard(
+    displaySettings: DisplaySettings,
+    onDisplaySettingsChanged: (DisplaySettings) -> Unit
+) {
+    SettingsCard(title = "Audio") {
+        SettingsSwitch(
+            text = "Sound Effects",
+            checked = displaySettings.soundEnabled,
+            onCheckedChange = { enabled ->
+                onDisplaySettingsChanged(displaySettings.withSoundEnabled(enabled))
+            }
+        )
+        
+        if (displaySettings.soundEnabled) {
+            SettingsSlider(
+                text = "Volume",
+                value = (displaySettings.soundVolume * 100).toInt(),
+                valueRange = 0..100,
+                step = 10,
+                onValueChanged = { volumePercent ->
+                    val volume = volumePercent / 100.0f
+                    onDisplaySettingsChanged(displaySettings.withSoundVolume(volume))
+                },
+                formatValue = { "$it%" }
+            )
+        }
     }
 }
 
