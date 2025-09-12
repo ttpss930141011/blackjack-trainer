@@ -122,30 +122,8 @@ class PersistenceService(
             .take(limit)
     }
     
-    // ===== ANALYTICS CALCULATIONS (Client-Side) =====
-    
-    /**
-     * Calculate scenario error statistics.
-     * Pure calculation - no complex repository queries.
-     */
-    suspend fun calculateScenarioStats(minSamples: Int = InfrastructureConstants.MIN_SAMPLES_FOR_STATISTICS): List<ScenarioErrorStat> {
-        val decisions = getAllDecisions()
-        
-        return decisions
-            .groupBy { it.baseScenarioKey }
-            .filter { (_, decisionList) -> decisionList.size >= minSamples }
-            .map { (scenario, decisionList) ->
-                val totalAttempts = decisionList.size
-                val errorCount = decisionList.count { !it.isCorrect }
-                
-                ScenarioErrorStat(
-                    baseScenarioKey = scenario,
-                    errorCount = errorCount,
-                    totalAttempts = totalAttempts
-                )
-            }
-            .sortedByDescending { it.errorRate }
-    }
+    // ===== ANALYTICS CALCULATIONS (Simplified) =====
+    // Complex statistics removed - keeping only essential session data
     
     /**
      * Calculate mistake records with original card data.
@@ -171,19 +149,7 @@ class PersistenceService(
             .sortedByDescending { it.errorCount }
     }
     
-    /**
-     * Convert MistakeRecord to ScenarioErrorStat for backward compatibility.
-     * Bridges the new card-based data to existing string-based display.
-     */
-    fun mistakeRecordsToStats(mistakeRecords: List<MistakeRecord>): List<ScenarioErrorStat> {
-        return mistakeRecords.map { mistake ->
-            ScenarioErrorStat(
-                baseScenarioKey = mistake.baseScenarioKey,
-                errorCount = mistake.errorCount,
-                totalAttempts = mistake.errorCount // For mistakes, we only track errors
-            )
-        }
-    }
+    // Statistics conversion methods removed
     
     /**
      * Calculate current session statistics.

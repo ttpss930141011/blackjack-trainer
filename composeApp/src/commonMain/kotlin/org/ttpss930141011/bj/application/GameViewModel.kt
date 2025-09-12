@@ -8,8 +8,7 @@ import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
-import org.ttpss930141011.bj.infrastructure.InMemoryLearningRepository
-import org.ttpss930141011.bj.infrastructure.ScenarioStats
+// InMemoryLearningRepository and ScenarioStats imports removed
 import org.ttpss930141011.bj.infrastructure.DataLoader
 import org.ttpss930141011.bj.infrastructure.CachingDataLoader
 import org.ttpss930141011.bj.infrastructure.InfrastructureConstants
@@ -69,11 +68,7 @@ class GameViewModel(
     private var _recentRounds by mutableStateOf<List<RoundHistory>>(emptyList())
     val recentRounds: List<RoundHistory> get() = _recentRounds
     
-    private var _scenarioStats by mutableStateOf<List<ScenarioErrorStat>>(emptyList())
-    val scenarioStats: List<ScenarioErrorStat> get() = _scenarioStats
-    
-    private var _decisionHistory by mutableStateOf<List<DecisionRecord>>(emptyList())
-    val decisionHistory: List<DecisionRecord> get() = _decisionHistory
+    // Statistics removed - keeping only essential round history
     
     // Round timing
     private var roundStartTime: Long = 0
@@ -274,32 +269,14 @@ class GameViewModel(
         }
     }
     
-    /**
-     * Load scenario statistics for analytics display.
-     */
-    fun loadScenarioStats() {
-        coroutineScope.launch {
-            _scenarioStats = persistenceService.calculateScenarioStats()
-        }
-    }
+    // Statistics methods removed - simplified data loading
     
     /**
-     * Load decision history for analytics display.
-     */
-    fun loadDecisionHistory() {
-        coroutineScope.launch {
-            _decisionHistory = persistenceService.getRecentDecisions(InfrastructureConstants.ANALYTICS_DECISIONS_LIMIT)
-        }
-    }
-    
-    /**
-     * Refresh all analytics data in one operation.
-     * Eliminates special cases and consolidates data loading.
+     * Refresh round history data.
+     * Simplified without complex analytics.
      */
     fun refreshAllData() {
         loadRecentRounds()
-        loadScenarioStats()
-        loadDecisionHistory()
     }
     
     /**
@@ -311,14 +288,7 @@ class GameViewModel(
         loadRecentRounds()
     }
     
-    /**
-     * Refresh scenario statistics cache.
-     * Follows same pattern as refreshRoundHistory for consistency.
-     */
-    fun refreshScenarioStats() {
-        dataLoader.invalidate("scenario_stats")
-        loadScenarioStats()
-    }
+    // Statistics refresh methods removed
     
     // ===== DECISION RECORDING =====
     
@@ -401,8 +371,7 @@ class GameViewModel(
             actionResult = actionResult
         )
         
-        // Refresh scenario stats using same pattern as round history
-        refreshScenarioStats()
+        // Statistics removed - no need to refresh
     }
     
     private fun handleAutoTransitions() {
@@ -439,18 +408,15 @@ class GameViewModel(
     
     // ===== ANALYTICS INTERFACE (SIMPLIFIED) =====
     
-    /**
-     * BREAKING CHANGE: Removed direct analytics methods.
-     * Use PersistenceService directly for complex analytics.
-     */
+    // === SIMPLIFIED ANALYTICS INTERFACE ===
     
     /**
      * Clear all learning data and refresh views.
-     * Consolidated operation without special cases.
+     * Simplified operation.
      */
     fun clearAllLearningData() {
         persistenceService.clearAllLearningData()
-        refreshAllData()
+        loadRecentRounds()
     }
     
     val currentGameRules: GameRules? get() = game?.rules

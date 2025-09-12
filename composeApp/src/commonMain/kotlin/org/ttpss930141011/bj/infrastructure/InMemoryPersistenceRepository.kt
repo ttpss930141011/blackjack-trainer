@@ -98,7 +98,7 @@ object PersistenceStats {
     
     /**
      * Calculate error rate for scenarios.
-     * This replaces the complex ScenarioErrorStat methods.
+     * Simple session stats calculation.
      */
     suspend fun calculateScenarioErrors(
         repository: PersistenceRepository,

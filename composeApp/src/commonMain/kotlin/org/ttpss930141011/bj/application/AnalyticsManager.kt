@@ -7,7 +7,7 @@ import kotlinx.coroutines.launch
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
-import org.ttpss930141011.bj.infrastructure.ScenarioStats
+// ScenarioStats import removed
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 

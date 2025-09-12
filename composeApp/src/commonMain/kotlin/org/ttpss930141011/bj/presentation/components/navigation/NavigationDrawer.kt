@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 
 enum class NavigationPage {
-    HOME, STRATEGY, HISTORY, STATISTICS, SETTINGS
+    HOME, STRATEGY, HISTORY, SETTINGS
 }
 
 data class NavigationItem(
@@ -39,7 +39,6 @@ fun GameNavigationDrawer(
         NavigationItem("Home", NavigationPage.HOME, Icons.Filled.Home),
         NavigationItem("Strategy Chart", NavigationPage.STRATEGY, Icons.Filled.PlaylistPlay),
         NavigationItem("Decision History", NavigationPage.HISTORY, Icons.Filled.History),
-        NavigationItem("Statistics", NavigationPage.STATISTICS, Icons.Filled.BarChart),
         NavigationItem("Settings", NavigationPage.SETTINGS, Icons.Filled.Settings)
     )
     

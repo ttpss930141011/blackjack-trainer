@@ -14,7 +14,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
@@ -29,8 +28,7 @@ import org.ttpss930141011.bj.presentation.components.feedback.*
 import org.ttpss930141011.bj.presentation.components.history.*
 import org.ttpss930141011.bj.presentation.components.dialogs.*
 import org.ttpss930141011.bj.presentation.components.navigation.Header
-import org.ttpss930141011.bj.presentation.components.navigation.GameNavigationDrawer
-import org.ttpss930141011.bj.presentation.components.navigation.GameNavigationBar
+import org.ttpss930141011.bj.presentation.components.navigation.NavigationMenu
 import org.ttpss930141011.bj.presentation.components.navigation.NavigationPage
 import org.ttpss930141011.bj.presentation.pages.*
 import org.ttpss930141011.bj.presentation.design.AppConstants
@@ -54,6 +52,9 @@ fun CasinoGameScreen() {
 
     // Navigation state (HOME is default)
     var currentPage by remember { mutableStateOf<NavigationPage?>(NavigationPage.HOME) }
+    
+    // Menu state
+    var isMenuExpanded by remember { mutableStateOf(false) }
 
     // Feedback notification settings
     var feedbackNotificationEnabled by remember { mutableStateOf(true) }
@@ -109,41 +110,37 @@ fun CasinoGameScreen() {
     )
 
     Layout { screenWidth ->
-        if (screenWidth.isCompact) {
-            // Mobile: NavigationBar at bottom (NO drawer for compact)
-            Scaffold(
-                containerColor = CasinoTheme.PageBackground,
-                bottomBar = {
-                    GameNavigationBar(
-                        currentPage = currentPage ?: NavigationPage.HOME,
-                        onPageSelected = { currentPage = it }
+        // Single layout approach - no more compact/expanded split
+        Scaffold(
+            containerColor = CasinoTheme.PageBackground
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(CasinoTheme.PageBackground)
+                    .padding(paddingValues)
+            ) {
+                    // Header for all pages with integrated navigation menu
+                    Header(
+                        balance = currentPlayer.chips,
+                        currentPage = currentPage,
+                        onBackClick = if (currentPage != NavigationPage.HOME) {
+                            { currentPage = NavigationPage.HOME }
+                        } else null,
+                        isMenuExpanded = isMenuExpanded,
+                        onMenuExpandedChange = { isMenuExpanded = it },
+                        onNavigate = { page -> currentPage = page }
                     )
-                }
-            ) { paddingValues ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(CasinoTheme.PageBackground)
-                        .padding(paddingValues)
-                ) {
-                    // Add header for non-Home pages (no drawer button in compact)
-                    if (currentPage != NavigationPage.HOME && currentPage != null) {
-                        Header(
-                            balance = currentPlayer.chips,
-                            currentPage = currentPage,
-                            drawerButton = null // No drawer in compact layout
-                        )
-                    }
 
                     when (currentPage) {
-                        NavigationPage.STRATEGY -> Layout { screenWidth ->
+                        NavigationPage.STRATEGY -> {
                             StrategyPage(
                                 gameRules = currentGameRules,
                                 screenWidth = screenWidth
                             )
                         }
 
-                        NavigationPage.HISTORY -> Layout { screenWidth ->
+                        NavigationPage.HISTORY -> {
                             // 使用新的載入方式
                             LaunchedEffect(Unit) {
                                 viewModel.loadRecentRounds()
@@ -155,21 +152,7 @@ fun CasinoGameScreen() {
                             )
                         }
 
-                        NavigationPage.STATISTICS -> Layout { screenWidth ->
-                            // Load both scenario statistics and decision history for enhanced analytics
-                            LaunchedEffect(Unit) {
-                                viewModel.loadScenarioStats()
-                                viewModel.loadDecisionHistory()
-                            }
-                            
-                            StatisticsPage(
-                                scenarioStats = viewModel.scenarioStats,
-                                decisionHistory = viewModel.decisionHistory,
-                                screenWidth = screenWidth
-                            )
-                        }
-
-                        NavigationPage.SETTINGS -> Layout { screenWidth ->
+                        NavigationPage.SETTINGS -> {
                             // 載入用戶偏好設定
                             LaunchedEffect(Unit) {
                                 viewModel.loadUserPreferences()
@@ -184,7 +167,7 @@ fun CasinoGameScreen() {
                         }
 
                         NavigationPage.HOME, null -> {
-                            // Default to game content (Home) - no drawer state in compact
+                            // Default to game content (Home)
                             CasinoGameContent(
                                 game = game,
                                 viewModel = viewModel,
@@ -199,116 +182,8 @@ fun CasinoGameScreen() {
                     }
                 }
             }
-        } else {
-            // Desktop: Full screen with feedback drawer
-            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-            val scope = rememberCoroutineScope()
-
-            GameWithNavigationDrawer(
-                currentPage = currentPage,
-                onPageSelected = { currentPage = it },
-                drawerState = drawerState
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(CasinoTheme.PageBackground) // Consistent background
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        // Add header for non-Home pages  
-                        if (currentPage != NavigationPage.HOME && currentPage != null) {
-                            Header(
-                                balance = currentPlayer.chips,
-                                currentPage = currentPage,
-                                drawerButton = {
-                                    TextButton(
-                                        onClick = {
-                                            scope.launch { drawerState.open() }
-                                        }
-                                    ) {
-                                        Text(
-                                            text = "☰",
-                                            color = Color.White,
-                                            style = MaterialTheme.typography.titleLarge
-                                        )
-                                    }
-                                }
-                            )
-                        }
-
-                        when (currentPage) {
-                            NavigationPage.STRATEGY -> Layout { screenWidth ->
-                                StrategyPage(
-                                    gameRules = currentGameRules,
-                                    screenWidth = screenWidth
-                                )
-                            }
-
-                            NavigationPage.HISTORY -> Layout { screenWidth ->
-                                // 使用新的載入方式
-                                LaunchedEffect(Unit) {
-                                    viewModel.loadRecentRounds()
-                                }
-                                
-                                HistoryPage(
-                                    roundHistory = viewModel.recentRounds,
-                                    screenWidth = screenWidth
-                                )
-                            }
-
-                            NavigationPage.STATISTICS -> Layout { screenWidth ->
-                                // Load both scenario statistics and decision history for enhanced analytics
-                                LaunchedEffect(Unit) {
-                                    viewModel.loadScenarioStats()
-                                    viewModel.loadDecisionHistory()
-                                }
-                                
-                                StatisticsPage(
-                                    scenarioStats = viewModel.scenarioStats,
-                                    decisionHistory = viewModel.decisionHistory,
-                                    screenWidth = screenWidth
-                                )
-                            }
-
-                            NavigationPage.SETTINGS -> Layout { screenWidth ->
-                                // 載入用戶偏好設定
-                                LaunchedEffect(Unit) {
-                                    viewModel.loadUserPreferences()
-                                }
-                                
-                                SettingsPage(
-                                    userPreferences = viewModel.userPreferences,
-                                    onPreferencesChanged = { newPreferences ->
-                                        viewModel.updateUserPreferences(newPreferences)
-                                    }
-                                )
-                            }
-
-                            NavigationPage.HOME, null -> {
-                                // Default to game content (Home)
-                                Layout { screenWidth ->
-                                    CasinoGameContent(
-                                        game = game,
-                                        viewModel = viewModel,
-                                        currentPlayer = currentPlayer,
-                                        feedback = viewModel.feedback,
-                                        currentPage = currentPage,
-                                        screenWidth = screenWidth,
-                                        feedbackNotificationEnabled = feedbackNotificationEnabled,
-                                        feedbackDurationSeconds = feedbackDurationSeconds,
-                                        drawerState = drawerState
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
-}
 
 @Composable
 private fun CasinoGameContent(
@@ -320,9 +195,7 @@ private fun CasinoGameContent(
     screenWidth: ScreenWidth,
     feedbackNotificationEnabled: Boolean = true,
     feedbackDurationSeconds: Float = 2.5f,
-    drawerState: DrawerState? = null
 ) {
-    val scope = rememberCoroutineScope()
     // 直接使用單色背景，移除多餘漸層
     Box(
         modifier = Modifier
@@ -333,24 +206,7 @@ private fun CasinoGameContent(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Header(
-                balance = currentPlayer.chips,
-                currentPage = currentPage,
-                drawerButton = drawerState?.let { drawer ->
-                    {
-                        HistoryDrawerButton(
-                            decisionCount = viewModel.recentRounds.size, // Use recentRounds instead
-                            onOpenDrawer = {
-                                scope.launch {
-                                    drawer.open()
-                                }
-                            }
-                        )
-                    }
-                }
-            )
-
-            // 遊戲區域直接填滿剩餘空間，移除多餘包裝
+            // Game area fills remaining space directly
             game?.let { currentGame ->
                 GamePhaseManager(
                     game = currentGame,
@@ -398,31 +254,6 @@ private fun CasinoGameContent(
     }
 }
 
-@Composable
-fun GameWithNavigationDrawer(
-    currentPage: NavigationPage?,
-    onPageSelected: (NavigationPage?) -> Unit,
-    drawerState: DrawerState,
-    gameContent: @Composable () -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            GameNavigationDrawer(
-                currentPage = currentPage ?: NavigationPage.HOME, // Fallback for drawer display
-                onPageSelected = onPageSelected,
-                onCloseDrawer = {
-                    scope.launch {
-                        drawerState.close()
-                    }
-                }
-            )
-        }
-    ) {
-        gameContent()
-    }
-}
 
 @Composable
 private fun RuleChangeNotificationToast(
