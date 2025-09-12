@@ -10,9 +10,11 @@ import kotlinx.coroutines.IO
 import org.ttpss930141011.bj.infrastructure.database.dao.DecisionRecordDao
 import org.ttpss930141011.bj.infrastructure.database.dao.GameSessionDao
 import org.ttpss930141011.bj.infrastructure.database.dao.RoundHistoryDao
+import org.ttpss930141011.bj.infrastructure.database.dao.UserPreferencesDao
 import org.ttpss930141011.bj.infrastructure.database.entities.DecisionRecordEntity
 import org.ttpss930141011.bj.infrastructure.database.entities.GameSessionEntity
 import org.ttpss930141011.bj.infrastructure.database.entities.RoundHistoryEntity
+import org.ttpss930141011.bj.infrastructure.database.entities.UserPreferencesEntity
 
 /**
  * Room database for blackjack strategy trainer.
@@ -24,9 +26,10 @@ import org.ttpss930141011.bj.infrastructure.database.entities.RoundHistoryEntity
     entities = [
         GameSessionEntity::class,
         RoundHistoryEntity::class,
-        DecisionRecordEntity::class
+        DecisionRecordEntity::class,
+        UserPreferencesEntity::class
     ], 
-    version = 3, 
+    version = 4, 
     exportSchema = true
 )
 @ConstructedBy(BlackjackDatabaseConstructor::class)
@@ -34,6 +37,7 @@ abstract class BlackjackDatabase : RoomDatabase() {
     abstract fun gameSessionDao(): GameSessionDao
     abstract fun roundHistoryDao(): RoundHistoryDao
     abstract fun decisionRecordDao(): DecisionRecordDao
+    abstract fun userPreferencesDao(): UserPreferencesDao
 }
 
 

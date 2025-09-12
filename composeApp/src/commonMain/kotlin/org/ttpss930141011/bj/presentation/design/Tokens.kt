@@ -2,6 +2,8 @@ package org.ttpss930141011.bj.presentation.design
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.TextUnit
 import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 
 /**
@@ -50,6 +52,23 @@ object Tokens {
         val medium = 12.dp
         val large = 16.dp
         val xlarge = 24.dp
+    }
+    
+    // Typography scale
+    object Typography {
+        // Action button text sizes
+        val actionButtonIconCompact = 12.sp
+        val actionButtonIconExpanded = 16.sp
+        val actionButtonTextExpanded = 14.sp
+        val actionButtonHintCompact = 10.sp
+        val actionButtonHintExpanded = 14.sp
+        
+        // General text sizes
+        val captionSmall = 10.sp
+        val captionMedium = 12.sp
+        val bodySmall = 14.sp
+        val bodyMedium = 16.sp
+        val titleSmall = 18.sp
     }
     
     // Adaptive functions - optimized single-source approach

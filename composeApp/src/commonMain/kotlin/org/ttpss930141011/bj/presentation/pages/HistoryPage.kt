@@ -157,16 +157,7 @@ private fun DecisionRow(
                 CardChip(result.newCard)
             }
             is ActionResult.Split -> {
-                Column {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("H1:", fontSize = 10.sp)
-                        HandDisplay(result.hand1)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("H2:", fontSize = 10.sp)
-                        HandDisplay(result.hand2)
-                    }
-                }
+                // No additional cards shown for split - keep UI clean
             }
             is ActionResult.Stand, is ActionResult.Surrender -> {
                 // No additional cards shown

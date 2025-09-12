@@ -8,8 +8,10 @@ import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.infrastructure.database.BlackjackDatabase
 import org.ttpss930141011.bj.infrastructure.database.entities.RoundHistoryEntity
 import org.ttpss930141011.bj.infrastructure.database.entities.DecisionRecordEntity
+import org.ttpss930141011.bj.infrastructure.database.entities.UserPreferencesEntity
 import kotlin.reflect.KClass
 import org.ttpss930141011.bj.domain.enums.RoundResult
+import org.ttpss930141011.bj.application.TimeProvider
 
 /**
  * Room-based implementation of PersistenceRepository
@@ -64,8 +66,15 @@ class RoomPersistenceRepository(
             }
             
             is UserPreferences -> {
-                // TODO: 實現 UserPreferences 保存
-                // 可以使用 SharedPreferences 或者創建專門的 Entity
+                // Convert domain object to entity following DecisionRecord pattern
+                val entity = UserPreferencesEntity(
+                    id = 1, // Fixed ID for singleton preferences
+                    preferredRulesJson = json.encodeToString(data.preferredRules),
+                    lastBetAmount = data.lastBetAmount,
+                    displaySettingsJson = json.encodeToString(data.displaySettings),
+                    lastUpdated = TimeProvider.currentTimeMillis()
+                )
+                database.userPreferencesDao().savePreferences(entity)
             }
             
             else -> {
@@ -87,8 +96,9 @@ class RoomPersistenceRepository(
             }
             
             UserPreferences::class -> {
-                // TODO: 實現 UserPreferences 載入
-                null
+                // Load from database following same pattern as other entities
+                val entity = database.userPreferencesDao().getPreferences()
+                entity?.let { convertEntityToDomain(it) } as? T
             }
             
             else -> null
@@ -196,6 +206,18 @@ class RoomPersistenceRepository(
             afterAction = ActionResult.Stand(json.decodeFromString(entity.handCardsJson)), // Placeholder
             isCorrect = entity.isCorrect,
             timestamp = entity.timestamp
+        )
+    }
+    
+    /**
+     * 將 UserPreferencesEntity 轉換為 UserPreferences domain 對象
+     * 使用 JSON 反序列化將字串轉換回複雜對象
+     */
+    private fun convertEntityToDomain(entity: UserPreferencesEntity): UserPreferences {
+        return UserPreferences(
+            preferredRules = json.decodeFromString(entity.preferredRulesJson),
+            lastBetAmount = entity.lastBetAmount,
+            displaySettings = json.decodeFromString(entity.displaySettingsJson)
         )
     }
 }

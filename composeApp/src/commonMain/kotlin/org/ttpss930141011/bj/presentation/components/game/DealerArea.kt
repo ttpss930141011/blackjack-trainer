@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.domain.entities.*
@@ -20,38 +21,42 @@ import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.design.Tokens
+import org.ttpss930141011.bj.presentation.design.AppConstants
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
 import org.ttpss930141011.bj.presentation.components.displays.HoleCardDisplay
 import org.ttpss930141011.bj.presentation.components.displays.StatusOverlay
+import org.ttpss930141011.bj.presentation.components.displays.DeckIndicatorArea
+import org.ttpss930141011.bj.presentation.components.displays.OverlappingCardsDisplay
+import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import org.ttpss930141011.bj.presentation.mappers.DealerStatus
 
 /**
- * Dealer area component that handles dealer display logic
- * Shows waiting state, up card, or full hand based on game phase
+ * Dealer area with true centering approach
+ * Center: Dealer hand truly centered in available space
+ * Left overlay: Deck indicator as non-interfering overlay
  */
-
 @Composable
 fun DealerArea(
     game: Game,
+    screenWidth: ScreenWidth,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
-        when (game.phase) {
-            GamePhase.WAITING_FOR_BETS -> {
-                DealerWaitingDisplay()
-            }
-            else -> {
-                DealerHandCard(
-                    dealerHand = game.dealer.hand,
-                    dealerUpCard = game.dealer.upCard,
-                    phase = game.phase
-                )
-            }
-        }
+    Box(modifier = modifier) {
+        // Main content: Dealer hand centered in full width
+        DealerHandArea(
+            game = game,
+            screenWidth = screenWidth,
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        // Overlay: Deck indicator positioned on the left
+        DeckIndicatorArea(
+            remainingCards = game.deck.remainingCards,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = Tokens.Space.s)
+        )
     }
 }
 
@@ -79,11 +84,42 @@ private fun DealerWaitingDisplay() {
     }
 }
 
+/**
+ * Isolated dealer hand area that handles phase-specific display
+ * Separated from layout concerns for cleaner separation
+ */
+@Composable
+private fun DealerHandArea(
+    game: Game,
+    screenWidth: ScreenWidth,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        when (game.phase) {
+            GamePhase.WAITING_FOR_BETS -> {
+                DealerWaitingDisplay()
+            }
+            else -> {
+                DealerHandCard(
+                    dealerHand = game.dealer.hand,
+                    dealerUpCard = game.dealer.upCard,
+                    phase = game.phase,
+                    screenWidth = screenWidth
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun DealerHandCard(
     dealerHand: Hand?,
     dealerUpCard: Card?,
-    phase: GamePhase
+    phase: GamePhase,
+    screenWidth: ScreenWidth
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -105,19 +141,21 @@ private fun DealerHandCard(
                     when (phase) {
                         GamePhase.PLAYER_TURN -> {
                             dealerUpCard?.let { upCard ->
-                                Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
-                                    CardImageDisplay(card = upCard, size = Tokens.Card.medium)
-                                    HoleCardDisplay(size = Tokens.Card.medium)
-                                }
+                                // Use overlapping display: hole card first (bottom), then up card (top, overlapping)
+                                DealerUpCardWithHoleCard(
+                                    upCard = upCard,
+                                    screenWidth = screenWidth
+                                )
                             }
                         }
                         else -> {
+                            // Show full dealer hand with overlapping display for space efficiency
                             dealerHand?.let { hand ->
-                                Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
-                                    hand.cards.forEach { card ->
-                                        CardImageDisplay(card = card, size = Tokens.Card.medium)
-                                    }
-                                }
+                                OverlappingCardsDisplay(
+                                    cards = hand.cards,
+                                    cardSize = Tokens.Card.medium,
+                                    screenWidth = screenWidth
+                                )
                             }
                         }
                     }
@@ -160,6 +198,45 @@ private fun getDealerStatus(dealerHand: Hand?, phase: GamePhase): DealerStatus? 
         phase == GamePhase.DEALER_TURN -> DealerStatus.HITTING
         phase == GamePhase.SETTLEMENT -> DealerStatus.STANDING
         else -> null
+    }
+}
+
+/**
+ * Displays dealer up card overlapping hole card during player turn
+ * Hole card at bottom, up card overlapping on top following same ratio as other cards
+ */
+@Composable
+private fun DealerUpCardWithHoleCard(
+    upCard: Card,
+    screenWidth: ScreenWidth,
+    cardSize: Tokens.CardDimensions = Tokens.Card.medium
+) {
+    // Use same overlap ratio as other card displays for consistency
+    val overlapRatio = when (screenWidth) {
+        ScreenWidth.COMPACT -> AppConstants.Card.COMPACT_OVERLAP_RATIO    // 0.6f
+        ScreenWidth.MEDIUM -> AppConstants.Card.DEFAULT_OVERLAP_RATIO     // 0.5f  
+        ScreenWidth.EXPANDED -> AppConstants.Card.EXPANDED_OVERLAP_RATIO  // 0.4f
+    }
+    
+    // Calculate offset for up card (same logic as OverlappingCardsDisplay)
+    val visibleWidth: Dp = cardSize.width * (1f - overlapRatio)
+    val totalWidth: Dp = visibleWidth + cardSize.width
+    
+    Box(
+        modifier = Modifier.width(totalWidth)
+    ) {
+        // Hole card at bottom (position 0)
+        HoleCardDisplay(
+            size = cardSize,
+            modifier = Modifier.offset(x = 0.dp)
+        )
+        
+        // Up card overlapping on top (position with offset)
+        CardImageDisplay(
+            card = upCard,
+            size = cardSize,
+            modifier = Modifier.offset(x = visibleWidth)
+        )
     }
 }
 

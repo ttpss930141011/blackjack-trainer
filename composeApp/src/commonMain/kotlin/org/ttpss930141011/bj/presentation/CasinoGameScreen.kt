@@ -22,6 +22,7 @@ import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.layout.Layout
+import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 import org.ttpss930141011.bj.presentation.layout.isCompact
 import org.ttpss930141011.bj.presentation.components.*
 import org.ttpss930141011.bj.presentation.components.feedback.*
@@ -67,6 +68,13 @@ fun CasinoGameScreen() {
             currentGameRules,
             Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS)
         )
+    }
+
+    // Reload user preferences when returning to HOME page
+    LaunchedEffect(currentPage) {
+        if (currentPage == NavigationPage.HOME || currentPage == null) {
+            viewModel.loadUserPreferences()
+        }
     }
 
     // Handle rule changes from user preferences (not external gameRules parameter)
@@ -148,13 +156,15 @@ fun CasinoGameScreen() {
                         }
 
                         NavigationPage.STATISTICS -> Layout { screenWidth ->
-                            // Load scenario statistics using ViewModel's centralized data management
+                            // Load both scenario statistics and decision history for enhanced analytics
                             LaunchedEffect(Unit) {
                                 viewModel.loadScenarioStats()
+                                viewModel.loadDecisionHistory()
                             }
                             
                             StatisticsPage(
                                 scenarioStats = viewModel.scenarioStats,
+                                decisionHistory = viewModel.decisionHistory,
                                 screenWidth = screenWidth
                             )
                         }
@@ -181,6 +191,7 @@ fun CasinoGameScreen() {
                                 currentPlayer = currentPlayer,
                                 feedback = viewModel.feedback,
                                 currentPage = currentPage,
+                                screenWidth = screenWidth,
                                 feedbackNotificationEnabled = feedbackNotificationEnabled,
                                 feedbackDurationSeconds = feedbackDurationSeconds
                             )
@@ -248,13 +259,15 @@ fun CasinoGameScreen() {
                             }
 
                             NavigationPage.STATISTICS -> Layout { screenWidth ->
-                                // Load scenario statistics using ViewModel's centralized data management
+                                // Load both scenario statistics and decision history for enhanced analytics
                                 LaunchedEffect(Unit) {
                                     viewModel.loadScenarioStats()
+                                    viewModel.loadDecisionHistory()
                                 }
                                 
                                 StatisticsPage(
                                     scenarioStats = viewModel.scenarioStats,
+                                    decisionHistory = viewModel.decisionHistory,
                                     screenWidth = screenWidth
                                 )
                             }
@@ -275,16 +288,19 @@ fun CasinoGameScreen() {
 
                             NavigationPage.HOME, null -> {
                                 // Default to game content (Home)
-                                CasinoGameContent(
-                                    game = game,
-                                    viewModel = viewModel,
-                                    currentPlayer = currentPlayer,
-                                    feedback = viewModel.feedback,
-                                    currentPage = currentPage,
-                                    feedbackNotificationEnabled = feedbackNotificationEnabled,
-                                    feedbackDurationSeconds = feedbackDurationSeconds,
-                                    drawerState = drawerState
-                                )
+                                Layout { screenWidth ->
+                                    CasinoGameContent(
+                                        game = game,
+                                        viewModel = viewModel,
+                                        currentPlayer = currentPlayer,
+                                        feedback = viewModel.feedback,
+                                        currentPage = currentPage,
+                                        screenWidth = screenWidth,
+                                        feedbackNotificationEnabled = feedbackNotificationEnabled,
+                                        feedbackDurationSeconds = feedbackDurationSeconds,
+                                        drawerState = drawerState
+                                    )
+                                }
                             }
                         }
                     }
@@ -301,6 +317,7 @@ private fun CasinoGameContent(
     currentPlayer: Player,
     feedback: DecisionFeedback?,
     currentPage: NavigationPage?,
+    screenWidth: ScreenWidth,
     feedbackNotificationEnabled: Boolean = true,
     feedbackDurationSeconds: Float = 2.5f,
     drawerState: DrawerState? = null
@@ -338,7 +355,8 @@ private fun CasinoGameContent(
                 GamePhaseManager(
                     game = currentGame,
                     viewModel = viewModel,
-                    feedback = feedback
+                    feedback = feedback,
+                    screenWidth = screenWidth
                 )
 
                 // Error handling with auto-dismiss

@@ -281,15 +281,14 @@ private fun ActionButton(
             contentColor = Color.White
         ),
         shape = RoundedCornerShape(Tokens.Space.m),
-        modifier = modifier
-            .height(Tokens.Size.buttonHeight)
-            // 移除固定最小宽度，让按钮能够响应式调整
+        modifier = modifier.height(Tokens.Size.buttonHeight),
+        contentPadding = PaddingValues(horizontal = Tokens.Space.xs, vertical = Tokens.Space.xs) // 减少内边距以提供更多文本空间
     ) {
         BreakpointLayout(
             compact = {
                 // Compact: Show icon + hint, 对Double按钮特殊处理
                 if (action == Action.DOUBLE) {
-                    // Double按钮保持水平布局避免×2分离
+                    // Double按钮使用紧凑布局，避免×2分离
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
@@ -297,12 +296,13 @@ private fun ActionButton(
                         Text(
                             text = icon,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                            fontSize = Tokens.Typography.actionButtonIconCompact,
+                            maxLines = 1
                         )
                         if (showHint) {
                             Text(
                                 text = "💡",
-                                fontSize = 10.sp
+                                fontSize = Tokens.Typography.actionButtonHintCompact
                             )
                         }
                     }
@@ -315,12 +315,13 @@ private fun ActionButton(
                         Text(
                             text = icon,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                            fontSize = Tokens.Typography.actionButtonIconExpanded,
+                            maxLines = 1
                         )
                         if (showHint) {
                             Text(
                                 text = "💡",
-                                fontSize = 10.sp
+                                fontSize = Tokens.Typography.actionButtonHintCompact
                             )
                         }
                     }
@@ -335,17 +336,19 @@ private fun ActionButton(
                     Text(
                         text = icon,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = Tokens.Typography.actionButtonIconExpanded,
+                        maxLines = 1
                     )
                     Text(
                         text = action.name,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        fontSize = Tokens.Typography.actionButtonTextExpanded,
+                        maxLines = 1
                     )
                     if (showHint) {
                         Text(
                             text = "💡",
-                            fontSize = 14.sp
+                            fontSize = Tokens.Typography.actionButtonHintExpanded
                         )
                     }
                 }

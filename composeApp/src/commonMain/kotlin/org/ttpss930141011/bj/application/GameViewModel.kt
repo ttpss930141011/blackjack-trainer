@@ -363,13 +363,22 @@ class GameViewModel(
             Action.STAND -> ActionResult.Stand(handBeforeAction.cards)
             Action.SURRENDER -> ActionResult.Surrender(handBeforeAction.cards)
             Action.SPLIT -> {
-                // For split, we'd need to access the split hands from game state
-                // For now, use a placeholder that shows the original pair
-                ActionResult.Split(
-                    originalPair = handBeforeAction.cards,
-                    hand1 = handBeforeAction.cards,
-                    hand2 = handBeforeAction.cards
-                )
+                // Get actual split hands from game state
+                val currentGame = game
+                if (currentGame != null && currentGame.playerHands.size >= 2) {
+                    ActionResult.Split(
+                        originalPair = handBeforeAction.cards,
+                        hand1 = currentGame.playerHands[0].cards,
+                        hand2 = currentGame.playerHands[1].cards
+                    )
+                } else {
+                    // Fallback if split hands not available
+                    ActionResult.Split(
+                        originalPair = handBeforeAction.cards,
+                        hand1 = handBeforeAction.cards,
+                        hand2 = handBeforeAction.cards
+                    )
+                }
             }
         }
     }

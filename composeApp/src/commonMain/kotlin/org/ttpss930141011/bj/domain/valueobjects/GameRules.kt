@@ -26,8 +26,8 @@ data class GameRules(
     val blackjackPayout: Double = DomainConstants.GameRules.BLACKJACK_PAYOUT_MULTIPLIER,
     val maxSplits: Int = DomainConstants.GameRules.MAX_SPLIT_HANDS - 1,
     val deckCount: Int = DomainConstants.DeckComposition.STANDARD_DECK_COUNT,
-    val resplitAces: Boolean = false,
-    val hitSplitAces: Boolean = false,
+    val resplitAces: Boolean = true,
+    val hitSplitAces: Boolean = true,
     val earlyVsLateSurrender: Boolean = false,
     val minimumBet: Int = 5
 )

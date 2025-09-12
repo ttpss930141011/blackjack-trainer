@@ -1,5 +1,7 @@
 package org.ttpss930141011.bj.domain.valueobjects
 
+import kotlinx.serialization.Serializable
+
 /**
  * UserPreferences - Single source of truth for all user customizations.
  * 
@@ -11,6 +13,7 @@ package org.ttpss930141011.bj.domain.valueobjects
  * @property lastBetAmount User's last bet amount for "repeat last bet"
  * @property displaySettings UI customization preferences
  */
+@Serializable
 data class UserPreferences(
     val preferredRules: GameRules = GameRules(),
     val lastBetAmount: Int = 0,
@@ -80,6 +83,7 @@ data class UserPreferences(
  * Currently empty because no display settings are actually implemented.
  * Add settings ONLY when the feature is working.
  */
+@Serializable
 data class DisplaySettings(
     // Placeholder for future settings - currently empty
     private val placeholder: Boolean = true

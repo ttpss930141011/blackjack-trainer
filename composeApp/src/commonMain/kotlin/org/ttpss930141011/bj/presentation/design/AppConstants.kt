@@ -58,4 +58,12 @@ object AppConstants {
         const val STACK_HORIZONTAL_OFFSET = 2
         const val STACK_VERTICAL_OFFSET = 1
     }
+    
+    // Card overlapping display ratios
+    object Card {
+        const val DEFAULT_OVERLAP_RATIO = 0.5f      // Standard 50% overlap
+        const val COMPACT_OVERLAP_RATIO = 0.6f      // More overlap for mobile
+        const val EXPANDED_OVERLAP_RATIO = 0.4f     // Less overlap for desktop
+        const val MINIMUM_VISIBLE_RATIO = 0.3f      // Minimum visible portion
+    }
 }

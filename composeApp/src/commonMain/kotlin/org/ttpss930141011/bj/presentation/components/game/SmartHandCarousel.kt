@@ -28,6 +28,7 @@ import org.ttpss930141011.bj.domain.valueobjects.PlayerHand
 import org.ttpss930141011.bj.presentation.components.displays.CardImageDisplay
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.components.displays.StatusOverlay
+import org.ttpss930141011.bj.presentation.components.displays.OverlappingCardsDisplay
 import org.ttpss930141011.bj.presentation.design.AppConstants
 import org.ttpss930141011.bj.presentation.design.CasinoSemanticColors
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
@@ -228,15 +229,12 @@ private fun SmartHandCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
                 ) {
-                    // Cards display
-                    Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)) {
-                        hand.cards.forEach { card ->
-                            CardImageDisplay(
-                                card = card, 
-                                size = Tokens.Card.medium
-                            )
-                        }
-                    }
+                    // Cards display with overlapping for space efficiency
+                    OverlappingCardsDisplay(
+                        cards = hand.cards,
+                        cardSize = Tokens.Card.medium,
+                        screenWidth = screenWidth
+                    )
                     
                     // Hand value with soft indicator
                     HandValueDisplay(
