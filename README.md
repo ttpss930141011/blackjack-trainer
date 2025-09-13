@@ -20,8 +20,8 @@ Responsible for core game execution
 #### 2. Learning Subdomain - Strategy Learning
 Responsible for strategy evaluation and learning tracking
 - `StrategyEngine` - Basic strategy calculation
-- `DecisionEvaluator`, `LearningRecorder` - Decision evaluation and learning coordination
-- `SessionStats`, `ScenarioErrorStat` - Learning analytics
+- `DecisionEvaluator`, `PersistenceService` - Decision evaluation and learning coordination
+- `SessionStats`, `RoundHistory` - Learning analytics
 
 ### Shared Core Concepts
 Both subdomains share these domain objects:
@@ -65,7 +65,7 @@ val needsShuffle: Boolean = remainingCards < 26
 - `ChipInSpot.kt` - Chip stacking: denomination and quantity combination
 - `AddChipResult.kt` - Bet addition result: success/failure with error message
 - `SessionStats.kt` - Session statistics: rule-aware learning progress tracking
-- `ScenarioErrorStat.kt` - Scenario error statistics: error rate analysis for specific scenarios
+- `RoundHistory.kt` - Round history tracking: detailed gameplay records
 - `StrategyChartData.kt` - Strategy chart data structure
 
 ### services/
@@ -77,7 +77,7 @@ fun getOptimalAction(playerHand: Hand, dealerUpCard: Card, rules: GameRules): Ac
 - `RoundManager.kt` - Round flow management: dealing, player action processing, state transitions
 - `SettlementService.kt` - Settlement service: win/loss determination and chip calculation
 - `ChipCompositionService.kt` - Chip composition optimization: greedy algorithm for minimum chip count
-- `LearningRepository.kt` - Learning record interface definition
+- `PersistenceRepository.kt` - Data persistence interface definition
 
 ### enums/
 - `Action.kt` - Player actions
@@ -106,7 +106,7 @@ enum class RoundResult { PLAYER_WIN, PLAYER_BLACKJACK, DEALER_WIN, PUSH, SURREND
 ### Core Coordinators
 - `GameViewModel.kt` - Main coordinator, delegates to four specialized Managers
 - `DecisionEvaluator.kt` - Decision evaluation coordination: connecting strategy engine with feedback generation
-- `LearningRecorder.kt` - Learning progress recording and statistical coordination
+- `PersistenceService.kt` - Data persistence and statistical coordination
 - `GameService.kt` - Application layer wrapper for game domain services
 
 ### Responsibility Separation Managers (Internal Implementation)
@@ -132,7 +132,7 @@ val roundDecisions: List<PlayerDecision> // Round decision tracking
 ```kotlin
 // Focus: Learning analysis and statistics
 fun recordPlayerAction(hand, dealerCard, action, isCorrect, rules)
-fun getWorstScenarios(minSamples: Int): List<ScenarioErrorStat>
+fun getRoundHistory(limit: Int): List<RoundHistory>
 val sessionStats: SessionStats
 ```
 
@@ -152,10 +152,11 @@ fun calculateChipComposition(amount: Int): List<ChipInSpot>
 
 ## Infrastructure Layer - Technical Implementation
 
-- `InMemoryLearningRepository.kt` - In-memory decision record storage
+- `InMemoryPersistenceRepository.kt` - In-memory data storage
+- `RoomPersistenceRepository.kt` - SQLite database storage with Room
 ```kotlin
-override fun save(decision: DecisionRecord) { decisions.add(decision) }
-override fun getErrorStatsByRule(ruleHash: String, minSamples: Int): List<ScenarioErrorStat>
+override fun saveDecisionRecord(decision: DecisionRecord)
+override fun getRoundHistory(limit: Int): List<RoundHistory>
 ```
 
 ## Presentation Layer - UI Presentation
@@ -220,7 +221,15 @@ sealed class GameStateResult {
 ## Development Commands
 
 ```bash
-./gradlew :composeApp:wasmJsBrowserDevelopmentRun  # Web version
-./gradlew test                                     # Run tests
-./gradlew build                                    # Multi-platform build
+# Run desktop version
+./gradlew :composeApp:run
+
+# Run tests
+./gradlew test
+
+# Build all platforms
+./gradlew build
+
+# Android development
+./gradlew :composeApp:installDebug
 ```
