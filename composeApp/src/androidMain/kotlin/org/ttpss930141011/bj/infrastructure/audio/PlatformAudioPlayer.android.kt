@@ -106,8 +106,8 @@ actual class PlatformAudioPlayer {
             val resourceBytes = Res.readBytes(resourcePath)
             val inputStream = resourceBytes.inputStream()
             
-            // Create a temporary file descriptor from the input stream
-            val tempFile = kotlin.io.path.createTempFile("audio", ".tmp").toFile()
+            // Create a temporary file descriptor from the input stream (API 24+ compatible)
+            val tempFile = java.io.File.createTempFile("audio", ".tmp")
             tempFile.writeBytes(resourceBytes)
             
             mediaPlayer.setDataSource(tempFile.absolutePath)
