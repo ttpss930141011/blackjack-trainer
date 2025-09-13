@@ -1,0 +1,121 @@
+name: Simple CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 6 * * 1'  # Monday 6 AM for dependency checks
+
+# Simple environment setup - no over-engineering
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048M -Dfile.encoding=UTF-8"
+
+jobs:
+  # CORE: Build and test - the essentials
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Make wrapper executable
+      run: chmod +x ./gradlew
+    
+    # FIX: Add compiler argument to suppress KMP warnings  
+    - name: Test & Build
+      run: |
+        # Build and test - warnings already suppressed in build.gradle.kts
+        ./gradlew build
+    
+    - name: Upload build artifacts (on failure)
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: build-failure-logs
+        path: |
+          **/build/reports/
+          **/build/test-results/
+        retention-days: 3
+
+  # PLATFORM: Android build check (essential for mobile app)  
+  android-build:
+    name: Android Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup JDK  
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Make wrapper executable
+      run: chmod +x ./gradlew
+        
+    - name: Build Android APK
+      run: |
+        ./gradlew :composeApp:assembleDebug
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug-apk
+        path: composeApp/build/outputs/apk/debug/*.apk
+        retention-days: 7
+
+  # OPTIONAL: Weekly dependency check (not blocking)
+  dependency-check:
+    name: Dependency Check  
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Only run on schedule or manual trigger
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup JDK
+      uses: actions/setup-java@v4  
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Make wrapper executable
+      run: chmod +x ./gradlew
+        
+    - name: Check for outdated dependencies
+      run: |
+        echo "=== Dependency Report ===" > deps.txt
+        ./gradlew dependencies >> deps.txt 2>&1 || echo "Dependencies listed"
+        
+        # Simple security check - look for obvious issues
+        echo "=== Security Check ===" >> deps.txt
+        if grep -r "password\|secret\|key" composeApp/src --include="*.kt" | grep -v "test"; then
+          echo "⚠️ Potential hardcoded secrets" >> deps.txt
+        else
+          echo "✅ No obvious secrets in code" >> deps.txt  
+        fi
+    
+    - name: Upload dependency report
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-report
+        path: deps.txt
+

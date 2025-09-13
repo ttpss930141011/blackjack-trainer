@@ -15,6 +15,12 @@ plugins {
 }
 
 kotlin {
+    // Fix for expect/actual classes warning in CI
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+    
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
