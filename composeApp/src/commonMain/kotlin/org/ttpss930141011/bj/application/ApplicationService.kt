@@ -53,13 +53,10 @@ class ApplicationService {
     }
     
     companion object {
-        @Volatile
         private var INSTANCE: ApplicationService? = null
         
         fun getInstance(): ApplicationService {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: ApplicationService().also { INSTANCE = it }
-            }
+            return INSTANCE ?: ApplicationService().also { INSTANCE = it }
         }
     }
 }

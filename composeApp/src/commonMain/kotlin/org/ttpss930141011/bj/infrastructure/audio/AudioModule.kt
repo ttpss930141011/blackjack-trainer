@@ -16,12 +16,10 @@ object AudioModule {
     
     /**
      * Gets or creates the singleton AudioManager instance.
-     * Thread-safe lazy initialization.
+     * Simple lazy initialization for KMP.
      */
     fun getAudioManager(): AudioManager {
-        return _audioManager ?: synchronized(this) {
-            _audioManager ?: createAudioManager().also { _audioManager = it }
-        }
+        return _audioManager ?: createAudioManager().also { _audioManager = it }
     }
     
     /**

@@ -238,9 +238,6 @@ jobs:
           - target: jvm
             os: ubuntu-latest
             tasks: :composeApp:compileKotlinJvm
-          - target: wasm
-            os: ubuntu-latest
-            tasks: :composeApp:compileKotlinWasmJs
           - target: desktop-windows
             os: windows-latest
             tasks: :composeApp:compileKotlinJvm
