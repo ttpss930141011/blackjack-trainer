@@ -30,12 +30,16 @@ import org.ttpss930141011.bj.presentation.design.CasinoColorScheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
-fun App() {
+fun App(
+    initialPage: NavigationPage? = NavigationPage.HOME,
+    onNavigationChange: ((NavigationPage?) -> Unit)? = null
+) {
     val viewModel = remember { GameViewModel() }
     val notificationState = rememberNotificationState()
 
-    // Navigation state (HOME is default)
-    var currentPage by remember { mutableStateOf<NavigationPage?>(NavigationPage.HOME) }
+    // Navigation state - use external control if provided, otherwise internal state
+    var internalCurrentPage by remember { mutableStateOf<NavigationPage?>(NavigationPage.HOME) }
+    val currentPage = initialPage ?: internalCurrentPage
     
     // Menu state
     var isMenuExpanded by remember { mutableStateOf(false) }
@@ -114,11 +118,23 @@ fun App() {
                             balance = currentPlayer.chips,
                             currentPage = currentPage,
                             onBackClick = if (currentPage != NavigationPage.HOME) {
-                                { currentPage = NavigationPage.HOME }
+                                { 
+                                    if (onNavigationChange != null) {
+                                        onNavigationChange(NavigationPage.HOME)
+                                    } else {
+                                        internalCurrentPage = NavigationPage.HOME
+                                    }
+                                }
                             } else null,
                             isMenuExpanded = isMenuExpanded,
                             onMenuExpandedChange = { isMenuExpanded = it },
-                            onNavigate = { page -> currentPage = page }
+                            onNavigate = { page -> 
+                                if (onNavigationChange != null) {
+                                    onNavigationChange(page)
+                                } else {
+                                    internalCurrentPage = page
+                                }
+                            }
                         )
 
                         when (currentPage) {
