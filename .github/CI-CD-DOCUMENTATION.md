@@ -20,8 +20,8 @@ CI Summary
 
 **Key Features**:
 - ⚡ **Fast Feedback**: Quality gates complete in <15 minutes
-- 🧪 **Comprehensive Testing**: JVM, Android, Common, WASM platforms
-- 📦 **Multi-Platform Builds**: Android APK, Desktop (Windows/Mac/Linux), Web WASM
+- 🧪 **Comprehensive Testing**: JVM, Android, Common platforms
+- 📦 **Multi-Platform Builds**: Android APK, Desktop (Windows/Mac/Linux)
 - 🛡️ **Security Integration**: CodeQL analysis and vulnerability scanning
 - 🎯 **Performance Monitoring**: Bundle size analysis and build performance
 
@@ -31,7 +31,7 @@ CI Summary
 **Testing Layers**:
 - **Domain Tests**: Core business logic (Cards, Hands, Strategy Engine)
 - **Integration Tests**: Cross-layer validation and use cases
-- **Performance Tests**: Strategy engine benchmarks and WASM bundle analysis
+- **Performance Tests**: Strategy engine benchmarks and JVM bundle analysis
 - **Platform Compatibility**: Compilation validation across all targets
 
 ### 🛡️ Security Pipeline (`security.yml`)
@@ -58,7 +58,6 @@ CI Summary
 |----------|------------|-----------|-----------|
 | **Android** | `assembleDebug/Release` | `testDebugUnitTest` | APK files |
 | **Desktop JVM** | `packageUberJarForCurrentOS` | `jvmTest` | Executable JAR |
-| **Web WASM** | `wasmJsBrowserDistribution` | `wasmJsTest` | Web bundle |
 | **Windows** | `packageMsi` | `jvmTest` | MSI installer |
 | **macOS** | `packageDmg` | `jvmTest` | DMG installer |
 
@@ -69,7 +68,7 @@ CI Summary
 - **Tests**: ≥80% test-to-implementation ratio for domain layer
 - **Security**: No critical vulnerabilities or hardcoded secrets
 - **Architecture**: Domain layer remains pure (no UI/persistence imports)
-- **Performance**: WASM bundle <5MB, build time <30 minutes
+- **Performance**: JVM bundle <50MB, build time <30 minutes
 
 ### ⚠️ Quality Warnings
 - **Test Coverage**: Domain changes without corresponding tests
@@ -138,7 +137,7 @@ All runs generate downloadable artifacts:
 
 ### Performance Tracking
 - **Weekly Builds**: Automated performance benchmarks
-- **Bundle Analysis**: WASM bundle size tracking over time
+- **Bundle Analysis**: JVM bundle size tracking over time
 - **Build Time**: Gradle build performance monitoring
 - **Platform Metrics**: Compilation time per platform
 
