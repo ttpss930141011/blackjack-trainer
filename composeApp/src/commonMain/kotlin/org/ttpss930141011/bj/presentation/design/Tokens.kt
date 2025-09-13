@@ -3,7 +3,6 @@ package org.ttpss930141011.bj.presentation.design
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.TextUnit
 import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 
 /**
@@ -19,7 +18,6 @@ object Tokens {
         val l = 16.dp
         val xl = 24.dp
         val xxl = 32.dp
-        val xxxl = 48.dp
     }
     
     // Component sizing
@@ -30,11 +28,8 @@ object Tokens {
         
         val buttonHeight = 48.dp
         val touchTarget = 48.dp
-        val chipDiameter = 48.dp
+        val chipDiameter = 56.dp
         
-        // Notification widths (moved to AppConstants)
-        val notificationTablet = AppConstants.Dimensions.NOTIFICATION_TABLET_WIDTH.dp
-        val notificationDesktop = AppConstants.Dimensions.NOTIFICATION_DESKTOP_WIDTH.dp
     }
     
     // Card dimensions

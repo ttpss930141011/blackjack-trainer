@@ -13,43 +13,15 @@ object AppConstants {
     
     // UI dimensions (dp values)
     object Dimensions {
-        const val BUTTON_HEIGHT = 56
-        const val CHIP_DISPLAY_SIZE = 120
         const val NOTIFICATION_TABLET_WIDTH = 350
         const val NOTIFICATION_DESKTOP_WIDTH = 300
-        const val BETTING_CIRCLE_COMPACT = 120
-        const val BETTING_CIRCLE_MEDIUM = 140
-        const val BETTING_CIRCLE_EXPANDED = 160
-        const val CHIP_SIZE_COMPACT = 60
-        const val CHIP_SIZE_MEDIUM = 70
+        const val BETTING_CIRCLE_COMPACT = 140
+        const val BETTING_CIRCLE_MEDIUM = 160
+        const val BETTING_CIRCLE_EXPANDED = 180
+        const val CHIP_SIZE_COMPACT = 70
+        const val CHIP_SIZE_MEDIUM = 80
     }
-    
-    // Animation timings (milliseconds)
-    object Animation {
-        const val FAST = 300L
-        const val MEDIUM = 1000L
-        const val NOTIFICATION_TIMEOUT_MOBILE = 3000L
-        const val NOTIFICATION_TIMEOUT_DESKTOP = 4000L
-    }
-    
-    // Alpha transparency values
-    object Alpha {
-        const val SEMI_TRANSPARENT = 0.7f
-        const val ACTIVE_BACKGROUND = 0.8f
-        const val HIGHLIGHTED = 0.9f
-        const val NOTIFICATION_BACKGROUND = 0.95f
-        const val SUBTLE = 0.6f
-        const val DISABLED = 0.5f
-        const val PLACEHOLDER = 0.3f
-        const val OVERLAY = 0.1f
-    }
-    
-    // Layout ratios
-    object Ratio {
-        const val BUTTON_WIDTH_FRACTION = 0.8f
-        const val DEALER_BUTTON_WIDTH_FRACTION = 0.6f
-        const val DIALOG_WIDTH_FRACTION = 0.9f
-    }
+
     
     // Offset values for chip stacking
     object ChipStack {

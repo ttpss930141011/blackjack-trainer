@@ -11,7 +11,6 @@ import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.domain.valueobjects.GameRules
 import org.ttpss930141011.bj.domain.valueobjects.DisplaySettings
 import org.ttpss930141011.bj.domain.valueobjects.UserPreferences
-import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 
 @Composable
 fun SettingsPage(
@@ -105,6 +104,18 @@ private fun GameRulesSettingsCard(
             value = gameRules.maxSplits,
             valueRange = 0..3,
             onValueChanged = { onRulesChanged(gameRules.copy(maxSplits = it)) }
+        )
+        
+        SettingsSlider(
+            text = "Deck penetration",
+            value = (gameRules.penetrationPercentage * 100).toInt(),
+            valueRange = 50..90,
+            step = 5,
+            onValueChanged = { percentage ->
+                val newPenetration = percentage / 100.0
+                onRulesChanged(gameRules.copy(penetrationPercentage = newPenetration))
+            },
+            formatValue = { "${it}%" }
         )
     }
 }

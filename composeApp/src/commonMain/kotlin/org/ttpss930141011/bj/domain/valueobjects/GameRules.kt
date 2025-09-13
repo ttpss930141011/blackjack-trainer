@@ -17,6 +17,7 @@ import org.ttpss930141011.bj.domain.DomainConstants
  * @property hitSplitAces Whether players can hit on split Aces
  * @property earlyVsLateSurrender Early surrender (before dealer check) vs late surrender
  * @property minimumBet Minimum bet amount required to play
+ * @property penetrationPercentage Cut card position as percentage of total deck (0.0-1.0)
  */
 @Serializable
 data class GameRules(
@@ -29,5 +30,19 @@ data class GameRules(
     val resplitAces: Boolean = true,
     val hitSplitAces: Boolean = true,
     val earlyVsLateSurrender: Boolean = false,
-    val minimumBet: Int = 5
-)
+    val minimumBet: Int = 5,
+    val penetrationPercentage: Double = 0.75  // 75% = 穿透率，25%剩余时重新洗牌
+) {
+    
+    /**
+     * Calculates the reshuffle threshold based on deck count and penetration.
+     * When remaining cards fall below this number, deck should be reshuffled.
+     * 
+     * @return Number of cards remaining when reshuffle should occur
+     */
+    fun calculateReshuffleThreshold(): Int {
+        val totalCards = deckCount * 52
+        val cardsToPlay = (totalCards * penetrationPercentage).toInt()
+        return totalCards - cardsToPlay
+    }
+}

@@ -12,14 +12,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
-import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
@@ -156,7 +154,7 @@ private fun ChipSelection(
                 enabled = currentBet > 0,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(Tokens.Size.chipDiameter),
+                    .height(Tokens.Size.buttonHeight),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = CasinoTheme.ButtonPrimary,
                     contentColor = Color.Black
@@ -171,6 +169,7 @@ private fun ChipSelection(
                 )
             }
         }
+        Spacer(modifier = Modifier.height(Tokens.Size.chipDiameter))
     }
 }
 

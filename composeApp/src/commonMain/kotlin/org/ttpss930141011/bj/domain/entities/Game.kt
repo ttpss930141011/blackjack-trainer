@@ -112,30 +112,6 @@ data class Game(
         )
     }
     
-    /**
-     * Clears the current bet and restores chips to player.
-     * Only allowed during betting phase.
-     * 
-     * @return New Game with bet cleared and chips restored
-     * @throws IllegalArgumentException if not in betting phase
-     */
-    fun clearBet(): Game {
-        require(hasPlayer) { "No player in game" }
-        require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear bet during betting phase" }
-        
-        val amountToRestore = betState.amount
-        
-        val updatedPlayer = if (amountToRestore > 0) {
-            player!!.addChips(amountToRestore)
-        } else {
-            player!!
-        }
-        
-        return copy(
-            player = updatedPlayer,
-            betState = BetState()
-        )
-    }
     
     /**
      * Adds amount to pending bet without deducting chips immediately.
@@ -281,15 +257,25 @@ data class Game(
      * Resets game state for a new round while preserving the current player.
      * Clears hands, bets, and resets phase to betting.
      * 
+     * Uses smart deck management: only reshuffles when penetration threshold is reached.
+     * This maintains deck continuity for proper card counting and realistic casino simulation.
+     * 
      * @return New Game ready for the next round
      */
     fun resetForNewRound(): Game {
+        val newDeck = when {
+            // Check if remaining cards fall below the penetration threshold
+            deck.remainingCards <= rules.calculateReshuffleThreshold() -> deck.reset()
+            // Otherwise maintain deck continuity
+            else -> deck
+        }
+        
         return copy(
             playerHands = emptyList(),
             currentHandIndex = 0,
             betState = BetState(),
             dealer = Dealer(),
-            deck = Deck.shuffled(),
+            deck = newDeck,
             phase = GamePhase.WAITING_FOR_BETS,
             isSettled = false
         )
