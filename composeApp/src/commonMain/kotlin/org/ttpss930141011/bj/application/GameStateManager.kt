@@ -109,7 +109,7 @@ internal class GameStateManager(
         }
         
         return try {
-            _game = currentGame.clearPendingBet()
+            _game = currentGame.clearBet()
             GameStateResult.success()
         } catch (e: Exception) {
             GameStateResult.error(e.message ?: "Unknown error")

@@ -132,13 +132,14 @@ data class Game(
     }
     
     /**
-     * Clears the pending bet without affecting player chips.
+     * Clears the current bet without affecting player chips.
+     * Since betting uses pending bet system, chips are never deducted until commitment.
      * 
-     * @return New Game with pending bet reset to zero
+     * @return New Game with bet cleared
      * @throws IllegalArgumentException if not in betting phase
      */
-    fun clearPendingBet(): Game {
-        require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear pending bet during betting phase" }
+    fun clearBet(): Game {
+        require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear bet during betting phase" }
         
         return copy(betState = betState.clear())
     }
