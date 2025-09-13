@@ -21,6 +21,7 @@ import org.ttpss930141011.bj.presentation.components.game.*
 import org.ttpss930141011.bj.presentation.components.feedback.GameOverOverlay
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import org.ttpss930141011.bj.presentation.design.AppConstants
+import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 
 /**
  * Unified game table that adapts to all game phases.
@@ -31,6 +32,7 @@ fun GameTable(
     game: Game,
     viewModel: GameViewModel,
     feedback: DecisionFeedback? = null,
+    screenWidth: ScreenWidth,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -48,6 +50,7 @@ fun GameTable(
                 // Dealer area - consistent across all phases
                 DealerArea(
                     game = game,
+                    screenWidth = screenWidth,
                     modifier = Modifier.fillMaxWidth()
                 )
                 

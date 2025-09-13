@@ -3,23 +3,26 @@ package org.ttpss930141011.bj.presentation.components.navigation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 
 enum class NavigationPage {
-    HOME, STRATEGY, HISTORY, STATISTICS, SETTINGS
+    HOME, STRATEGY, HISTORY, SETTINGS
 }
 
 data class NavigationItem(
     val title: String,
     val page: NavigationPage?,
-    val icon: String
+    val icon: ImageVector
 )
 
 @Composable
@@ -33,11 +36,10 @@ fun GameNavigationDrawer(
     val drawerWidth = 280.dp
     
     val allNavigationItems = listOf(
-        NavigationItem("Home", NavigationPage.HOME, "🏠"),
-        NavigationItem("Strategy Chart", NavigationPage.STRATEGY, "📊"),
-        NavigationItem("Decision History", NavigationPage.HISTORY, "📝"),
-        NavigationItem("Statistics", NavigationPage.STATISTICS, "📈"),
-        NavigationItem("Settings", NavigationPage.SETTINGS, "⚙️")
+        NavigationItem("Home", NavigationPage.HOME, Icons.Filled.Home),
+        NavigationItem("Strategy Chart", NavigationPage.STRATEGY, Icons.Filled.PlaylistPlay),
+        NavigationItem("Decision History", NavigationPage.HISTORY, Icons.Filled.History),
+        NavigationItem("Settings", NavigationPage.SETTINGS, Icons.Filled.Settings)
     )
     
     Surface(
@@ -74,7 +76,7 @@ private fun DrawerHeader() {
         modifier = Modifier.padding(16.dp)
     ) {
         Text(
-            text = "🎲 Blackjack Trainer",
+            text = "Blackjack Trainer",
             style = MaterialTheme.typography.titleLarge,
             color = Color.White,
             fontWeight = FontWeight.Bold
@@ -94,9 +96,9 @@ private fun NavigationItem(
 ) {
     NavigationDrawerItem(
         icon = {
-            Text(
-                text = item.icon,
-                fontSize = 20.sp
+            Icon(
+                imageVector = item.icon,
+                contentDescription = item.title
             )
         },
         label = { 

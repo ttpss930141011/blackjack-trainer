@@ -8,10 +8,17 @@ import org.ttpss930141011.bj.domain.enums.RoundResult
 
 /**
  * Domain service responsible for round settlement and winnings calculation.
- * Extracted from Game class to improve Single Responsibility Principle.
+ * Handles result determination, winnings calculation, and final game state updates.
  */
 class SettlementService {
     
+    /**
+     * Settles the current round by calculating results and updating player winnings.
+     * 
+     * @param game Current game state (must be in settlement phase)
+     * @return Updated game state with settlement results applied
+     * @throws IllegalArgumentException if preconditions are not met
+     */
     fun settleRound(game: Game): Game {
         require(game.phase == GamePhase.SETTLEMENT) { "Not in settlement phase" }
         require(game.dealer.hand != null) { "Dealer hand required for settlement" }
@@ -27,7 +34,7 @@ class SettlementService {
             
             val newStatus = when (result) {
                 RoundResult.PLAYER_WIN, RoundResult.PLAYER_BLACKJACK -> HandStatus.WIN
-                RoundResult.SURRENDER -> HandStatus.SURRENDERED // Keep surrendered status for UI
+                RoundResult.SURRENDER -> HandStatus.SURRENDERED
                 RoundResult.DEALER_WIN -> HandStatus.LOSS
                 RoundResult.PUSH -> HandStatus.PUSH
             }
@@ -37,15 +44,20 @@ class SettlementService {
         
         val updatedPlayer = game.player!!.addChips(totalWinnings)
         
-        // Domain layer calculates settlement results only - UI/Application layer controls workflow
         return game.copy(
             player = updatedPlayer,
             playerHands = settledHands,
             isSettled = true
-            // phase remains SETTLEMENT - let Application layer control transitions
         )
     }
     
+    /**
+     * Determines the result of a hand comparison between player and dealer.
+     * 
+     * @param playerHand The player's hand to evaluate
+     * @param dealerHand The dealer's final hand
+     * @return The round result for this specific hand
+     */
     fun determineResult(playerHand: PlayerHand, dealerHand: Hand): RoundResult {
         val playerValue = playerHand.bestValue
         val dealerValue = dealerHand.bestValue
@@ -65,13 +77,21 @@ class SettlementService {
         }
     }
     
+    /**
+     * Calculates the winnings for a given bet and result.
+     * 
+     * @param bet The original bet amount
+     * @param result The round result
+     * @param rules The game rules (for blackjack payout rate)
+     * @return The total amount to return to player (including original bet if won)
+     */
     fun calculateWinnings(bet: Int, result: RoundResult, rules: GameRules): Int {
         return when (result) {
-            RoundResult.PLAYER_WIN -> bet * 2 // Return bet + win equal amount
-            RoundResult.PLAYER_BLACKJACK -> (bet * (1 + rules.blackjackPayout)).toInt() // Return bet + win at payout rate
-            RoundResult.SURRENDER -> bet / 2 // Return half bet (surrender rule)
-            RoundResult.PUSH -> bet // Return bet only
-            RoundResult.DEALER_WIN -> 0 // Lose bet (already deducted)
+            RoundResult.PLAYER_WIN -> bet * 2
+            RoundResult.PLAYER_BLACKJACK -> (bet * (1 + rules.blackjackPayout)).toInt()
+            RoundResult.SURRENDER -> bet / 2
+            RoundResult.PUSH -> bet
+            RoundResult.DEALER_WIN -> 0
         }
     }
 }

@@ -24,6 +24,37 @@ import org.ttpss930141011.bj.domain.valueobjects.GameRules
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 
+// Design constants - no magic numbers
+private object StrategyDesign {
+    val SECTION_SPACING = 20.dp
+    val CARD_PADDING = 24.dp
+    val RULE_CARD_ELEVATION = 6.dp
+    val CHART_CARD_ELEVATION = 8.dp
+    val LEGEND_CARD_ELEVATION = 6.dp
+    val TIPS_CARD_ELEVATION = 4.dp
+    val SELECTOR_CARD_ELEVATION = 4.dp
+    
+    val RULE_BUTTON_SPACING = 8.dp
+    val RULE_BUTTON_PADDING = 12.dp
+    val CHART_BUTTON_PADDING = 12.dp
+    val CHART_BUTTON_SPACING = 8.dp
+    val LEGEND_ITEM_SPACING = 2.dp
+    val LEGEND_ICON_SIZE = 20.dp
+    val LEGEND_TEXT_MARGIN = 8.dp
+    val TIPS_ITEM_SPACING = 4.dp
+    val TIPS_NUMBER_MARGIN = 8.dp
+    
+    val HEADER_CELL_MULTIPLIER = 1.2f
+    val BORDER_WIDTH = 0.5.dp
+    val FONT_SIZE_MULTIPLIER = 0.3f
+    val RULE_DESCRIPTION_SIZE = 10.sp
+    val LEGEND_FONT_SIZE = 12.sp
+    
+    val HEADER_ALPHA = 0.3f
+    val BORDER_ALPHA = 0.2f
+    val RULE_DESCRIPTION_ALPHA = 0.8f
+}
+
 @Composable
 fun StrategySection(
     gameRules: GameRules,
@@ -41,7 +72,7 @@ fun StrategySection(
     
     Column(
         modifier = modifier.padding(Tokens.spacing(screenWidth)),
-        verticalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth))
+        verticalArrangement = Arrangement.spacedBy(StrategyDesign.SECTION_SPACING)
     ) {
         // Rule selector tabs
         RuleSelector(
@@ -56,6 +87,7 @@ fun StrategySection(
             onChartTypeChange = { selectedChartType = it },
             screenWidth = screenWidth
         )
+        
         // Strategy chart display
         StrategyChart(
             chart = chartSet.getChart(selectedChartType),
@@ -64,8 +96,12 @@ fun StrategySection(
         
         // Legend
         StrategyLegend(screenWidth = screenWidth)
+        
+        // Pro tips section
+        ProTipsSection(screenWidth = screenWidth)
     }
 }
+
 
 @Composable
 fun RuleSelector(
@@ -76,32 +112,36 @@ fun RuleSelector(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = Color(0xFF0F172A).copy(alpha = 0.95f) // Dark slate
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = StrategyDesign.RULE_CARD_ELEVATION)
     ) {
         Column(
             modifier = Modifier.padding(Tokens.spacing(screenWidth))
         ) {
             Text(
-                text = "Dealer Rules",
-                style = MaterialTheme.typography.titleMedium,
+                text = "⚙️ Dealer Rules",
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
+                color = Color.White,
                 modifier = Modifier.padding(bottom = Tokens.spacing(screenWidth))
             )
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth))
+                horizontalArrangement = Arrangement.spacedBy(StrategyDesign.RULE_BUTTON_SPACING)
             ) {
                 RuleTab(
-                    text = "Dealer Stands on Soft 17",
+                    text = "S17",
+                    fullText = "Dealer Stands on Soft 17",
                     selected = dealerStandsOnSoft17,
                     onClick = { onRuleChange(true) },
                     modifier = Modifier.weight(1f)
                 )
                 
                 RuleTab(
-                    text = "Dealer Hits on Soft 17",
+                    text = "H17",
+                    fullText = "Dealer Hits on Soft 17",
                     selected = !dealerStandsOnSoft17,
                     onClick = { onRuleChange(false) },
                     modifier = Modifier.weight(1f)
@@ -114,6 +154,7 @@ fun RuleSelector(
 @Composable
 fun RuleTab(
     text: String,
+    fullText: String,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -122,28 +163,36 @@ fun RuleTab(
         modifier = modifier.clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = if (selected) {
-                MaterialTheme.colorScheme.primary
+                Color(0xFF10B981) // Emerald green for selected
             } else {
-                MaterialTheme.colorScheme.surface
+                Color(0xFF374151).copy(alpha = 0.8f) // Gray for unselected
             }
         ),
         border = if (!selected) {
             BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
         } else null
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (selected) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
-            textAlign = TextAlign.Center,
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
-        )
+                .padding(StrategyDesign.RULE_BUTTON_PADDING)
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = fullText,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = StrategyDesign.RULE_DESCRIPTION_ALPHA),
+                textAlign = TextAlign.Center,
+                fontSize = StrategyDesign.RULE_DESCRIPTION_SIZE
+            )
+        }
     }
 }
 
@@ -153,25 +202,62 @@ fun ChartTypeSelector(
     onChartTypeChange: (ChartType) -> Unit,
     screenWidth: ScreenWidth
 ) {
-    Row(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Tokens.spacing(screenWidth))
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1F2937).copy(alpha = 0.95f) // Dark gray
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = StrategyDesign.SELECTOR_CARD_ELEVATION)
     ) {
-        ChartType.entries.forEach { chartType ->
-            FilterChip(
-                selected = selectedChartType == chartType,
-                onClick = { onChartTypeChange(chartType) },
-                label = {
-                    Text(
-                        text = when (chartType) {
-                            ChartType.HARD -> "Hard Totals"
-                            ChartType.SOFT -> "Soft Totals"  
-                            ChartType.SPLITS -> "Pairs"
-                        }
-                    )
-                },
-                modifier = Modifier.weight(1f)
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "📊 Chart Type",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = StrategyDesign.CHART_BUTTON_SPACING + 4.dp)
             )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(StrategyDesign.RULE_BUTTON_SPACING)
+            ) {
+                ChartType.entries.forEach { chartType ->
+                    val isSelected = selectedChartType == chartType
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onChartTypeChange(chartType) },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) {
+                                Color(0xFF3B82F6) // Blue for selected
+                            } else {
+                                Color(0xFF4B5563).copy(alpha = 0.7f) // Gray for unselected
+                            }
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = if (isSelected) 6.dp else 2.dp
+                        )
+                    ) {
+                        Text(
+                            text = when (chartType) {
+                                ChartType.HARD -> "💪 Hard"
+                                ChartType.SOFT -> "🌊 Soft"  
+                                ChartType.SPLITS -> "✂️ Pairs"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(StrategyDesign.RULE_BUTTON_PADDING)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -188,7 +274,11 @@ fun StrategyChart(
     }
     
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF0F172A).copy(alpha = 0.98f) // Very dark blue
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = StrategyDesign.CHART_CARD_ELEVATION)
     ) {
         Column(
             modifier = Modifier.padding(Tokens.spacing(screenWidth))
@@ -196,12 +286,13 @@ fun StrategyChart(
             // Chart title
             Text(
                 text = when (chart.chartType) {
-                    ChartType.HARD -> "Hard Totals"
-                    ChartType.SOFT -> "Soft Totals"
-                    ChartType.SPLITS -> "Pair Splitting"
-                } + if (chart.dealerHitsOnSoft17) " (Dealer Hits Soft 17)" else " (Dealer Stands Soft 17)",
-                style = MaterialTheme.typography.titleMedium,
+                    ChartType.HARD -> "💪 Hard Totals Strategy"
+                    ChartType.SOFT -> "🌊 Soft Totals Strategy"
+                    ChartType.SPLITS -> "✂️ Pair Splitting Strategy"
+                } + if (chart.dealerHitsOnSoft17) " (H17)" else " (S17)",
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
+                color = Color.White,
                 modifier = Modifier.padding(bottom = Tokens.spacing(screenWidth))
             )
             
@@ -222,32 +313,34 @@ fun HardTotalsChart(chart: StrategyChart, cellSize: Dp) {
     
     Column {
         // Header row
-        Row {
-            // Corner cell
-            ChartCell("P\\D", null, cellSize, isHeader = true)
-            // Dealer cards
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Corner cell - equal width using weight
+            ChartCellWithWeight("P\\D", null, cellSize, isHeader = true, weight = 1f)
+            // Dealer cards - all equal width
             dealerCards.forEach { dealer ->
-                ChartCell(
+                ChartCellWithWeight(
                     if (dealer == 11) "A" else dealer.toString(),
                     null,
                     cellSize,
-                    isHeader = true
+                    isHeader = true,
+                    weight = 1f
                 )
             }
         }
         
         // Data rows
         playerHands.forEach { player ->
-            Row {
-                // Player hand label
-                ChartCell(player.toString(), null, cellSize, isHeader = true)
-                // Strategy cells
+            Row(modifier = Modifier.fillMaxWidth()) {
+                // Player hand label - equal width
+                ChartCellWithWeight(player.toString(), null, cellSize, isHeader = true, weight = 1f)
+                // Strategy cells - all equal width
                 dealerCards.forEach { dealer ->
                     val action = chart.getOptimalAction(player, dealer)
-                    ChartCell(
+                    ChartCellWithWeight(
                         getActionSymbol(action),
                         action,
-                        cellSize
+                        cellSize,
+                        weight = 1f
                     )
                 }
             }
@@ -262,28 +355,30 @@ fun SoftTotalsChart(chart: StrategyChart, cellSize: Dp) {
     
     Column {
         // Header row
-        Row {
-            ChartCell("P\\D", null, cellSize, isHeader = true)
+        Row(modifier = Modifier.fillMaxWidth()) {
+            ChartCellWithWeight("P\\D", null, cellSize, isHeader = true, weight = 1f)
             dealerCards.forEach { dealer ->
-                ChartCell(
+                ChartCellWithWeight(
                     if (dealer == 11) "A" else dealer.toString(),
                     null,
                     cellSize,
-                    isHeader = true
+                    isHeader = true,
+                    weight = 1f
                 )
             }
         }
         
         // Data rows
         playerHands.forEach { player ->
-            Row {
-                ChartCell("A,${player-11}", null, cellSize, isHeader = true)
+            Row(modifier = Modifier.fillMaxWidth()) {
+                ChartCellWithWeight("A,${player-11}", null, cellSize, isHeader = true, weight = 1f)
                 dealerCards.forEach { dealer ->
                     val action = chart.getOptimalAction(player, dealer)
-                    ChartCell(
+                    ChartCellWithWeight(
                         getActionSymbol(action),
                         action,
-                        cellSize
+                        cellSize,
+                        weight = 1f
                     )
                 }
             }
@@ -298,29 +393,31 @@ fun SplitsChart(chart: StrategyChart, cellSize: Dp) {
     
     Column {
         // Header row
-        Row {
-            ChartCell("P\\D", null, cellSize, isHeader = true)
+        Row(modifier = Modifier.fillMaxWidth()) {
+            ChartCellWithWeight("P\\D", null, cellSize, isHeader = true, weight = 1f)
             dealerCards.forEach { dealer ->
-                ChartCell(
+                ChartCellWithWeight(
                     if (dealer == 11) "A" else dealer.toString(),
                     null,
                     cellSize,
-                    isHeader = true
+                    isHeader = true,
+                    weight = 1f
                 )
             }
         }
         
         // Data rows
         pairValues.forEach { pair ->
-            Row {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 val pairLabel = if (pair == 11) "A,A" else "$pair,$pair"
-                ChartCell(pairLabel, null, cellSize, isHeader = true)
+                ChartCellWithWeight(pairLabel, null, cellSize, isHeader = true, weight = 1f)
                 dealerCards.forEach { dealer ->
                     val action = chart.getOptimalAction(pair, dealer)
-                    ChartCell(
+                    ChartCellWithWeight(
                         getActionSymbol(action),
                         action,
-                        cellSize
+                        cellSize,
+                        weight = 1f
                     )
                 }
             }
@@ -336,28 +433,66 @@ fun ChartCell(
     isHeader: Boolean = false
 ) {
     val backgroundColor = if (isHeader) {
-        MaterialTheme.colorScheme.surfaceVariant
+        Color(0xFF374151).copy(alpha = 0.9f) // Dark gray for headers
     } else {
         getActionColor(action)
     }
     
-    val textColor = if (isHeader) {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    } else {
-        Color.White
-    }
+    val textColor = Color.White
     
     Box(
         modifier = Modifier
-            .size(size)
-            .border(0.5.dp, MaterialTheme.colorScheme.outline)
+            .size(width = size, height = size)
+            .border(
+                StrategyDesign.BORDER_WIDTH, 
+                if (isHeader) Color.White.copy(alpha = StrategyDesign.HEADER_ALPHA) 
+                else Color.White.copy(alpha = StrategyDesign.BORDER_ALPHA)
+            )
             .background(backgroundColor),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = textColor,
-            fontSize = (size.value * 0.3).sp,
+            fontSize = (size.value * StrategyDesign.FONT_SIZE_MULTIPLIER).sp,
+            fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun RowScope.ChartCellWithWeight(
+    text: String,
+    action: Action?,
+    size: Dp,
+    isHeader: Boolean = false,
+    weight: Float = 1f
+) {
+    val backgroundColor = if (isHeader) {
+        Color(0xFF374151).copy(alpha = 0.9f) // Dark gray for headers
+    } else {
+        getActionColor(action)
+    }
+    
+    val textColor = Color.White
+    
+    Box(
+        modifier = Modifier
+            .weight(weight)
+            .height(size)
+            .border(
+                StrategyDesign.BORDER_WIDTH, 
+                if (isHeader) Color.White.copy(alpha = StrategyDesign.HEADER_ALPHA) 
+                else Color.White.copy(alpha = StrategyDesign.BORDER_ALPHA)
+            )
+            .background(backgroundColor),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = textColor,
+            fontSize = (size.value * StrategyDesign.FONT_SIZE_MULTIPLIER).sp,
             fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
             textAlign = TextAlign.Center
         )
@@ -367,12 +502,12 @@ fun ChartCell(
 @Composable
 fun getActionColor(action: Action?): Color {
     return when (action) {
-        Action.HIT -> Color(0xFFE53935)        // Red
-        Action.STAND -> Color(0xFFFFD600)      // Yellow  
-        Action.DOUBLE -> Color(0xFF1976D2)     // Blue
-        Action.SPLIT -> Color(0xFF388E3C)      // Green
-        Action.SURRENDER -> Color(0xFF7B1FA2)  // Purple
-        null -> Color.Gray
+        Action.HIT -> Color(0xFFDC2626)        // Bright red
+        Action.STAND -> Color(0xFFF59E0B)      // Amber yellow
+        Action.DOUBLE -> Color(0xFF2563EB)     // Royal blue
+        Action.SPLIT -> Color(0xFF16A34A)      // Emerald green
+        Action.SURRENDER -> Color(0xFF9333EA)  // Purple
+        null -> Color(0xFF6B7280)              // Neutral gray
     }
 }
 
@@ -388,56 +523,112 @@ fun getActionSymbol(action: Action?): String {
 }
 
 @Composable
+fun ProTipsSection(screenWidth: ScreenWidth) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF059669).copy(alpha = 0.15f) // Light emerald background
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = StrategyDesign.TIPS_CARD_ELEVATION)
+    ) {
+        Column(
+            modifier = Modifier.padding(StrategyDesign.CARD_PADDING - 4.dp)
+        ) {
+            Text(
+                text = "💡 Pro Tips",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF059669)
+            )
+            
+            Spacer(modifier = Modifier.height(StrategyDesign.CHART_BUTTON_SPACING + 4.dp))
+            
+            val tips = listOf(
+                "Always split Aces and 8s, never split 5s or 10s",
+                "Double down on 11 against any dealer card except Ace",
+                "Never take insurance - the house edge is too high",
+                "Surrender hard 16 against dealer 9, 10, or Ace (if allowed)",
+                "Learn basic strategy first, then consider card counting"
+            )
+            
+            tips.forEachIndexed { index, tip ->
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    modifier = Modifier.padding(vertical = StrategyDesign.TIPS_ITEM_SPACING)
+                ) {
+                    Text(
+                        text = "${index + 1}.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF059669),
+                        modifier = Modifier.padding(end = StrategyDesign.TIPS_NUMBER_MARGIN)
+                    )
+                    
+                    Text(
+                        text = tip,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun StrategyLegend(screenWidth: ScreenWidth) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = Color(0xFF1F2937).copy(alpha = 0.95f) // Dark background
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = StrategyDesign.LEGEND_CARD_ELEVATION)
     ) {
         Column(
             modifier = Modifier.padding(Tokens.spacing(screenWidth))
         ) {
             Text(
-                text = "Legend",
-                style = MaterialTheme.typography.titleMedium,
+                text = "🎯 Action Legend",
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
+                color = Color.White,
                 modifier = Modifier.padding(bottom = Tokens.spacing(screenWidth))
             )
             
             val legends = listOf(
-                "H" to "Hit" to Color(0xFFE53935),
-                "S" to "Stand" to Color(0xFFFFD600),
-                "D" to "Double if allowed, otherwise hit" to Color(0xFF1976D2),
-                "P" to "Split" to Color(0xFF388E3C),
-                "R" to "Surrender if allowed, otherwise hit" to Color(0xFF7B1FA2)
+                "H" to "Hit - Take another card" to Color(0xFFDC2626),
+                "S" to "Stand - Keep your current total" to Color(0xFFF59E0B),
+                "D" to "Double - Double bet, take one card only" to Color(0xFF2563EB),
+                "P" to "Split - Split pair into two hands" to Color(0xFF16A34A),
+                "R" to "Surrender - Give up half your bet" to Color(0xFF9333EA)
             )
             
             legends.forEach { (symbolText, color) ->
                 val (symbol, text) = symbolText
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 2.dp)
+                    modifier = Modifier.padding(vertical = StrategyDesign.LEGEND_ITEM_SPACING)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(20.dp)
+                            .size(StrategyDesign.LEGEND_ICON_SIZE)
                             .background(color, RoundedCornerShape(4.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = symbol,
                             color = Color.White,
-                            fontSize = 12.sp,
+                            fontSize = StrategyDesign.LEGEND_FONT_SIZE,
                             fontWeight = FontWeight.Bold
                         )
                     }
                     
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(StrategyDesign.LEGEND_TEXT_MARGIN))
                     
                     Text(
                         text = text,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
                     )
                 }
             }

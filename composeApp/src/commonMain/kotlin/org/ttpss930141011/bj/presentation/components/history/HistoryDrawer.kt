@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.ttpss930141011.bj.domain.valueobjects.DecisionRecord
 import org.ttpss930141011.bj.domain.valueobjects.GameRules
-import org.ttpss930141011.bj.domain.valueobjects.ScenarioErrorStat
 import org.ttpss930141011.bj.presentation.layout.Layout
 import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 import org.ttpss930141011.bj.presentation.design.Tokens
@@ -23,7 +22,7 @@ import org.ttpss930141011.bj.presentation.design.Tokens
 fun GameWithHistoryDrawer(
     gameRules: GameRules,
     decisionHistory: List<DecisionRecord>,
-    scenarioStats: List<ScenarioErrorStat>,
+    // scenarioStats parameter removed
     onClearHistory: () -> Unit,
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     modifier: Modifier = Modifier,
@@ -36,7 +35,6 @@ fun GameWithHistoryDrawer(
                 HistoryDrawerContent(
                     gameRules = gameRules,
                     decisionHistory = decisionHistory,
-                    scenarioStats = scenarioStats,
                     onClearHistory = onClearHistory,
                     screenWidth = screenWidth
                 )
@@ -85,11 +83,11 @@ fun HistoryDrawerButton(
 fun HistoryDrawerContent(
     gameRules: GameRules,
     decisionHistory: List<DecisionRecord>,
-    scenarioStats: List<ScenarioErrorStat>,
+    // scenarioStats parameter removed
     onClearHistory: () -> Unit,
     screenWidth: ScreenWidth
 ) {
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
     
     ModalDrawerSheet(
@@ -117,7 +115,7 @@ fun HistoryDrawerContent(
                 selectedTabIndex = pagerState.currentPage,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                val tabTitles = listOf("Strategy", "History", "Stats")
+                val tabTitles = listOf("Strategy", "History")
                 tabTitles.forEachIndexed { index, title ->
                     Tab(
                         selected = pagerState.currentPage == index,
@@ -150,11 +148,6 @@ fun HistoryDrawerContent(
                     1 -> HistorySection(
                         decisionHistory = decisionHistory,
                         onClearHistory = onClearHistory,
-                        screenWidth = screenWidth,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    2 -> StatisticsSection(
-                        scenarioStats = scenarioStats,
                         screenWidth = screenWidth,
                         modifier = Modifier.fillMaxSize()
                     )

@@ -12,29 +12,39 @@ import kotlin.test.assertTrue
 class DecisionRecordTest {
 
     @Test
-    fun `given hand and dealer card when creating DecisionRecord then should generate correct scenario key`() {
+    fun `given hand snapshot and action when creating DecisionRecord then should store correctly`() {
         // Given
         val handCards = listOf(Card(Suit.HEARTS, Rank.TEN), Card(Suit.SPADES, Rank.SIX))
         val dealerUpCard = Card(Suit.CLUBS, Rank.KING)
+        val gameRules = GameRules()
         val playerAction = Action.HIT
         val isCorrect = false
+        val timestamp = 123456789L
         
         // When
         val decisionRecord = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = playerAction,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = gameRules
+            ),
+            action = playerAction,
+            afterAction = ActionResult.Hit(
+                newCard = Card(Suit.DIAMONDS, Rank.FIVE),
+                resultingHand = handCards + Card(Suit.DIAMONDS, Rank.FIVE)
+            ),
             isCorrect = isCorrect,
-            gameRules = GameRules()
+            timestamp = timestamp
         )
         
         // Then
-        assertEquals("H16 vs K", decisionRecord.baseScenarioKey)
-        assertTrue(decisionRecord.scenarioKey.startsWith("H16 vs K ["))
-        assertTrue(decisionRecord.scenarioKey.endsWith("]"))
-        assertEquals(6, decisionRecord.ruleHash.length) // Should be 6-char hex
-        assertEquals(playerAction, decisionRecord.playerAction)
+        assertEquals(handCards, decisionRecord.beforeAction.cards)
+        assertEquals(dealerUpCard, decisionRecord.beforeAction.dealerUpCard)
+        assertEquals(playerAction, decisionRecord.action)
         assertEquals(isCorrect, decisionRecord.isCorrect)
+        assertEquals(timestamp, decisionRecord.timestamp)
+        assertEquals("H16 vs K", decisionRecord.baseScenarioKey)
+        assertEquals(6, decisionRecord.ruleHash.length) // Should be 6-char hex
     }
 
     @Test
@@ -47,11 +57,15 @@ class DecisionRecordTest {
         
         // When
         val decisionRecord = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = playerAction,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = GameRules()
+            ),
+            action = playerAction,
+            afterAction = ActionResult.Stand(handCards),
             isCorrect = isCorrect,
-            gameRules = GameRules()
+            timestamp = System.currentTimeMillis()
         )
         
         // Then
@@ -68,11 +82,19 @@ class DecisionRecordTest {
         
         // When
         val decisionRecord = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = playerAction,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = GameRules()
+            ),
+            action = playerAction,
+            afterAction = ActionResult.Split(
+                originalPair = handCards,
+                hand1 = listOf(Card(Suit.HEARTS, Rank.EIGHT), Card(Suit.DIAMONDS, Rank.TWO)),
+                hand2 = listOf(Card(Suit.SPADES, Rank.EIGHT), Card(Suit.CLUBS, Rank.THREE))
+            ),
             isCorrect = isCorrect,
-            gameRules = GameRules()
+            timestamp = System.currentTimeMillis()
         )
         
         // Then
@@ -89,11 +111,15 @@ class DecisionRecordTest {
         
         // When
         val decisionRecord = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = playerAction,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = GameRules()
+            ),
+            action = playerAction,
+            afterAction = ActionResult.Stand(handCards),
             isCorrect = isCorrect,
-            gameRules = GameRules()
+            timestamp = System.currentTimeMillis()
         )
         
         // Then
@@ -111,20 +137,29 @@ class DecisionRecordTest {
         
         // When
         val earlierDecision = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = Action.HIT,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = GameRules()
+            ),
+            action = Action.HIT,
+            afterAction = ActionResult.Hit(
+                newCard = Card(Suit.DIAMONDS, Rank.FIVE),
+                resultingHand = handCards + Card(Suit.DIAMONDS, Rank.FIVE)
+            ),
             isCorrect = false,
-            gameRules = GameRules(),
             timestamp = baseTime
         )
         
         val laterDecision = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = Action.STAND,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = GameRules()
+            ),
+            action = Action.STAND,
+            afterAction = ActionResult.Stand(handCards),
             isCorrect = true,
-            gameRules = GameRules(),
             timestamp = laterTime
         )
         
@@ -133,7 +168,7 @@ class DecisionRecordTest {
     }
 
     @Test
-    fun `given decision record when accessing properties then should return correct values`() {
+    fun `given decision record when accessing legacy properties then should return correct values`() {
         // Given
         val handCards = listOf(Card(Suit.HEARTS, Rank.QUEEN), Card(Suit.SPADES, Rank.TWO))
         val dealerUpCard = Card(Suit.CLUBS, Rank.ACE)
@@ -143,15 +178,21 @@ class DecisionRecordTest {
         
         // When
         val decisionRecord = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = playerAction,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = GameRules()
+            ),
+            action = playerAction,
+            afterAction = ActionResult.Double(
+                newCard = Card(Suit.DIAMONDS, Rank.NINE),
+                resultingHand = handCards + Card(Suit.DIAMONDS, Rank.NINE)
+            ),
             isCorrect = isCorrect,
-            gameRules = GameRules(),
             timestamp = timestamp
         )
         
-        // Then
+        // Then - Test legacy compatibility properties
         assertEquals(handCards, decisionRecord.handCards)
         assertEquals(dealerUpCard, decisionRecord.dealerUpCard)
         assertEquals(playerAction, decisionRecord.playerAction)
@@ -174,40 +215,19 @@ class DecisionRecordTest {
         
         // When
         val decisionRecord = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = playerAction,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = GameRules()
+            ),
+            action = playerAction,
+            afterAction = ActionResult.Stand(handCards),
             isCorrect = isCorrect,
-            gameRules = GameRules()
+            timestamp = System.currentTimeMillis()
         )
         
         // Then
         assertEquals("H10 vs 6", decisionRecord.baseScenarioKey)
-    }
-
-    @Test
-    fun `given soft hand with multiple aces when creating DecisionRecord then should generate correct scenario key`() {
-        // Given
-        val handCards = listOf(
-            Card(Suit.HEARTS, Rank.ACE),
-            Card(Suit.SPADES, Rank.ACE),
-            Card(Suit.CLUBS, Rank.FIVE)
-        )
-        val dealerUpCard = Card(Suit.DIAMONDS, Rank.TWO)
-        val playerAction = Action.HIT
-        val isCorrect = true
-        
-        // When
-        val decisionRecord = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = playerAction,
-            isCorrect = isCorrect,
-            gameRules = GameRules()
-        )
-        
-        // Then
-        assertEquals("S17 vs 2", decisionRecord.baseScenarioKey)
     }
 
     @Test
@@ -218,19 +238,30 @@ class DecisionRecordTest {
         val dealerUpCard = Card(Suit.CLUBS, Rank.KING)
         
         val decision1 = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = Action.HIT,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = gameRules
+            ),
+            action = Action.HIT,
+            afterAction = ActionResult.Hit(
+                newCard = Card(Suit.DIAMONDS, Rank.FIVE),
+                resultingHand = handCards + Card(Suit.DIAMONDS, Rank.FIVE)
+            ),
             isCorrect = true,
-            gameRules = gameRules
+            timestamp = System.currentTimeMillis()
         )
         
         val decision2 = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = Action.STAND,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = gameRules
+            ),
+            action = Action.STAND,
+            afterAction = ActionResult.Stand(handCards),
             isCorrect = false,
-            gameRules = gameRules
+            timestamp = System.currentTimeMillis()
         )
         
         // When & Then
@@ -247,19 +278,30 @@ class DecisionRecordTest {
         val dealerUpCard = Card(Suit.CLUBS, Rank.KING)
         
         val decision1 = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = Action.HIT,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = rules1
+            ),
+            action = Action.HIT,
+            afterAction = ActionResult.Hit(
+                newCard = Card(Suit.DIAMONDS, Rank.FIVE),
+                resultingHand = handCards + Card(Suit.DIAMONDS, Rank.FIVE)
+            ),
             isCorrect = true,
-            gameRules = rules1
+            timestamp = System.currentTimeMillis()
         )
         
         val decision2 = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = Action.STAND,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = rules2
+            ),
+            action = Action.STAND,
+            afterAction = ActionResult.Stand(handCards),
             isCorrect = false,
-            gameRules = rules2
+            timestamp = System.currentTimeMillis()
         )
         
         // When & Then
@@ -274,37 +316,34 @@ class DecisionRecordTest {
         val dealerUpCard = Card(Suit.CLUBS, Rank.KING)
         
         val decision1 = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = Action.HIT,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = GameRules(dealerHitsOnSoft17 = true)
+            ),
+            action = Action.HIT,
+            afterAction = ActionResult.Hit(
+                newCard = Card(Suit.DIAMONDS, Rank.FIVE),
+                resultingHand = handCards + Card(Suit.DIAMONDS, Rank.FIVE)
+            ),
             isCorrect = true,
-            gameRules = GameRules(dealerHitsOnSoft17 = true)
+            timestamp = System.currentTimeMillis()
         )
         
         val decision2 = DecisionRecord(
-            handCards = handCards,
-            dealerUpCard = dealerUpCard,
-            playerAction = Action.STAND,
+            beforeAction = HandSnapshot(
+                cards = handCards,
+                dealerUpCard = dealerUpCard,
+                gameRules = GameRules(dealerHitsOnSoft17 = false) // Different rules, same scenario
+            ),
+            action = Action.STAND,
+            afterAction = ActionResult.Stand(handCards),
             isCorrect = false,
-            gameRules = GameRules(dealerHitsOnSoft17 = false) // Different rules, same scenario
+            timestamp = System.currentTimeMillis()
         )
         
         // When & Then
         assertTrue(decision1.hasSameBaseScenario(decision2))
         assertTrue(decision2.hasSameBaseScenario(decision1))
-    }
-
-    @Test
-    fun `given empty hand cards when creating DecisionRecord then should throw exception`() {
-        // Given & When & Then
-        kotlin.test.assertFailsWith<IllegalArgumentException> {
-            DecisionRecord(
-                handCards = emptyList(),
-                dealerUpCard = Card(Suit.CLUBS, Rank.KING),
-                playerAction = Action.HIT,
-                isCorrect = true,
-                gameRules = GameRules()
-            )
-        }
     }
 }

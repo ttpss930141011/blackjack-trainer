@@ -43,11 +43,15 @@ fun ActionArea(
                 availableChips = ChipImageMapper.standardChipValues,
                 playerChips = game.player?.chips ?: 0,
                 currentBet = viewModel.currentBetAmount,
+                lastBetAmount = viewModel.lastBetAmount,
                 onChipSelected = { chipValue ->
                     ChipValue.fromValue(chipValue)?.let { viewModel.addChipToBet(it) }
                 },
                 onDealCards = {
                     viewModel.dealCards()
+                },
+                onRepeatLastBet = {
+                    viewModel.repeatLastBet()
                 },
                 modifier = modifier
             )
@@ -92,11 +96,22 @@ private fun ChipSelection(
     availableChips: List<Int>,
     playerChips: Int,
     currentBet: Int,
+    lastBetAmount: Int?,
     onChipSelected: (Int) -> Unit,
     onDealCards: () -> Unit,
+    onRepeatLastBet: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    
+    // Auto-apply last bet when entering betting phase
+    LaunchedEffect(lastBetAmount, currentBet) {
+        if (lastBetAmount != null && lastBetAmount > 0 && currentBet == 0) {
+            // Only auto-apply if user hasn't started betting manually
+            onRepeatLastBet()
+        }
+    }
+    
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Tokens.Space.l)
@@ -181,31 +196,54 @@ private fun ActionButtons(
 ) {
     BreakpointLayout(
         compact = {
-            // Compact: FlowRow for wrapping
-            FlowRow(
+            // Compact: Single row with custom ordering: Double, Hit, Stand, Split, Surrender
+            val orderedActions = availableActions.sortedWith { a, b ->
+                val order = mapOf(
+                    Action.DOUBLE to 1,
+                    Action.HIT to 2, 
+                    Action.STAND to 3,
+                    Action.SPLIT to 4,
+                    Action.SURRENDER to 5
+                )
+                (order[a] ?: 99) - (order[b] ?: 99)
+            }
+            
+            Row(
                 modifier = modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(
-                    Tokens.Space.s, 
+                    Tokens.Space.s,
                     Alignment.CenterHorizontally
                 ),
-                verticalArrangement = Arrangement.spacedBy(Tokens.Space.s)
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                availableActions.forEach { action ->
+                orderedActions.forEach { action ->
                     ActionButton(
                         action = action,
                         onAction = onAction,
-                        feedback = feedback
+                        feedback = feedback,
+                        modifier = Modifier.weight(1f) // 让按钮平均分配宽度
                     )
                 }
             }
         },
         expanded = {
-            // Expanded: LazyRow
+            // Expanded: LazyRow with same custom ordering: Double, Hit, Stand, Split, Surrender
+            val orderedActions = availableActions.sortedWith { a, b ->
+                val order = mapOf(
+                    Action.DOUBLE to 1,
+                    Action.HIT to 2, 
+                    Action.STAND to 3,
+                    Action.SPLIT to 4,
+                    Action.SURRENDER to 5
+                )
+                (order[a] ?: 99) - (order[b] ?: 99)
+            }
+            
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(Tokens.Space.m, Alignment.CenterHorizontally),
                 modifier = modifier
             ) {
-                items(availableActions) { action ->
+                items(orderedActions) { action ->
                     ActionButton(
                         action = action,
                         onAction = onAction,
@@ -243,27 +281,49 @@ private fun ActionButton(
             contentColor = Color.White
         ),
         shape = RoundedCornerShape(Tokens.Space.m),
-        modifier = modifier
-            .height(Tokens.Size.buttonHeight)
-            .widthIn(min = Tokens.Size.chipDiameter)
+        modifier = modifier.height(Tokens.Size.buttonHeight),
+        contentPadding = PaddingValues(horizontal = Tokens.Space.xs, vertical = Tokens.Space.xs) // 减少内边距以提供更多文本空间
     ) {
         BreakpointLayout(
             compact = {
-                // Compact: Show icon + hint
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = icon,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                    if (showHint) {
+                // Compact: Show icon + hint, 对Double按钮特殊处理
+                if (action == Action.DOUBLE) {
+                    // Double按钮使用紧凑布局，避免×2分离
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = "💡",
-                            fontSize = 12.sp
+                            text = icon,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = Tokens.Typography.actionButtonIconCompact,
+                            maxLines = 1
                         )
+                        if (showHint) {
+                            Text(
+                                text = "💡",
+                                fontSize = Tokens.Typography.actionButtonHintCompact
+                            )
+                        }
+                    }
+                } else {
+                    // 其他按钮使用垂直布局优化空间利用
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = icon,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = Tokens.Typography.actionButtonIconExpanded,
+                            maxLines = 1
+                        )
+                        if (showHint) {
+                            Text(
+                                text = "💡",
+                                fontSize = Tokens.Typography.actionButtonHintCompact
+                            )
+                        }
                     }
                 }
             },
@@ -276,17 +336,19 @@ private fun ActionButton(
                     Text(
                         text = icon,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = Tokens.Typography.actionButtonIconExpanded,
+                        maxLines = 1
                     )
                     Text(
                         text = action.name,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        fontSize = Tokens.Typography.actionButtonTextExpanded,
+                        maxLines = 1
                     )
                     if (showHint) {
                         Text(
                             text = "💡",
-                            fontSize = 14.sp
+                            fontSize = Tokens.Typography.actionButtonHintExpanded
                         )
                     }
                 }

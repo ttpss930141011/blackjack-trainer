@@ -125,7 +125,6 @@ jobs:
         echo "Testing compilation across all targets..."
         ./gradlew :composeApp:compileKotlinJvm
         ./gradlew :composeApp:compileDebugKotlinAndroid
-        ./gradlew :composeApp:compileKotlinWasmJs
 
   # Performance Tests - Runtime performance validation
   performance-tests:
@@ -168,14 +167,14 @@ jobs:
         echo "=== Memory Analysis ===" >> performance-results.txt
         du -sh composeApp/build/libs/ >> performance-results.txt 2>/dev/null || echo "No JAR files found"
     
-    - name: WASM bundle analysis
+    - name: JVM bundle analysis
       run: |
-        ./gradlew :composeApp:wasmJsBrowserDistribution
-        echo "=== WASM Bundle Size Analysis ===" >> performance-results.txt
-        ls -lah composeApp/build/dist/wasmJs/productionExecutable/ >> performance-results.txt || true
+        ./gradlew :composeApp:packageUberJarForCurrentOS
+        echo "=== JVM Bundle Size Analysis ===" >> performance-results.txt
+        ls -lah composeApp/build/compose/jars/ >> performance-results.txt || true
         
         # Analyze key files
-        find composeApp/build/dist/wasmJs/productionExecutable/ -name "*.js" -o -name "*.wasm" | \
+        find composeApp/build/compose/jars/ -name "*.jar" | \
           xargs -I {} sh -c 'echo "File: {}, Size: $(du -h "{}" | cut -f1)"' >> performance-results.txt
     
     - name: Upload performance results

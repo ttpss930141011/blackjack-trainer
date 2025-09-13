@@ -1,5 +1,7 @@
 package org.ttpss930141011.bj.domain.valueobjects
 
+import org.ttpss930141011.bj.application.TimeProvider
+
 /**
  * Statistics for a specific rule set within a session.
  */
@@ -105,11 +107,15 @@ data class SessionStats(
         return decisions.fold(this) { stats, playerDecision ->
             // Create a synthetic DecisionRecord for backward compatibility
             val decisionRecord = DecisionRecord(
-                handCards = listOf(Card(Suit.HEARTS, Rank.TWO)), // Minimal data for compatibility
-                dealerUpCard = Card(Suit.HEARTS, Rank.TWO), // Placeholder
-                playerAction = playerDecision.action,
+                beforeAction = HandSnapshot(
+                    cards = listOf(Card(Suit.HEARTS, Rank.TWO)), // Minimal data for compatibility
+                    dealerUpCard = Card(Suit.HEARTS, Rank.TWO), // Placeholder
+                    gameRules = GameRules() // Default rules for backward compatibility
+                ),
+                action = playerDecision.action,
+                afterAction = ActionResult.Stand(listOf(Card(Suit.HEARTS, Rank.TWO))), // Placeholder
                 isCorrect = playerDecision.isCorrect,
-                gameRules = GameRules() // Default rules for backward compatibility
+                timestamp = TimeProvider.currentTimeMillis()
             )
             stats.recordDecision(decisionRecord)
         }
@@ -139,62 +145,10 @@ data class SessionStats(
     
     // === Rule-Aware Analytics Methods ===
     
-    /**
-     * Get statistics for the current active rule set.
-     */
-    fun getCurrentRuleStats(): RuleSegmentStats? {
-        return currentRuleVersion?.let { ruleSegments[it] }
-    }
     
-    /**
-     * Get statistics for a specific rule set.
-     */
-    fun getStatsForRules(gameRules: GameRules): RuleSegmentStats? {
-        val targetRuleVersion = gameRules.hashCode().toString(16).takeLast(8)
-        return ruleSegments[targetRuleVersion]
-    }
     
-    /**
-     * Get worst scenarios for current rule set only (prevents contamination).
-     */
-    fun getCurrentRuleWorstScenarios(minSamples: Int = 3): List<Pair<String, Double>> {
-        return getCurrentRuleStats()?.decisions
-            ?.filter { it.handCards.isNotEmpty() } // Filter out synthetic records
-            ?.groupBy { it.baseScenarioKey } // Use base scenario (without rule hash)
-            ?.filter { (_, decisionList) -> decisionList.size >= minSamples }
-            ?.map { (scenario, decisionList) ->
-                val errorRate = decisionList.count { !it.isCorrect }.toDouble() / decisionList.size
-                scenario to errorRate
-            }
-            ?.sortedByDescending { it.second } ?: emptyList()
-    }
     
-    /**
-     * Check if rule change notification should be shown.
-     */
-    fun hasRuleChanged(newRules: GameRules): Boolean {
-        val newRuleVersion = newRules.hashCode().toString(16).takeLast(8)
-        return currentRuleVersion != null && currentRuleVersion != newRuleVersion
-    }
     
-    /**
-     * Get rule comparison summary for user awareness.
-     */
-    fun getRuleComparisonSummary(): String? {
-        if (ruleSegments.size <= 1) return null
-        
-        val segments = ruleSegments.values.toList()
-        val current = getCurrentRuleStats()
-        val previous = segments.filter { it != current }.maxByOrNull { it.totalDecisions }
-        
-        return if (current != null && previous != null) {
-            val currentRate = (current.decisionRate * 100).toInt()
-            val previousRate = (previous.decisionRate * 100).toInt()
-            val trend = if (currentRate > previousRate) "↗" else if (currentRate < previousRate) "↘" else "→"
-            
-            "Rule changed: ${previousRate}% → ${currentRate}% $trend (${current.totalDecisions} decisions)"
-        } else null
-    }
 }
 
 // Rich domain value objects

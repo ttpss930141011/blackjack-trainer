@@ -67,9 +67,6 @@ test-results/
 reports/
 jacoco/
 
-# Personal development memory (should not be shared)
-CLAUDE.local.md
-
 # Environment files
 .env
 .env.local

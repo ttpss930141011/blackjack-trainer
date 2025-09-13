@@ -23,12 +23,19 @@ class SettlementServiceTest {
         isSettled: Boolean = false,
         rules: GameRules = GameRules()
     ): Game {
+        // Create committed BetState from first hand's bet
+        val betAmount = if (playerHands.isNotEmpty()) playerHands.first().bet else 0
+        val betState = if (betAmount > 0) {
+            BetState(amount = betAmount, isCommitted = true)
+        } else {
+            BetState()
+        }
+        
         return Game(
             player = Player(id = "test-player", chips = playerChips),
             playerHands = playerHands,
             currentHandIndex = 0,
-            pendingBet = 0,
-            currentBet = if (playerHands.isNotEmpty()) playerHands.first().bet else 0,
+            betState = betState,
             dealer = Dealer(hand = dealerHand),
             deck = Deck.createTestDeck(emptyList()),
             rules = rules,

@@ -6,7 +6,7 @@ import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 
 /**
- * DecisionEvaluator - Application service for evaluating player decisions against optimal strategy.
+ * Application service for evaluating player decisions against optimal strategy.
  * 
  * This service encapsulates the strategy evaluation logic, separating decision assessment
  * from learning record management. Part of the DDD Application layer.
@@ -16,7 +16,7 @@ class DecisionEvaluator {
     private val strategyEngine = StrategyEngine()
     
     /**
-     * Evaluate a player's decision and provide feedback.
+     * Evaluates a player's decision and provides feedback.
      * 
      * @param handBeforeAction The player's hand state before taking action
      * @param dealerUpCard The dealer's visible card
@@ -40,7 +40,7 @@ class DecisionEvaluator {
     }
     
     /**
-     * Get the optimal action for a given game state.
+     * Gets the optimal action for a given game state.
      * 
      * @param playerHand The current player hand
      * @param dealerUpCard The dealer's visible card
@@ -56,7 +56,7 @@ class DecisionEvaluator {
     }
     
     /**
-     * Get the optimal action for a PlayerHand (convenience method).
+     * Gets the optimal action for a PlayerHand (convenience method).
      * 
      * @param playerHand The player hand to evaluate
      * @param dealerUpCard The dealer's visible card  

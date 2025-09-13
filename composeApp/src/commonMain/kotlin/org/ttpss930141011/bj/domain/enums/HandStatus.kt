@@ -1,11 +1,24 @@
 package org.ttpss930141011.bj.domain.enums
 
+import kotlinx.serialization.Serializable
+
+/**
+ * Status of a player hand during and after play
+ */
+@Serializable
 enum class HandStatus {
-    ACTIVE,       // 可繼續行動
-    STANDING,     // 已站牌，等待結果
-    BUSTED,       // 爆牌
-    SURRENDERED,  // 投降
-    WIN,          // 勝利
-    LOSS,         // 失敗  
-    PUSH          // 平手
+    /** Hand can still take actions */
+    ACTIVE,
+    /** Player chose to stand, awaiting dealer */
+    STANDING,
+    /** Hand exceeded 21 points */
+    BUSTED,
+    /** Player surrendered */
+    SURRENDERED,
+    /** Hand won against dealer */
+    WIN,
+    /** Hand lost to dealer */
+    LOSS,
+    /** Hand tied with dealer */
+    PUSH
 }

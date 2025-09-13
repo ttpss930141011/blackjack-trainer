@@ -14,53 +14,80 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import org.ttpss930141011.bj.application.GameViewModel
+import org.ttpss930141011.bj.application.ApplicationService
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.layout.Layout
+import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 import org.ttpss930141011.bj.presentation.layout.isCompact
 import org.ttpss930141011.bj.presentation.components.*
 import org.ttpss930141011.bj.presentation.components.feedback.*
 import org.ttpss930141011.bj.presentation.components.history.*
 import org.ttpss930141011.bj.presentation.components.dialogs.*
 import org.ttpss930141011.bj.presentation.components.navigation.Header
-import org.ttpss930141011.bj.presentation.components.navigation.GameNavigationDrawer
-import org.ttpss930141011.bj.presentation.components.navigation.GameNavigationBar
+import org.ttpss930141011.bj.presentation.components.navigation.NavigationMenu
 import org.ttpss930141011.bj.presentation.components.navigation.NavigationPage
 import org.ttpss930141011.bj.presentation.pages.*
 import org.ttpss930141011.bj.presentation.design.AppConstants
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 
+/**
+ * Main casino game screen with responsive navigation
+ * 
+ * Provides the main game interface with adaptive navigation based on screen size:
+ * - Compact screens: Bottom navigation bar
+ * - Large screens: Side navigation drawer
+ * 
+ * Manages game state through GameViewModel and handles screen navigation between
+ * game, history, statistics, and settings screens.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CasinoGameScreen(
-    gameRules: GameRules = GameRules(),
-    onRulesChanged: (GameRules) -> Unit = {}
-) {
+fun CasinoGameScreen() {
     val viewModel = remember { GameViewModel() }
     val notificationState = rememberNotificationState()
-    
+
     // Navigation state (HOME is default)
     var currentPage by remember { mutableStateOf<NavigationPage?>(NavigationPage.HOME) }
     
+    // Menu state
+    var isMenuExpanded by remember { mutableStateOf(false) }
+
     // Feedback notification settings
     var feedbackNotificationEnabled by remember { mutableStateOf(true) }
     var feedbackDurationSeconds by remember { mutableStateOf(2.5f) }
-    
-    // Initialize game only once, then handle rule changes without reset
+
+    // Get current game rules from user preferences (persistent storage)
+    val currentGameRules = viewModel.userPreferences.preferredRules
+
+    // Initialize application services and game only once
     LaunchedEffect(Unit) {
-        viewModel.initializeGame(gameRules, Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS))
+        // Initialize application-level services
+        ApplicationService.getInstance().initialize()
+        
+        // Initialize game with user's preferred rules
+        viewModel.initializeGame(
+            currentGameRules,
+            Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS)
+        )
     }
-    
-    // Handle rule changes dynamically without resetting game state
-    LaunchedEffect(gameRules) {
-        viewModel.handleRuleChange(gameRules)
+
+    // Reload user preferences when returning to HOME page
+    LaunchedEffect(currentPage) {
+        if (currentPage == NavigationPage.HOME || currentPage == null) {
+            viewModel.loadUserPreferences()
+        }
     }
-    
+
+    // Handle rule changes from user preferences (not external gameRules parameter)
+    LaunchedEffect(currentGameRules) {
+        viewModel.handleRuleChange(currentGameRules)
+    }
+
     // Handle feedback - add to history and manage ambient feedback
     LaunchedEffect(viewModel.feedback) {
         viewModel.feedback?.let { feedback ->
@@ -68,7 +95,7 @@ fun CasinoGameScreen(
             // 不立即清除 feedback，讓 ActionButton 可以顯示視覺反饋
         }
     }
-    
+
     // Delayed transition feedback - ensures ActionButton feedback is visible before phase changes
     DelayedTransitionFeedback(
         feedback = viewModel.feedback,
@@ -77,196 +104,91 @@ fun CasinoGameScreen(
             // This gives users time to see the feedback before transitioning to dealer turn
         }
     )
-    
+
     // Note: FeedbackSystem removed to prevent race condition with PersistentFeedbackToast
     // PersistentFeedbackToast now handles all feedback timing and cleanup
-    
+
     val game = viewModel.game
-    val currentPlayer = game?.player ?: Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS)
-    
+    val currentPlayer = game?.player ?: Player(
+        id = AppConstants.Defaults.PLAYER_ID,
+        chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS
+    )
+
     Layout { screenWidth ->
-        if (screenWidth.isCompact) {
-            // Mobile: NavigationBar at bottom with drawer support  
-            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-            val scope = rememberCoroutineScope()
-            
-            ModalNavigationDrawer(
-                drawerState = drawerState,
-                drawerContent = {
-                    GameNavigationDrawer(
-                        currentPage = currentPage ?: NavigationPage.HOME,
-                        onPageSelected = { currentPage = it },
-                        onCloseDrawer = {
-                            scope.launch {
-                                drawerState.close()
-                            }
-                        }
+        // Single layout approach - no more compact/expanded split
+        Scaffold(
+            containerColor = CasinoTheme.PageBackground
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(CasinoTheme.PageBackground)
+                    .padding(paddingValues)
+            ) {
+                    // Header for all pages with integrated navigation menu
+                    Header(
+                        balance = currentPlayer.chips,
+                        currentPage = currentPage,
+                        onBackClick = if (currentPage != NavigationPage.HOME) {
+                            { currentPage = NavigationPage.HOME }
+                        } else null,
+                        isMenuExpanded = isMenuExpanded,
+                        onMenuExpandedChange = { isMenuExpanded = it },
+                        onNavigate = { page -> currentPage = page }
                     )
-                }
-            ) {
-                Scaffold(
-                    containerColor = CasinoTheme.PageBackground,
-                    bottomBar = {
-                        GameNavigationBar(
-                            currentPage = currentPage ?: NavigationPage.HOME,
-                            onPageSelected = { currentPage = it }
-                        )
-                    }
-                ) { paddingValues ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(CasinoTheme.PageBackground)
-                            .padding(paddingValues)
-                    ) {
-                        // Add header for non-Home pages
-                        if (currentPage != NavigationPage.HOME && currentPage != null) {
-                            Header(
-                                balance = currentPlayer.chips,
-                                currentPage = currentPage,
-                                gameRules = viewModel.currentGameRules,
-                                drawerButton = {
-                                    TextButton(
-                                        onClick = {
-                                            scope.launch { drawerState.open() }
-                                        }
-                                    ) {
-                                        Text(
-                                            text = "☰",
-                                            color = Color.White,
-                                            style = MaterialTheme.typography.titleLarge
-                                        )
-                                    }
+
+                    when (currentPage) {
+                        NavigationPage.STRATEGY -> {
+                            StrategyPage(
+                                gameRules = currentGameRules,
+                                screenWidth = screenWidth
+                            )
+                        }
+
+                        NavigationPage.HISTORY -> {
+                            // 使用新的載入方式
+                            LaunchedEffect(Unit) {
+                                viewModel.loadRecentRounds()
+                            }
+                            
+                            HistoryPage(
+                                roundHistory = viewModel.recentRounds,
+                                screenWidth = screenWidth
+                            )
+                        }
+
+                        NavigationPage.SETTINGS -> {
+                            // 載入用戶偏好設定
+                            LaunchedEffect(Unit) {
+                                viewModel.loadUserPreferences()
+                            }
+                            
+                            SettingsPage(
+                                userPreferences = viewModel.userPreferences,
+                                onPreferencesChanged = { newPreferences ->
+                                    viewModel.updateUserPreferences(newPreferences)
                                 }
                             )
                         }
-                        
-                        when (currentPage) {
-                            NavigationPage.STRATEGY -> Layout { screenWidth ->
-                                StrategyPage(
-                                    gameRules = gameRules,
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.HISTORY -> Layout { screenWidth ->
-                                HistoryPage(
-                                    decisionHistory = viewModel.getRecentDecisionsForCurrentRule(),
-                                    onClearHistory = { viewModel.clearAllLearningData() },
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.STATISTICS -> Layout { screenWidth ->
-                                StatisticsPage(
-                                    scenarioStats = viewModel.getCurrentRuleWorstScenarios(),
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.SETTINGS -> Layout { screenWidth ->
-                                SettingsPage(
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.HOME, null -> {
-                                // Default to game content (Home)
-                                CasinoGameContent(
-                                    game = game,
-                                    viewModel = viewModel,
-                                    currentPlayer = currentPlayer,
-                                    feedback = viewModel.feedback,
-                                    currentPage = currentPage,
-                                    feedbackNotificationEnabled = feedbackNotificationEnabled,
-                                    feedbackDurationSeconds = feedbackDurationSeconds
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            // Desktop: Full screen with feedback drawer
-            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-            val scope = rememberCoroutineScope()
-            
-            GameWithNavigationDrawer(
-                currentPage = currentPage,
-                onPageSelected = { currentPage = it },
-                drawerState = drawerState
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(CasinoTheme.PageBackground) // Consistent background
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        // Add header for non-Home pages  
-                        if (currentPage != NavigationPage.HOME && currentPage != null) {
-                            Header(
-                                balance = currentPlayer.chips,
+
+                        NavigationPage.HOME, null -> {
+                            // Default to game content (Home)
+                            CasinoGameContent(
+                                game = game,
+                                viewModel = viewModel,
+                                currentPlayer = currentPlayer,
+                                feedback = viewModel.feedback,
                                 currentPage = currentPage,
-                                gameRules = viewModel.currentGameRules,
-                                drawerButton = {
-                                    TextButton(
-                                        onClick = {
-                                            scope.launch { drawerState.open() }
-                                        }
-                                    ) {
-                                        Text(
-                                            text = "☰",
-                                            color = Color.White,
-                                            style = MaterialTheme.typography.titleLarge
-                                        )
-                                    }
-                                }
+                                screenWidth = screenWidth,
+                                feedbackNotificationEnabled = feedbackNotificationEnabled,
+                                feedbackDurationSeconds = feedbackDurationSeconds
                             )
-                        }
-                        
-                        when (currentPage) {
-                            NavigationPage.STRATEGY -> Layout { screenWidth ->
-                                StrategyPage(
-                                    gameRules = gameRules,
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.HISTORY -> Layout { screenWidth ->
-                                HistoryPage(
-                                    decisionHistory = viewModel.getRecentDecisionsForCurrentRule(),
-                                    onClearHistory = { viewModel.clearAllLearningData() },
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.STATISTICS -> Layout { screenWidth ->
-                                StatisticsPage(
-                                    scenarioStats = viewModel.getCurrentRuleWorstScenarios(),
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.SETTINGS -> Layout { screenWidth ->
-                                SettingsPage(
-                                    screenWidth = screenWidth
-                                )
-                            }
-                            NavigationPage.HOME, null -> {
-                                // Default to game content (Home)
-                                CasinoGameContent(
-                                    game = game,
-                                    viewModel = viewModel,
-                                    currentPlayer = currentPlayer,
-                                    feedback = viewModel.feedback,
-                                    currentPage = currentPage,
-                                    feedbackNotificationEnabled = feedbackNotificationEnabled,
-                                    feedbackDurationSeconds = feedbackDurationSeconds,
-                                    drawerState = drawerState
-                                )
-                            }
                         }
                     }
                 }
             }
         }
     }
-}
 
 @Composable
 private fun CasinoGameContent(
@@ -275,11 +197,10 @@ private fun CasinoGameContent(
     currentPlayer: Player,
     feedback: DecisionFeedback?,
     currentPage: NavigationPage?,
+    screenWidth: ScreenWidth,
     feedbackNotificationEnabled: Boolean = true,
     feedbackDurationSeconds: Float = 2.5f,
-    drawerState: DrawerState? = null
 ) {
-    val scope = rememberCoroutineScope()
     // 直接使用單色背景，移除多餘漸層
     Box(
         modifier = Modifier
@@ -290,32 +211,15 @@ private fun CasinoGameContent(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Header(
-                balance = currentPlayer.chips,
-                currentPage = currentPage,
-                gameRules = viewModel.currentGameRules,
-                drawerButton = drawerState?.let { drawer ->
-                    {
-                        HistoryDrawerButton(
-                            decisionCount = viewModel.getRecentDecisions().size,
-                            onOpenDrawer = {
-                                scope.launch { 
-                                    drawer.open() 
-                                }
-                            }
-                        )
-                    }
-                }
-            )
-            
-            // 遊戲區域直接填滿剩餘空間，移除多餘包裝
+            // Game area fills remaining space directly
             game?.let { currentGame ->
                 GamePhaseManager(
                     game = currentGame,
                     viewModel = viewModel,
-                    feedback = feedback
+                    feedback = feedback,
+                    screenWidth = screenWidth
                 )
-                
+
                 // Error handling with auto-dismiss
                 viewModel.errorMessage?.let { error ->
                     LaunchedEffect(error) {
@@ -323,17 +227,17 @@ private fun CasinoGameContent(
                         viewModel.clearError()
                     }
                 }
-                
+
                 // Rule change notification with auto-dismiss
-                viewModel.ruleChangeNotification?.let { notification ->
+                viewModel.uiStateManager.ruleChangeNotification?.let { notification ->
                     LaunchedEffect(notification) {
                         kotlinx.coroutines.delay(5000) // Show longer for rule changes
-                        viewModel.dismissRuleChangeNotification()
+                        viewModel.uiStateManager.dismissRuleChangeNotification()
                     }
                 }
             }
         }
-        
+
         // Persistent feedback toast overlay - shows feedback across phase transitions
         PersistentFeedbackToast(
             feedback = feedback,
@@ -342,44 +246,19 @@ private fun CasinoGameContent(
             onFeedbackConsumed = { viewModel.clearFeedback() },
             modifier = Modifier.align(Alignment.TopCenter)
         )
-        
+
         // Rule change notification overlay
-        viewModel.ruleChangeNotification?.let { notification ->
+        viewModel.uiStateManager.ruleChangeNotification?.let { notification ->
             RuleChangeNotificationToast(
                 message = notification,
-                onDismiss = { viewModel.dismissRuleChangeNotification() },
+                onDismiss = { viewModel.uiStateManager.dismissRuleChangeNotification() },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
-        
+
     }
 }
 
-@Composable
-fun GameWithNavigationDrawer(
-    currentPage: NavigationPage?,
-    onPageSelected: (NavigationPage?) -> Unit,
-    drawerState: DrawerState,
-    gameContent: @Composable () -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            GameNavigationDrawer(
-                currentPage = currentPage ?: NavigationPage.HOME, // Fallback for drawer display
-                onPageSelected = onPageSelected,
-                onCloseDrawer = {
-                    scope.launch {
-                        drawerState.close()
-                    }
-                }
-            )
-        }
-    ) {
-        gameContent()
-    }
-}
 
 @Composable
 private fun RuleChangeNotificationToast(
@@ -406,7 +285,7 @@ private fun RuleChangeNotificationToast(
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                 modifier = Modifier.weight(1f)
             )
-            
+
             TextButton(onClick = onDismiss) {
                 Text(
                     text = "OK",
