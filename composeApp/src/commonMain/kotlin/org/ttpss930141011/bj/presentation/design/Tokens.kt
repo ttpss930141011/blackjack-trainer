@@ -30,7 +30,7 @@ object Tokens {
         
         val buttonHeight = 48.dp
         val touchTarget = 48.dp
-        val chipDiameter = 80.dp
+        val chipDiameter = 48.dp
         
         // Notification widths (moved to AppConstants)
         val notificationTablet = AppConstants.Dimensions.NOTIFICATION_TABLET_WIDTH.dp

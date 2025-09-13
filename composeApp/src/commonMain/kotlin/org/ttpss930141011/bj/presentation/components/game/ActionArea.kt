@@ -116,19 +116,6 @@ private fun ChipSelection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Tokens.Space.l)
     ) {
-        // Player balance - centered
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Balance: $$playerChips",
-                style = MaterialTheme.typography.titleMedium,
-                color = CasinoTheme.BalanceAccent,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        
         // Chip selection - horizontally scrollable for mobile devices
         // Use fixed width to ensure scrolling works on mobile (7 chips * 80dp + spacing ≈ 624dp)
         val mobileContentWidth = Tokens.Size.chipDiameter * 8 // Buffer for spacing and padding
@@ -168,8 +155,8 @@ private fun ChipSelection(
                 onClick = onDealCards,
                 enabled = currentBet > 0,
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .height(56.dp),
+                    .fillMaxWidth()
+                    .height(Tokens.Size.chipDiameter),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = CasinoTheme.ButtonPrimary,
                     contentColor = Color.Black
@@ -369,8 +356,8 @@ private fun DealerTurnButton(
         Button(
             onClick = onPlayDealerTurn,
             modifier = Modifier
-                .fillMaxWidth(0.6f)
-                .height(56.dp),
+                .fillMaxWidth()
+                .height(Tokens.Size.buttonHeight),
             colors = ButtonDefaults.buttonColors(
                 containerColor = CasinoTheme.ButtonPrimary,
                 contentColor = Color.Black
@@ -404,8 +391,8 @@ private fun NextRoundButton(
             ),
             shape = RoundedCornerShape(Tokens.Space.m),
             modifier = Modifier
-                .height(56.dp)
-                .fillMaxWidth(0.6f)
+                .height(Tokens.Size.buttonHeight)
+                .fillMaxWidth()
         ) {
             Text(
                 text = "Next Round",

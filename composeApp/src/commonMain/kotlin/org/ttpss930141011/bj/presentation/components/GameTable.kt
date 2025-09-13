@@ -22,6 +22,7 @@ import org.ttpss930141011.bj.presentation.components.feedback.GameOverOverlay
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import org.ttpss930141011.bj.presentation.design.AppConstants
 import org.ttpss930141011.bj.presentation.layout.ScreenWidth
+import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 
 /**
  * Unified game table that adapts to all game phases.
@@ -36,43 +37,87 @@ fun GameTable(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        // Main game table - always visible
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(CasinoTheme.CardTableBackground)
-                .padding(Tokens.Space.m),
-            verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
-        ) {
-                // Phase title
-                PhaseHeader(game.phase)
-                
-                // Dealer area - consistent across all phases
-                DealerArea(
-                    game = game,
-                    screenWidth = screenWidth,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.weight(1f))
-                
-                // Player area - adapts based on phase
-                PlayerArea(
-                    game = game,
-                    viewModel = viewModel,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.weight(1f))
-                
-                // Action area - adapts based on phase  
-                ActionArea(
-                    game = game,
-                    viewModel = viewModel,
-                    feedback = feedback,
-                    modifier = Modifier.fillMaxWidth()
-                )
+        // Main game table - responsive layout based on screen width
+        BreakpointLayout(
+            compact = {
+                // Compact: Action buttons in middle position for better mobile UX
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(CasinoTheme.CardTableBackground)
+                        .padding(Tokens.Space.m),
+                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
+                ) {
+                    // Phase title
+                    PhaseHeader(game.phase)
+                    
+                    // Dealer area - consistent across all phases
+                    DealerArea(
+                        game = game,
+                        screenWidth = screenWidth,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    Spacer(modifier = Modifier.weight(0.5f))
+                    
+                    // Action area - moved to middle for compact layout
+                    ActionArea(
+                        game = game,
+                        viewModel = viewModel,
+                        feedback = feedback,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    Spacer(modifier = Modifier.weight(0.5f))
+                    
+                    // Player area - moved to bottom for chip visibility
+                    PlayerArea(
+                        game = game,
+                        viewModel = viewModel,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            medium = {
+                // Medium/Expanded: Keep original bottom action button layout
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(CasinoTheme.CardTableBackground)
+                        .padding(Tokens.Space.m),
+                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
+                ) {
+                    // Phase title
+                    PhaseHeader(game.phase)
+                    
+                    // Dealer area - consistent across all phases
+                    DealerArea(
+                        game = game,
+                        screenWidth = screenWidth,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                    
+                    // Player area - adapts based on phase
+                    PlayerArea(
+                        game = game,
+                        viewModel = viewModel,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                    
+                    // Action area - kept at bottom for larger screens
+                    ActionArea(
+                        game = game,
+                        viewModel = viewModel,
+                        feedback = feedback,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
+        )
         
         // Game over overlay - following StatusOverlay pattern
         if (viewModel.isGameOver) {
