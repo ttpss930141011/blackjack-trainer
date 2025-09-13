@@ -103,52 +103,65 @@ enum class RoundResult { PLAYER_WIN, PLAYER_BLACKJACK, DEALER_WIN, PUSH, SURREND
 
 ## Application Layer - Use Case Coordination
 
-### Core Coordinators
-- `GameViewModel.kt` - Main coordinator, delegates to four specialized Managers
-- `DecisionEvaluator.kt` - Decision evaluation coordination: connecting strategy engine with feedback generation
-- `PersistenceService.kt` - Data persistence and statistical coordination
-- `GameService.kt` - Application layer wrapper for game domain services
+### Architecture Overview
+從 305 行的 God Object 重構為職責分離的管理器架構，保持向後兼容性的同時提升可維護性。
 
-### Responsibility Separation Managers (Internal Implementation)
-**Why This Architecture**: The original GameViewModel was a 305-line God Object mixing multiple concerns. This refactoring solves the Single Responsibility Principle violation while maintaining backward compatibility.
-
-#### `GameStateManager.kt` (Internal)
-```kotlin
-// Focus: Pure game state management
-fun initializeGame(gameRules: GameRules, player: Player)
-fun startRound(betAmount: Int): GameStateResult
-fun executePlayerAction(action: Action): GameActionResult?
-fun processDealerTurn(): GameStateResult
+```mermaid
+graph TB
+    UI[UI Layer] --> VM[GameViewModel<br/>Main Coordinator]
+    VM --> GSM[GameStateManager<br/>Game State]
+    VM --> FM[FeedbackManager<br/>Decision Feedback] 
+    VM --> AM[AnalyticsManager<br/>Learning Analytics]
+    VM --> USM[UIStateManager<br/>UI State]
+    
+    GSM --> GS[GameService]
+    FM --> DE[DecisionEvaluator]
+    AM --> PS[PersistenceService<br/>Dual-Stream Persistence]
+    
+    GS --> Domain[Domain Services<br/>StrategyEngine, RoundManager]
+    DE --> SE[StrategyEngine]
+    PS --> Repo[PersistenceRepository<br/>Room Database]
 ```
 
-#### `FeedbackManager.kt` (Internal)
+### Core Services
+
+#### `GameViewModel.kt` - 主協調器
+統一 API 入口，內部委託給四個專用管理器，解決單一職責原則違反問題。
+
+#### `DecisionEvaluator.kt` - 策略評估服務 ✅ 
+連接策略引擎與反饋生成，提供決策正確性評估。
 ```kotlin
-// Focus: Decision feedback and evaluation
-fun evaluatePlayerAction(handBeforeAction, dealerUpCard, action, rules): DecisionFeedback
-val roundDecisions: List<PlayerDecision> // Round decision tracking
+fun evaluateDecision(hand: Hand, dealerCard: Card, action: Action): DecisionFeedback
 ```
 
-#### `AnalyticsManager.kt` (Internal)
-```kotlin
-// Focus: Learning analysis and statistics
-fun recordPlayerAction(hand, dealerCard, action, isCorrect, rules)
-fun getRoundHistory(limit: Int): List<RoundHistory>
-val sessionStats: SessionStats
+#### `PersistenceService.kt` - 雙流持久化架構
+**新增**: 處理數據持久化的核心服務，採用雙流設計：
+- **DecisionRecord 流**: 原子決策數據，用於跨遊戲統計分析
+- **RoundHistory 流**: 完整回合記錄，用於用戶回放體驗
+
+```mermaid
+graph LR
+    PS[PersistenceService] --> DR[DecisionRecord<br/>Analytics Data]
+    PS --> RH[RoundHistory<br/>Complete Context] 
+    DR --> Stats[Statistics Page]
+    RH --> History[History Page]
 ```
 
-#### `UIStateManager.kt` (Internal)
-```kotlin
-// Focus: UI state and notifications
-fun setError(message: String?)
-fun handleRuleChangeNotification(currentRules, newRules, sessionStats)
-fun calculateChipComposition(amount: Int): List<ChipInSpot>
-```
+### Specialized Managers (Internal)
+
+| Manager | 職責 | 核心功能 |
+|---------|------|----------|
+| **GameStateManager** | 遊戲狀態管理 | `initializeGame`, `startRound`, `executePlayerAction` |
+| **FeedbackManager** | 決策反饋評估 | `evaluatePlayerAction`, 決策追蹤 |
+| **AnalyticsManager** | 學習分析統計 | `recordPlayerAction`, `sessionStats` |
+| **UIStateManager** | UI 狀態通知 | `setError`, `calculateChipComposition` |
 
 ### Refactoring Benefits
-- **Single Responsibility**: Each Manager focuses on one concern
-- **Backward Compatibility**: GameViewModel maintains the same public API
-- **Test Friendly**: Managers can be tested independently
-- **Maintainability**: Problem location is more precise
+- **🎯 單一職責**: 每個管理器專注一個領域
+- **🔄 向後兼容**: GameViewModel API 保持不變  
+- **✅ 可測試性**: 獨立測試各個管理器
+- **🔧 可維護性**: 問題定位更精確
+- **💾 持久化**: 新增 Room 數據庫支持
 
 ## Infrastructure Layer - Technical Implementation
 
