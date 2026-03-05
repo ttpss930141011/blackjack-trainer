@@ -143,14 +143,14 @@ class GameViewModel(
     // ===== BETTING =====
 
     fun addChipToBet(chipValue: ChipValue) {
-        when (val result = bettingManager.addChipToBet(chipValue)) {
+        when (val result = gameStateManager.addChipToBet(chipValue)) {
             is GameStateResult.Success -> uiStateManager.clearError()
             is GameStateResult.Error -> uiStateManager.setError(result.message)
         }
     }
 
     fun clearBet() {
-        when (val result = bettingManager.clearBet()) {
+        when (val result = gameStateManager.clearBet()) {
             is GameStateResult.Success -> {
                 bettingManager.onBetCleared()
                 uiStateManager.clearError()

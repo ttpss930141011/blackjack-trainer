@@ -5,7 +5,6 @@ import org.ttpss930141011.bj.domain.enums.Action
 import org.ttpss930141011.bj.domain.enums.HandStatus
 import org.ttpss930141011.bj.domain.enums.GamePhase
 import org.ttpss930141011.bj.domain.enums.ChipValue
-import org.ttpss930141011.bj.domain.services.BettingPolicy
 import org.ttpss930141011.bj.domain.services.RoundManager
 import org.ttpss930141011.bj.domain.services.SettlementService
 
@@ -43,8 +42,6 @@ data class Game(
 ) {
     
     companion object {
-        private val betting = BettingPolicy()
-
         fun create(rules: GameRules): Game {
             return Game(
                 player = null,
@@ -90,12 +87,43 @@ data class Game(
         return copy(player = newPlayer)
     }
     
-    // Betting operations delegated to BettingPolicy
-    fun placeBet(amount: Int): Game = betting.placeBet(this, amount)
-    fun addToPendingBet(amount: Int): Game = betting.addToPendingBet(this, amount)
-    fun clearBet(): Game = betting.clearBet(this)
-    fun commitPendingBet(): Game = betting.commitPendingBet(this)
-    fun tryAddChipToPendingBet(chipValue: ChipValue): AddChipResult = betting.tryAddChip(this, chipValue)
+    fun placeBet(amount: Int): Game {
+        require(hasPlayer) { "No player in game" }
+        require(amount > 0) { "Bet must be positive" }
+        require(player!!.chips >= amount) { "Insufficient chips" }
+        return copy(player = player.deductChips(amount), betState = BetState(amount, isCommitted = true))
+    }
+
+    fun addToPendingBet(amount: Int): Game {
+        require(hasPlayer) { "No player in game" }
+        require(phase == GamePhase.WAITING_FOR_BETS) { "Can only add to pending bet during betting phase" }
+        require(amount > 0) { "Amount must be positive" }
+        require(player!!.chips >= (betState.amount + amount)) { "Insufficient chips" }
+        return copy(betState = betState.add(amount))
+    }
+
+    fun clearBet(): Game {
+        require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear bet during betting phase" }
+        return copy(betState = betState.clear())
+    }
+
+    fun commitPendingBet(): Game {
+        require(betState.isPending) { "No pending bet to commit" }
+        require(hasPlayer) { "No player in game" }
+        require(betState.isAffordable(player!!.chips)) { "Insufficient chips" }
+        return copy(player = player.deductChips(betState.amount), betState = betState.commit())
+    }
+
+    fun tryAddChipToPendingBet(chipValue: ChipValue): AddChipResult {
+        if (!hasPlayer) return AddChipResult(false, "No player in game", this)
+        if (phase != GamePhase.WAITING_FOR_BETS) return AddChipResult(false, "Can only add chips during betting phase", this)
+        if (player!!.chips < (betState.amount + chipValue.value)) return AddChipResult(false, "Insufficient chips", this)
+        return try {
+            AddChipResult(true, null, addToPendingBet(chipValue.value))
+        } catch (e: IllegalArgumentException) {
+            AddChipResult(false, e.message, this)
+        }
+    }
     
     /**
      * Initiates a new round by dealing cards to player and dealer.
