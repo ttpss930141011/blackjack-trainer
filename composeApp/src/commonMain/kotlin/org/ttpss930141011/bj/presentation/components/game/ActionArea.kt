@@ -340,7 +340,7 @@ private fun SettlementReview(
     onNextRound: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val outcome = try { game.getRoundOutcome() } catch (_: Exception) { RoundOutcome.UNKNOWN }
+    val outcome = if (game.phase == GamePhase.SETTLEMENT) game.getRoundOutcome() else RoundOutcome.UNKNOWN
     val totalDecisions = roundDecisions.size
     val correctDecisions = roundDecisions.count { it.isCorrect }
     val allCorrect = totalDecisions > 0 && correctDecisions == totalDecisions
