@@ -109,7 +109,8 @@ class GameViewModel(
 
         if (feedback != null && handBefore != null && dealerUp != null && rules != null) {
             val handAfter = game?.currentHand
-            val actionResult = ActionResultFactory.create(action, handBefore, handAfter, game)
+            val splitHands = if (action == Action.SPLIT) game?.playerHands else null
+            val actionResult = ActionResultFactory.create(action, handBefore, handAfter, splitHands)
             recordDecision(action, handBefore, dealerUp, rules, actionResult)
         }
         handleAutoTransitions()
