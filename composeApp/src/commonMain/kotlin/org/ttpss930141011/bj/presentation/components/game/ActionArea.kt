@@ -2,11 +2,9 @@ package org.ttpss930141011.bj.presentation.components.game
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,8 +18,6 @@ import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
-import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
-import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import org.ttpss930141011.bj.presentation.design.Strings
 import androidx.compose.ui.text.style.TextAlign
@@ -41,20 +37,11 @@ fun ActionArea(
 ) {
     when (game.phase) {
         GamePhase.WAITING_FOR_BETS -> {
-            ChipSelection(
-                availableChips = ChipImageMapper.standardChipValues,
-                playerChips = game.player?.chips ?: 0,
+            DealButton(
                 currentBet = viewModel.currentBetAmount,
                 lastBetAmount = viewModel.lastBetAmount,
-                onChipSelected = { chipValue ->
-                    ChipValue.fromValue(chipValue)?.let { viewModel.addChipToBet(it) }
-                },
-                onDealCards = {
-                    viewModel.dealCards()
-                },
-                onRepeatLastBet = {
-                    viewModel.repeatLastBet()
-                },
+                onDealCards = { viewModel.dealCards() },
+                onRepeatLastBet = { viewModel.repeatLastBet() },
                 modifier = modifier
             )
         }
@@ -95,87 +82,42 @@ fun ActionArea(
     }
 }
 
+/**
+ * Deal button shown during betting phase.
+ * Styled consistently with other action buttons.
+ */
 @Composable
-private fun ChipSelection(
-    availableChips: List<Int>,
-    playerChips: Int,
+private fun DealButton(
     currentBet: Int,
     lastBetAmount: Int?,
-    onChipSelected: (Int) -> Unit,
     onDealCards: () -> Unit,
     onRepeatLastBet: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val scrollState = rememberScrollState()
-    
     // Auto-apply last bet when entering betting phase
     LaunchedEffect(lastBetAmount, currentBet) {
         if (lastBetAmount != null && lastBetAmount > 0 && currentBet == 0) {
-            // Only auto-apply if user hasn't started betting manually
             onRepeatLastBet()
         }
     }
-    
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(Tokens.Space.l)
+
+    Button(
+        onClick = onDealCards,
+        enabled = currentBet > 0,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(Tokens.Size.buttonHeight),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = CasinoTheme.ButtonPrimary,
+            contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(Tokens.Space.m)
     ) {
-        // Chip selection - horizontally scrollable for mobile devices
-        // Use fixed width to ensure scrolling works on mobile (7 chips * 80dp + spacing ≈ 624dp)
-        val mobileContentWidth = Tokens.Size.chipDiameter * 8 // Buffer for spacing and padding
-        
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                modifier = Modifier
-                    .width(mobileContentWidth)
-                    .horizontalScroll(scrollState)
-                    .padding(horizontal = Tokens.Space.s),
-                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                availableChips.forEach { chipValue ->
-                    ChipImageDisplay(
-                        value = chipValue,
-                        size = Tokens.Size.chipDiameter,
-                        onClick = {
-                            if (currentBet + chipValue <= playerChips) {
-                                onChipSelected(chipValue)
-                            }
-                        }
-                    )
-                }
-            }
-        }
-        
-        // Deal button - centered
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Button(
-                onClick = onDealCards,
-                enabled = currentBet > 0,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(Tokens.Size.buttonHeight),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = CasinoTheme.ButtonPrimary,
-                    contentColor = Color.Black
-                ),
-                shape = RoundedCornerShape(Tokens.Space.l),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = Tokens.Space.s)
-            ) {
-                Text(
-                    text = if (currentBet > 0) Strings.Game.dealCardsWithBet(currentBet) else Strings.Game.DEAL_CARDS,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(Tokens.Size.chipDiameter))
+        Text(
+            text = if (currentBet > 0) Strings.Game.dealCardsWithBet(currentBet) else Strings.Game.DEAL_CARDS,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        )
     }
 }
 
@@ -410,7 +352,6 @@ private fun SettlementReview(
             modifier = Modifier
                 .height(Tokens.Size.buttonHeight)
                 .fillMaxWidth()
-                .padding(horizontal = Tokens.Space.s)
         ) {
             Text(
                 text = Strings.Game.NEXT_ROUND,
@@ -426,28 +367,22 @@ private fun DealerTurnButton(
     onPlayDealerTurn: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
+    Button(
+        onClick = onPlayDealerTurn,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(Tokens.Size.buttonHeight),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = CasinoTheme.ButtonPrimary,
+            contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(Tokens.Space.m)
     ) {
-        Button(
-            onClick = onPlayDealerTurn,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(Tokens.Size.buttonHeight),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = CasinoTheme.ButtonPrimary,
-                contentColor = Color.Black
-            ),
-            shape = RoundedCornerShape(Tokens.Space.l),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = Tokens.Space.s)
-        ) {
-            Text(
-                text = Strings.Game.PLAY_DEALER_TURN,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        Text(
+            text = Strings.Game.PLAY_DEALER_TURN,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        )
     }
 }
 

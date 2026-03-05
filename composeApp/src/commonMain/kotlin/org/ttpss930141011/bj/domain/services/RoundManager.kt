@@ -55,10 +55,25 @@ class RoundManager {
         
         val currentHand = game.currentHand!!
         
+        val betAmount = currentHand.bet
+        val player = game.player!!
+
         val updatedGame = when (action) {
             Action.SPLIT -> {
+                require(player.chips >= betAmount) { "Insufficient chips to split" }
                 val (newHands, newDeck, nextIndex) = handleSplit(game, currentHand)
                 game.copy(
+                    player = player.deductChips(betAmount),
+                    playerHands = newHands,
+                    deck = newDeck,
+                    currentHandIndex = nextIndex
+                )
+            }
+            Action.DOUBLE -> {
+                require(player.chips >= betAmount) { "Insufficient chips to double" }
+                val (newHands, newDeck, nextIndex) = handleRegularAction(game, currentHand, action)
+                game.copy(
+                    player = player.deductChips(betAmount),
                     playerHands = newHands,
                     deck = newDeck,
                     currentHandIndex = nextIndex

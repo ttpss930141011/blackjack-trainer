@@ -1,7 +1,9 @@
 package org.ttpss930141011.bj.presentation.components.game
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -10,8 +12,11 @@ import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.enums.*
+import org.ttpss930141011.bj.domain.enums.ChipValue
 import org.ttpss930141011.bj.domain.services.*
+import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.design.Tokens
+import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
 
 /**
  * Player area component that handles player hand display
@@ -36,35 +41,49 @@ fun PlayerArea(
         ) {
             when (game.phase) {
                 GamePhase.WAITING_FOR_BETS -> {
-                    // Use consistent height container to match SmartHandCarousel
+                    val scrollState = rememberScrollState()
+                    val playerChips = game.player?.chips ?: 0
+                    val currentBet = viewModel.currentBetAmount
+
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(Tokens.Space.xs)
+                        verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
                     ) {
-                        // Card area equivalent space to match SmartHandCard structure
+                        // Betting circle
+                        BettingCircle(
+                            currentBet = currentBet,
+                            chipComposition = viewModel.chipComposition,
+                            onClearBet = { viewModel.clearBet() }
+                        )
+
+                        // Chip selection row — below the circle
+                        val mobileContentWidth = Tokens.Size.chipDiameter * 8
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(
-                                    Tokens.Card.medium.height + 
-                                    Tokens.Space.m * 2 + 
-                                    Tokens.Space.s + 
-                                    Tokens.Space.l // 使用合适的间距token代替文本高度
-                                ),
+                            modifier = Modifier.fillMaxWidth(),
                             contentAlignment = Alignment.Center
                         ) {
-                            BettingCircle(
-                                currentBet = viewModel.currentBetAmount,
-                                chipComposition = viewModel.chipComposition,
-                                onClearBet = { viewModel.clearBet() }
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .width(mobileContentWidth)
+                                    .horizontalScroll(scrollState)
+                                    .padding(horizontal = Tokens.Space.s),
+                                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s, Alignment.CenterHorizontally),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                ChipImageMapper.standardChipValues.forEach { chipValue ->
+                                    ChipImageDisplay(
+                                        value = chipValue,
+                                        size = Tokens.Size.chipDiameter,
+                                        onClick = {
+                                            if (currentBet + chipValue <= playerChips) {
+                                                ChipValue.fromValue(chipValue)?.let { viewModel.addChipToBet(it) }
+                                            }
+                                        }
+                                    )
+                                }
+                            }
                         }
-                        
-                        // Chips area equivalent space to match ChipStackDisplay
-                        Spacer(
-                            modifier = Modifier.height(org.ttpss930141011.bj.presentation.design.AppConstants.Dimensions.CHIP_SIZE_COMPACT.dp)
-                        )
                     }
                 }
                 else -> {
