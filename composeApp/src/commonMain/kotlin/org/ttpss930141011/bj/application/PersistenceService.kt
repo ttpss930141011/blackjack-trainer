@@ -125,30 +125,6 @@ class PersistenceService(
     // ===== ANALYTICS CALCULATIONS (Simplified) =====
     // Complex statistics removed - keeping only essential session data
     
-    /**
-     * Calculate mistake records with original card data.
-     * Preserves original card information instead of parsed strings.
-     */
-    suspend fun calculateMistakeRecords(minSamples: Int = InfrastructureConstants.MIN_SAMPLES_FOR_STATISTICS): List<MistakeRecord> {
-        val decisions = getAllDecisions()
-        
-        return decisions
-            .filter { !it.isCorrect } // Only errors
-            .groupBy { it.baseScenarioKey }
-            .filter { (_, decisionList) -> decisionList.size >= minSamples }
-            .map { (scenario, errorDecisions) ->
-                // Take the first error as representative of this scenario
-                val firstError = errorDecisions.first()
-                MistakeRecord(
-                    handCards = firstError.handCards,
-                    dealerUpCard = firstError.dealerUpCard,
-                    errorCount = errorDecisions.size,
-                    baseScenarioKey = scenario
-                )
-            }
-            .sortedByDescending { it.errorCount }
-    }
-    
     // Statistics conversion methods removed
     
     /**
