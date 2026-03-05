@@ -436,8 +436,10 @@ class GameViewModel(
      * Simplified operation.
      */
     fun clearAllLearningData() {
-        persistenceService.clearAllLearningData()
-        loadRecentRounds()
+        coroutineScope.launch {
+            persistenceService.clearAllLearningData()
+            loadRecentRounds()
+        }
     }
     
     val currentGameRules: GameRules? get() = game?.rules

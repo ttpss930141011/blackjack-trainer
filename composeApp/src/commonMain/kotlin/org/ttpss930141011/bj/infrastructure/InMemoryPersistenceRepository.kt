@@ -48,6 +48,22 @@ class InMemoryPersistenceRepository : PersistenceRepository {
         }
     }
     
+    override suspend fun <T : Any> deleteWhere(type: KClass<T>, criteria: Map<String, Any>) {
+        val typeName = type.simpleName ?: return
+        val store = storage[typeName] ?: return
+        val toRemove = store.entries.filter { (_, obj) ->
+            criteria.all { (fieldName, expectedValue) ->
+                getFieldValue(obj, fieldName) == expectedValue
+            }
+        }.map { it.key }
+        toRemove.forEach { store.remove(it) }
+    }
+
+    override suspend fun <T : Any> clear(type: KClass<T>) {
+        val typeName = type.simpleName ?: return
+        storage.remove(typeName)
+    }
+
     /**
      * Generate storage key for any object.
      * DecisionRecord uses timestamp, RoundHistory uses roundId, UserPreferences uses constant key.

@@ -71,10 +71,10 @@ class PersistenceService(
      * Clean old round history data.
      * Keeps History page responsive by limiting data volume.
      */
-    fun cleanOldRoundHistory(olderThanDays: Int = InfrastructureConstants.DATA_CLEANUP_DAYS_THRESHOLD) {
+    suspend fun cleanOldRoundHistory(olderThanDays: Int = InfrastructureConstants.DATA_CLEANUP_DAYS_THRESHOLD) {
         val cutoffTime = TimeProvider.currentTimeMillis() - (olderThanDays.days.inWholeMilliseconds)
-        // Implementation depends on repository capabilities
-        // TODO: Add repository.deleteWhere() method
+        repository.deleteWhere(RoundHistory::class, mapOf("timestampBefore" to cutoffTime))
+        repository.deleteWhere(DecisionRecord::class, mapOf("timestampBefore" to cutoffTime))
     }
     
     // ===== DECISION ANALYTICS OPERATIONS (Stats Page) =====
@@ -219,11 +219,9 @@ class PersistenceService(
      * Clear all learning data for reset functionality.
      * Clears both RoundHistory and DecisionRecord streams.
      */
-    fun clearAllLearningData() {
-        // Clear both data streams
-        // TODO: Implement repository.clear() methods
-        // repository.clear(RoundHistory::class)
-        // repository.clear(DecisionRecord::class)
+    suspend fun clearAllLearningData() {
+        repository.clear(RoundHistory::class)
+        repository.clear(DecisionRecord::class)
     }
     
     /**

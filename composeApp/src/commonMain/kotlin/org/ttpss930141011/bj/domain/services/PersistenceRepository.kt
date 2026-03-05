@@ -15,6 +15,8 @@ interface PersistenceRepository {
     suspend fun save(data: Any)
     suspend fun <T : Any> load(key: String, type: KClass<T>): T?
     suspend fun <T : Any> query(type: KClass<T>, criteria: Map<String, Any> = emptyMap()): List<T>
+    suspend fun <T : Any> deleteWhere(type: KClass<T>, criteria: Map<String, Any>)
+    suspend fun <T : Any> clear(type: KClass<T>)
 }
 
 /**
@@ -25,3 +27,9 @@ suspend inline fun <reified T : Any> PersistenceRepository.load(key: String): T?
 
 suspend inline fun <reified T : Any> PersistenceRepository.query(criteria: Map<String, Any> = emptyMap()): List<T> = 
     query(T::class, criteria)
+
+suspend inline fun <reified T : Any> PersistenceRepository.deleteWhere(criteria: Map<String, Any>) =
+    deleteWhere(T::class, criteria)
+
+suspend inline fun <reified T : Any> PersistenceRepository.clear() =
+    clear(T::class)
