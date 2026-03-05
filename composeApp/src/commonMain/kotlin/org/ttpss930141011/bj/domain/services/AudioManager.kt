@@ -14,9 +14,11 @@ package org.ttpss930141011.bj.domain.services
 interface AudioManager {
     
     /**
-     * Plays the card dealing sound effect.
-     * Used when cards are dealt to player or dealer.
+     * Initializes the audio system. Call once at app startup.
+     * No-op if already initialized.
      */
+    suspend fun initialize()
+
     suspend fun playCardSound()
     
     /**
@@ -40,10 +42,11 @@ interface AudioManager {
     fun setEnabled(enabled: Boolean)
     
     /**
-     * Current sound enabled state.
-     * 
-     * @return true if sounds are enabled, false if disabled
+     * Sets the volume level for all sound effects.
+     * @param volume Volume from 0.0 (silent) to 1.0 (max)
      */
+    fun setVolume(volume: Float)
+    
     val isEnabled: Boolean
 }
 

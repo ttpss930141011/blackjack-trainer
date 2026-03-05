@@ -8,8 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.ttpss930141011.bj.application.GameViewModel
-import org.ttpss930141011.bj.application.ApplicationService
 import org.ttpss930141011.bj.domain.entities.*
+import org.ttpss930141011.bj.infrastructure.audio.AudioModule
 import org.ttpss930141011.bj.presentation.layout.Layout
 import org.ttpss930141011.bj.presentation.components.navigation.Header
 import org.ttpss930141011.bj.presentation.components.navigation.NavigationPage
@@ -45,19 +45,16 @@ fun App(
     // Get current game rules from user preferences (persistent storage)
     val currentGameRules = viewModel.userPreferences.preferredRules
 
-    // Initialize application services and game only once
+    // Initialize audio + game once at startup, reload preferences on page change
     LaunchedEffect(Unit) {
-        // Initialize application-level services
-        ApplicationService.getInstance().initialize()
-        
-        // Initialize game with user's preferred rules
+        AudioModule.getAudioManager().initialize()
         viewModel.initializeGame(
             currentGameRules,
             Player(id = AppConstants.Defaults.PLAYER_ID, chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS)
         )
+        viewModel.loadUserPreferences()
     }
 
-    // Reload user preferences when returning to HOME page
     LaunchedEffect(currentPage) {
         if (currentPage == NavigationPage.HOME || currentPage == null) {
             viewModel.loadUserPreferences()

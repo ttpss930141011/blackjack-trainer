@@ -4,11 +4,8 @@ import androidx.compose.runtime.*
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
-
 /**
  * GameStateManager - Focuses ONLY on game state management
- * 
- * Linus: "One job, do it well. No UI shit, no analytics shit, just game state."
  */
 internal class GameStateManager(
     private val gameService: GameService
@@ -79,35 +76,22 @@ internal class GameStateManager(
     
     fun addChipToBet(chipValue: ChipValue): GameStateResult {
         val currentGame = _game ?: return GameStateResult.error("No game initialized")
-        
-        if (currentGame.phase != GamePhase.WAITING_FOR_BETS) {
-            return GameStateResult.success() // Silently ignore if not in betting phase
-        }
-        
-        if (isGameOver) {
-            return GameStateResult.error("Game Over! Insufficient chips to place bets.")
-        }
-        
-        return try {
-            val result = currentGame.tryAddChipToPendingBet(chipValue)
-            if (result.success) {
-                _game = result.updatedGame
-                GameStateResult.success()
-            } else {
-                GameStateResult.error(result.errorMessage ?: "Failed to add chip")
-            }
-        } catch (e: Exception) {
-            GameStateResult.error(e.message ?: "Unknown error")
+        if (currentGame.phase != GamePhase.WAITING_FOR_BETS) return GameStateResult.success()
+        if (isGameOver) return GameStateResult.error("Game Over! Insufficient chips to place bets.")
+
+        val result = currentGame.tryAddChipToPendingBet(chipValue)
+        return if (result.success) {
+            _game = result.updatedGame
+            GameStateResult.success()
+        } else {
+            GameStateResult.error(result.errorMessage ?: "Failed to add chip")
         }
     }
-    
+
     fun clearBet(): GameStateResult {
         val currentGame = _game ?: return GameStateResult.error("No game initialized")
-        
-        if (currentGame.phase != GamePhase.WAITING_FOR_BETS) {
-            return GameStateResult.success() // Silently ignore
-        }
-        
+        if (currentGame.phase != GamePhase.WAITING_FOR_BETS) return GameStateResult.success()
+
         return try {
             _game = currentGame.clearBet()
             GameStateResult.success()
@@ -115,17 +99,13 @@ internal class GameStateManager(
             GameStateResult.error(e.message ?: "Unknown error")
         }
     }
-    
+
     fun dealCards(): GameStateResult {
         val currentGame = _game ?: return GameStateResult.error("No game initialized")
-        
-        if (!currentGame.canDealCards) {
-            return GameStateResult.error("Cannot deal cards at this time")
-        }
-        
+        if (!currentGame.canDealCards) return GameStateResult.error("Cannot deal cards at this time")
+
         return try {
-            val gameWithCommittedBet = currentGame.commitPendingBet()
-            _game = gameService.dealRound(gameWithCommittedBet)
+            _game = gameService.dealRound(currentGame.commitPendingBet())
             GameStateResult.success()
         } catch (e: Exception) {
             GameStateResult.error(e.message ?: "Unknown error")

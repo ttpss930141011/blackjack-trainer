@@ -42,10 +42,6 @@ data class Game(
 ) {
     
     companion object {
-        /**
-         * Creates a new game with the specified rules and shuffled deck.
-         * Initializes all game state to start-of-game values.
-         */
         fun create(rules: GameRules): Game {
             return Game(
                 player = null,
@@ -91,124 +87,41 @@ data class Game(
         return copy(player = newPlayer)
     }
     
-    /**
-     * Places a direct bet, deducting chips immediately.
-     * 
-     * @param amount Bet amount to place
-     * @return New Game with bet placed and chips deducted
-     * @throws IllegalArgumentException if invalid bet or insufficient chips
-     */
     fun placeBet(amount: Int): Game {
         require(hasPlayer) { "No player in game" }
         require(amount > 0) { "Bet must be positive" }
         require(player!!.chips >= amount) { "Insufficient chips" }
-        
-        val updatedPlayer = player.deductChips(amount)
-        val committedBet = BetState(amount, isCommitted = true)
-        
-        return copy(
-            player = updatedPlayer,
-            betState = committedBet
-        )
+        return copy(player = player.deductChips(amount), betState = BetState(amount, isCommitted = true))
     }
-    
-    
-    /**
-     * Adds amount to pending bet without deducting chips immediately.
-     * Allows building up a bet before commitment.
-     * 
-     * @param amount Amount to add to pending bet
-     * @return New Game with increased pending bet
-     * @throws IllegalArgumentException if invalid or insufficient chips
-     */
+
     fun addToPendingBet(amount: Int): Game {
         require(hasPlayer) { "No player in game" }
         require(phase == GamePhase.WAITING_FOR_BETS) { "Can only add to pending bet during betting phase" }
         require(amount > 0) { "Amount must be positive" }
         require(player!!.chips >= (betState.amount + amount)) { "Insufficient chips" }
-        
-        val newBetState = betState.add(amount)
-        return copy(betState = newBetState)
+        return copy(betState = betState.add(amount))
     }
-    
-    /**
-     * Clears the current bet without affecting player chips.
-     * Since betting uses pending bet system, chips are never deducted until commitment.
-     * 
-     * @return New Game with bet cleared
-     * @throws IllegalArgumentException if not in betting phase
-     */
+
     fun clearBet(): Game {
         require(phase == GamePhase.WAITING_FOR_BETS) { "Can only clear bet during betting phase" }
-        
         return copy(betState = betState.clear())
     }
-    
-    /**
-     * Commits the pending bet by deducting chips and setting as current bet.
-     * 
-     * @return New Game with pending bet committed and chips deducted
-     * @throws IllegalArgumentException if no pending bet or insufficient chips
-     */
+
     fun commitPendingBet(): Game {
         require(betState.isPending) { "No pending bet to commit" }
         require(hasPlayer) { "No player in game" }
         require(betState.isAffordable(player!!.chips)) { "Insufficient chips" }
-        
-        val updatedPlayer = player.deductChips(betState.amount)
-        val committedBetState = betState.commit()
-        
-        return copy(
-            player = updatedPlayer,
-            betState = committedBetState
-        )
+        return copy(player = player.deductChips(betState.amount), betState = betState.commit())
     }
-    
-    /**
-     * Attempts to add a chip to the pending bet with comprehensive validation.
-     * Returns result object indicating success/failure with updated game state.
-     * 
-     * @param chipValue Chip denomination to add to pending bet
-     * @return AddChipResult with success status and updated game state
-     */
+
     fun tryAddChipToPendingBet(chipValue: ChipValue): AddChipResult {
-        if (!hasPlayer) {
-            return AddChipResult(
-                success = false,
-                errorMessage = "No player in game",
-                updatedGame = this
-            )
-        }
-        
-        if (phase != GamePhase.WAITING_FOR_BETS) {
-            return AddChipResult(
-                success = false,
-                errorMessage = "Can only add chips during betting phase",
-                updatedGame = this
-            )
-        }
-        
-        if (player!!.chips < (betState.amount + chipValue.value)) {
-            return AddChipResult(
-                success = false,
-                errorMessage = "Insufficient chips",
-                updatedGame = this
-            )
-        }
-        
-        try {
-            val updatedGame = addToPendingBet(chipValue.value)
-            return AddChipResult(
-                success = true,
-                errorMessage = null,
-                updatedGame = updatedGame
-            )
+        if (!hasPlayer) return AddChipResult(false, "No player in game", this)
+        if (phase != GamePhase.WAITING_FOR_BETS) return AddChipResult(false, "Can only add chips during betting phase", this)
+        if (player!!.chips < (betState.amount + chipValue.value)) return AddChipResult(false, "Insufficient chips", this)
+        return try {
+            AddChipResult(true, null, addToPendingBet(chipValue.value))
         } catch (e: IllegalArgumentException) {
-            return AddChipResult(
-                success = false,
-                errorMessage = e.message,
-                updatedGame = this
-            )
+            AddChipResult(false, e.message, this)
         }
     }
     
@@ -236,24 +149,8 @@ data class Game(
      */
     fun settleRound(): Game = SettlementService().settleRound(this)
     
-    // === Simplified Betting Methods ===
-    
-    /**
-     * Adds chip value to the current bet (simplified version).
-     * 
-     * @param chipValue Chip denomination to add
-     * @param count Number of chips to add (default 1)
-     * @return Updated Game with amount added to bet
-     * @throws IllegalArgumentException if insufficient chips or invalid state
-     */
-    fun addChipToBet(chipValue: ChipValue, count: Int = 1): Game {
-        return addToPendingBet(chipValue.value * count)
-    }
-    
-    
-    
-    
-    
+    fun addChipToBet(chipValue: ChipValue, count: Int = 1): Game = addToPendingBet(chipValue.value * count)
+
     /**
      * Resets game state for a new round while preserving the current player.
      * Clears hands, bets, and resets phase to betting.

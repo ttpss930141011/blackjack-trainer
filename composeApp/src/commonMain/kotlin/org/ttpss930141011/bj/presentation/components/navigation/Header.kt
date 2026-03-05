@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 import org.ttpss930141011.bj.presentation.layout.Layout
+import org.ttpss930141011.bj.presentation.design.Strings
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.design.CasinoSemanticColors
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
@@ -66,7 +67,7 @@ private fun HomeHeader(
         modifier = Modifier
             .fillMaxWidth()
             .background(CasinoTheme.HeaderBackground)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = Tokens.Space.l, vertical = Tokens.Space.m)
     ) {
         // Accuracy badge on the left
         Row(
@@ -84,13 +85,13 @@ private fun HomeHeader(
                 Text(
                     text = "$pct%",
                     color = color,
-                    fontSize = 14.sp,
+                    fontSize = Tokens.Typography.actionButtonTextExpanded,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = " ($sessionCorrect/$sessionTotal)",
                     color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 11.sp
+                    fontSize = Tokens.Typography.actionButtonHintCompact
                 )
             }
         }
@@ -138,7 +139,7 @@ private fun SubPageHeader(
         modifier = Modifier
             .fillMaxWidth()
             .background(CasinoTheme.HeaderBackground)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = Tokens.Space.l, vertical = Tokens.Space.m)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -183,9 +184,9 @@ private fun SubPageHeader(
 
 private fun getPageTitle(page: NavigationPage?): String {
     return when (page) {
-        NavigationPage.STRATEGY -> "Strategy Guide"
-        NavigationPage.HISTORY -> "Game History"
-        NavigationPage.SETTINGS -> "Settings"
+        NavigationPage.STRATEGY -> Strings.Nav.STRATEGY_GUIDE
+        NavigationPage.HISTORY -> Strings.Nav.GAME_HISTORY
+        NavigationPage.SETTINGS -> Strings.Nav.SETTINGS
         else -> ""
     }
 }
@@ -200,12 +201,12 @@ private fun ModernBalanceBadge(
         colors = CardDefaults.cardColors(
             containerColor = CasinoTheme.BalanceBadgeBackground
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Space.xs)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = Tokens.Space.m, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs)
         ) {
             Text(
                 text = "$$balance",

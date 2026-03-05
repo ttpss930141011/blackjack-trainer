@@ -25,7 +25,7 @@ class AudioManagerImpl : AudioManager {
      * Should be called during app startup.
      * If initialization fails, audio will be silently disabled.
      */
-    suspend fun initialize() {
+    override suspend fun initialize() {
         try {
             isInitialized = platformPlayer.initialize()
         } catch (e: Exception) {
@@ -66,7 +66,7 @@ class AudioManagerImpl : AudioManager {
      * 
      * @param volume Volume between 0.0 and 1.0
      */
-    fun setVolume(volume: Float) {
+    override fun setVolume(volume: Float) {
         val clampedVolume = volume.coerceIn(0.0f, 1.0f)
         try {
             platformPlayer.setVolume(clampedVolume)

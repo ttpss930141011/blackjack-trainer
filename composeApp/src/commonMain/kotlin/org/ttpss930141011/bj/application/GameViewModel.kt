@@ -4,36 +4,35 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.ttpss930141011.bj.domain.entities.*
-import org.ttpss930141011.bj.domain.valueobjects.*
-import org.ttpss930141011.bj.domain.enums.*
-import org.ttpss930141011.bj.domain.services.*
-// InMemoryLearningRepository and ScenarioStats imports removed
+import org.ttpss930141011.bj.domain.entities.Game
+import org.ttpss930141011.bj.domain.entities.Player
+import org.ttpss930141011.bj.domain.entities.RoundOutcome
+import org.ttpss930141011.bj.domain.valueobjects.ActionResult
+import org.ttpss930141011.bj.domain.valueobjects.Card
+import org.ttpss930141011.bj.domain.valueobjects.ChipInSpot
+import org.ttpss930141011.bj.domain.valueobjects.DecisionFeedback
+import org.ttpss930141011.bj.domain.valueobjects.GameRules
+import org.ttpss930141011.bj.domain.valueobjects.PlayerDecision
+import org.ttpss930141011.bj.domain.valueobjects.PlayerHand
+import org.ttpss930141011.bj.domain.valueobjects.RoundHistory
+import org.ttpss930141011.bj.domain.valueobjects.RoundStartContext
+import org.ttpss930141011.bj.domain.valueobjects.SessionStats
+import org.ttpss930141011.bj.domain.valueobjects.UserPreferences
+import org.ttpss930141011.bj.domain.enums.Action
+import org.ttpss930141011.bj.domain.enums.ChipValue
+import org.ttpss930141011.bj.domain.enums.GamePhase
+import org.ttpss930141011.bj.domain.enums.RoundResult
+import org.ttpss930141011.bj.domain.services.AudioManager
+import org.ttpss930141011.bj.domain.services.ChipCompositionService
+import org.ttpss930141011.bj.domain.services.GameService
 import org.ttpss930141011.bj.infrastructure.DataLoader
 import org.ttpss930141011.bj.infrastructure.CachingDataLoader
-import org.ttpss930141011.bj.infrastructure.InfrastructureConstants
 import org.ttpss930141011.bj.infrastructure.audio.AudioModule
-import org.ttpss930141011.bj.infrastructure.audio.AudioManagerImpl
 
 /**
- * GameViewModel - BREAKING CHANGE: Complete rewrite for RoundHistory integration
- * 
- * NEW ARCHITECTURE:
- * - Dual-stream persistence: RoundHistory + DecisionRecord
- * - Round lifecycle management with complete context capture
- * - Session-aware round correlation via AnalyticsManager.sessionId
- * - Simplified API with removed complex aggregation methods
- * 
- * REMOVED LEGACY FEATURES:
- * - Complex decision aggregation in GameViewModel
- * - Direct access to getWorstScenarios(), getRecentDecisions(), etc.
- * - Mixed session/persistent state management
- * 
- * NEW FEATURES:
- * - Complete round history with all context
- * - Round start context capture
- * - Round completion with full settlement data
- * - Clean separation of History vs Stats data
+ * GameViewModel - Coordinator for game, feedback, analytics, betting, and preferences.
+ *
+ * Delegates to six focused managers. Exposes a unified API for the UI layer.
  */
 class GameViewModel(
     private val gameService: GameService = GameService(),
@@ -44,13 +43,15 @@ class GameViewModel(
     private val audioManager: AudioManager = AudioModule.getAudioManager(),
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 ) {
-    
+    // --- Managers ---
     private val gameStateManager = GameStateManager(gameService)
     private val feedbackManager = FeedbackManager(decisionEvaluator, audioManager, coroutineScope)
     private val analyticsManager = AnalyticsManager(persistenceService)
+    private val bettingManager = BettingManager(gameStateManager)
+    private val preferencesManager = PreferencesManager(persistenceService, audioManager, dataLoader, coroutineScope)
     val uiStateManager = UIStateManager(chipCompositionService)
-    
-    // Core game state exposure
+
+    // --- Core state exposure ---
     val game: Game? get() = gameStateManager.game
     val feedback: DecisionFeedback? get() = feedbackManager.feedback
     val sessionStats: SessionStats get() = analyticsManager.sessionStats
@@ -58,124 +59,67 @@ class GameViewModel(
     val errorMessage: String? get() = uiStateManager.errorMessage
     val isGameOver: Boolean get() = gameStateManager.isGameOver
 
-    // User preferences state management
-    private var _userPreferences by mutableStateOf(UserPreferences())
-    val userPreferences: UserPreferences get() = _userPreferences
-    
-    // Last bet memory for UX improvement
-    private var _lastBetAmount by mutableStateOf<Int?>(null)
-    private var _userClearedBet by mutableStateOf(false)
-    val lastBetAmount: Int? get() = _lastBetAmount
-    
-    // Data owned by ViewModel (Linus principle: clear data ownership)
+    // --- Preferences ---
+    val userPreferences: UserPreferences get() = preferencesManager.userPreferences
+
+    // --- Betting ---
+    val lastBetAmount: Int? get() = bettingManager.lastBetAmount
+    val currentBetAmount: Int get() = game?.betState?.amount ?: 0
+    val canDealCards: Boolean get() = game?.canDealCards ?: false
+    val chipComposition: List<ChipInSpot> get() = uiStateManager.calculateChipComposition(currentBetAmount)
+    val availableBalance: Int get() = game?.player?.chips ?: 0
+
+    // --- Round history ---
     private var _recentRounds by mutableStateOf<List<RoundHistory>>(emptyList())
     val recentRounds: List<RoundHistory> get() = _recentRounds
-    
-    // Statistics removed - keeping only essential round history
-    
-    // Round timing
     private var roundStartTime: Long = 0
 
+    val currentGameRules: GameRules? get() = game?.rules
+
     // ===== GAME LIFECYCLE =====
-    
-    /**
-     * Applies audio preferences from user settings.
-     * Called when user preferences change.
-     */
-    private fun applyAudioPreferences() {
-        audioManager.setEnabled(userPreferences.displaySettings.soundEnabled)
-        if (audioManager is AudioManagerImpl) {
-            audioManager.setVolume(userPreferences.displaySettings.soundVolume)
-        }
-    }
-    
-    /**
-     * Initializes a new game with specified rules and player
-     * BREAKING CHANGE: Resets both round history and decision analytics
-     */
+
     fun initializeGame(gameRules: GameRules, player: Player) {
-        // Apply current audio preferences
-        applyAudioPreferences()
         gameStateManager.initializeGame(gameRules, player)
         feedbackManager.reset()
         analyticsManager.resetSession()
         uiStateManager.clearError()
     }
-    
-    // ===== ROUND LIFECYCLE WITH HISTORY =====
-    
-    /**
-     * Starts a new round with the specified bet amount
-     * BREAKING CHANGE: Captures complete round start context for RoundHistory
-     */
-    fun startRound(betAmount: Int) {
-        when (val result = gameStateManager.startRound(betAmount)) {
-            is GameStateResult.Success -> {
-                feedbackManager.startNewRound()
-                uiStateManager.clearError()
-                
-                // BREAKING CHANGE: Capture round start context
-                captureRoundStartContext()
-            }
-            is GameStateResult.Error -> uiStateManager.setError(result.message)
-        }
-    }
-    
-    /**
-     * Deals initial cards to start the round
-     * BREAKING CHANGE: Initializes round timing and context capture
-     */
+
     fun dealCards() {
-        rememberLastBet()
+        bettingManager.rememberLastBet(currentBetAmount)
         roundStartTime = TimeProvider.currentTimeMillis()
-        
+
         when (val result = gameStateManager.dealCards()) {
             is GameStateResult.Success -> {
                 feedbackManager.reset()
                 uiStateManager.clearError()
-                
-                // Play card dealing sound
-                coroutineScope.launch {
-                    audioManager.playCardSound()
-                }
-                
-                // BREAKING CHANGE: Initialize round context after dealing
+                coroutineScope.launch { audioManager.playCardSound() }
                 initializeRoundContext()
             }
             is GameStateResult.Error -> uiStateManager.setError(result.message)
         }
     }
-    
-    /**
-     * Executes a player action and handles all related state updates
-     * BREAKING CHANGE: Uses new AnalyticsManager.recordPlayerAction
-     */
+
     fun playerAction(action: Action) {
-        // Capture hand state BEFORE action execution for accurate recording (deep copy cards!)
-        val handBeforeAction = game?.currentHand?.copy(cards = game?.currentHand?.cards?.toList() ?: emptyList())
-        val dealerUpCard = game?.dealer?.upCard
-        val gameRules = game?.rules
-        
+        val handBefore = game?.currentHand?.copy(cards = game?.currentHand?.cards?.toList() ?: emptyList())
+        val dealerUp = game?.dealer?.upCard
+        val rules = game?.rules
+
         executePlayerAction(action)
-        
-        // Only record if action execution set feedback (meaning it succeeded)
-        if (feedback != null && handBeforeAction != null && dealerUpCard != null && gameRules != null) {
-            val handAfterAction = game?.currentHand
-            val actionResult = createActionResult(action, handBeforeAction, handAfterAction)
-            recordDecisionForLearning(action, handBeforeAction, dealerUpCard, gameRules, actionResult)
+
+        if (feedback != null && handBefore != null && dealerUp != null && rules != null) {
+            val handAfter = game?.currentHand
+            val splitHands = if (action == Action.SPLIT) game?.playerHands else null
+            val actionResult = ActionResultFactory.create(action, handBefore, handAfter, splitHands)
+            recordDecision(action, handBefore, dealerUp, rules, actionResult)
         }
         handleAutoTransitions()
     }
-    
-    /**
-     * Processes the dealer's turn according to house rules
-     * BREAKING CHANGE: Completes round with full RoundHistory generation
-     */
+
     fun dealerTurn() {
         when (val result = gameStateManager.processDealerTurn()) {
             is GameStateResult.Success -> {
                 if (game?.phase == GamePhase.SETTLEMENT && game?.isSettled == true) {
-                    // BREAKING CHANGE: Complete round with full history
                     completeRoundWithHistory()
                 }
                 uiStateManager.clearError()
@@ -183,364 +127,168 @@ class GameViewModel(
             is GameStateResult.Error -> uiStateManager.setError(result.message)
         }
     }
-    
-    /**
-     * Advances to the next round
-     * BREAKING CHANGE: Cleans up round context
-     */
+
     fun nextRound() {
         when (val result = gameStateManager.startNewRound()) {
             is GameStateResult.Success -> {
                 feedbackManager.startNewRound()
                 uiStateManager.clearError()
-                _userClearedBet = false
-                
-                // BREAKING CHANGE: Clean round timing
+                bettingManager.onNewRound()
                 roundStartTime = 0
             }
             is GameStateResult.Error -> uiStateManager.setError(result.message)
         }
     }
-    
-    // ===== ROUND HISTORY IMPLEMENTATION =====
-    
-    /**
-     * Capture round start context when bet is placed
-     */
-    private fun captureRoundStartContext() {
-        val currentGame = game ?: return
-        
-        val context = RoundStartContext(
-            sessionId = analyticsManager.currentSessionId,
-            gameRules = currentGame.rules,
-            betAmount = currentGame.betState.amount,
-            initialPlayerHands = emptyList(), // Will be set after dealing
-            dealerVisibleCard = Card.UNKNOWN_CARD, // Will be set after dealing
-            startTimestamp = TimeProvider.currentTimeMillis()
-        )
-        
-        analyticsManager.startRound(context)
-    }
-    
-    /**
-     * Initialize round context after cards are dealt
-     */
-    private fun initializeRoundContext() {
-        val currentGame = game ?: return
-        
-        val context = RoundStartContext(
-            sessionId = analyticsManager.currentSessionId,
-            gameRules = currentGame.rules,
-            betAmount = currentGame.betState.amount,
-            initialPlayerHands = currentGame.playerHands,
-            dealerVisibleCard = currentGame.dealer.upCard ?: Card.UNKNOWN_CARD,
-            startTimestamp = roundStartTime
-        )
-        
-        analyticsManager.startRound(context)
-    }
-    
-    /**
-     * Complete round and generate RoundHistory
-     */
-    private fun completeRoundWithHistory() {
-        val currentGame = game ?: return
-        
-        val roundDurationMs = if (roundStartTime > 0) {
-            TimeProvider.currentTimeMillis() - roundStartTime
-        } else 0
-        
-        val netChipChange = calculateNetChipChange(currentGame)
-        val roundResult = currentGame.getRoundOutcome().toRoundResult()
-        
-        currentGame.dealer.hand?.let { dealerHand ->
-            analyticsManager.completeRound(
-                finalPlayerHands = currentGame.playerHands,
-                dealerFinalHand = dealerHand,
-                roundResult = roundResult,
-                netChipChange = netChipChange,
-                roundDurationMs = roundDurationMs
-            )
-        }
-        
-        // Refresh round history for UI
-        refreshRoundHistory()
-    }
-    
-    /**
-     * Calculate net chip change for the round
-     */
-    private fun calculateNetChipChange(game: Game): Int {
-        // Simple calculation - in a real implementation, this would be more sophisticated
-        return when (game.getRoundOutcome()) {
-            RoundOutcome.WIN -> game.betState.amount
-            RoundOutcome.LOSS -> -game.betState.amount
-            RoundOutcome.PUSH -> 0
-            RoundOutcome.UNKNOWN -> 0
-        }
-    }
-    
-    /**
-     * Load recent game rounds from persistence layer.
-     * Uses caching for performance optimization.
-     */
-    fun loadRecentRounds() {
-        coroutineScope.launch {
-            _recentRounds = persistenceService.getRecentRounds()
-        }
-    }
-    
-    // Statistics methods removed - simplified data loading
-    
-    /**
-     * Refresh round history data.
-     * Simplified without complex analytics.
-     */
-    fun refreshAllData() {
-        loadRecentRounds()
-    }
-    
-    /**
-     * Refresh round history cache.
-     * Simplified without complex async handling.
-     */
-    fun refreshRoundHistory() {
-        dataLoader.invalidate("recent_rounds")
-        loadRecentRounds()
-    }
-    
-    // Statistics refresh methods removed
-    
-    // ===== DECISION RECORDING =====
-    
-    private fun executePlayerAction(action: Action) {
-        val result = gameStateManager.executePlayerAction(action)
-        if (result != null) {
-            val currentGame = game!!
-            val feedback = feedbackManager.evaluatePlayerAction(
-                handBeforeAction = result.handBeforeAction,
-                dealerUpCard = currentGame.dealer.upCard!!,
-                playerAction = action,
-                rules = currentGame.rules
-            )
-            uiStateManager.clearError()
-        } else {
-            uiStateManager.setError("Failed to execute player action")
-        }
-    }
-    
-    private fun createActionResult(
-        action: Action, 
-        handBeforeAction: PlayerHand, 
-        handAfterAction: PlayerHand?
-    ): ActionResult {
-        return when (action) {
-            Action.HIT -> {
-                if (handAfterAction != null && handAfterAction.cards.size > handBeforeAction.cards.size) {
-                    val newCard = handAfterAction.cards.last()
-                    ActionResult.Hit(newCard, handAfterAction.cards)
-                } else {
-                    ActionResult.Hit(handBeforeAction.cards.first(), handBeforeAction.cards) // Fallback
-                }
-            }
-            Action.DOUBLE -> {
-                if (handAfterAction != null && handAfterAction.cards.size > handBeforeAction.cards.size) {
-                    val newCard = handAfterAction.cards.last()
-                    ActionResult.Double(newCard, handAfterAction.cards)
-                } else {
-                    ActionResult.Double(handBeforeAction.cards.first(), handBeforeAction.cards) // Fallback
-                }
-            }
-            Action.STAND -> ActionResult.Stand(handBeforeAction.cards)
-            Action.SURRENDER -> ActionResult.Surrender(handBeforeAction.cards)
-            Action.SPLIT -> {
-                // Get actual split hands from game state
-                val currentGame = game
-                if (currentGame != null && currentGame.playerHands.size >= 2) {
-                    ActionResult.Split(
-                        originalPair = handBeforeAction.cards,
-                        hand1 = currentGame.playerHands[0].cards,
-                        hand2 = currentGame.playerHands[1].cards
-                    )
-                } else {
-                    // Fallback if split hands not available
-                    ActionResult.Split(
-                        originalPair = handBeforeAction.cards,
-                        hand1 = handBeforeAction.cards,
-                        hand2 = handBeforeAction.cards
-                    )
-                }
-            }
-        }
-    }
-    
-    private fun recordDecisionForLearning(
-        action: Action, 
-        handBeforeAction: PlayerHand, 
-        dealerUpCard: Card, 
-        gameRules: GameRules,
-        actionResult: ActionResult
-    ) {
-        val feedback = this.feedback ?: return
-        
-        analyticsManager.recordPlayerAction(
-            handBeforeAction = handBeforeAction,
-            dealerUpCard = dealerUpCard,
-            playerAction = action,
-            isCorrect = feedback.isCorrect,
-            gameRules = gameRules,
-            actionResult = actionResult
-        )
-        
-        // Statistics removed - no need to refresh
-    }
-    
-    private fun handleAutoTransitions() {
-        game?.let { currentGame ->
-            if (currentGame.shouldAutoAdvance() && currentGame.phase == GamePhase.DEALER_TURN) {
-                dealerTurn()
-            }
-        }
-    }
-    
-    // ===== BETTING INTERFACE =====
-    
-    val currentBetAmount: Int get() = game?.betState?.amount ?: 0
-    val canDealCards: Boolean get() = game?.canDealCards ?: false
-    val chipComposition: List<ChipInSpot> get() = uiStateManager.calculateChipComposition(currentBetAmount)
-    val availableBalance: Int get() = game?.player?.chips ?: 0
-    
+
+    // ===== BETTING =====
+
     fun addChipToBet(chipValue: ChipValue) {
         when (val result = gameStateManager.addChipToBet(chipValue)) {
             is GameStateResult.Success -> uiStateManager.clearError()
             is GameStateResult.Error -> uiStateManager.setError(result.message)
         }
     }
-    
+
     fun clearBet() {
         when (val result = gameStateManager.clearBet()) {
             is GameStateResult.Success -> {
-                _userClearedBet = true
+                bettingManager.onBetCleared()
                 uiStateManager.clearError()
             }
             is GameStateResult.Error -> uiStateManager.setError(result.message)
         }
     }
-    
-    // ===== ANALYTICS INTERFACE (SIMPLIFIED) =====
-    
-    // === SIMPLIFIED ANALYTICS INTERFACE ===
-    
-    /**
-     * Clear all learning data and refresh views.
-     * Simplified operation.
-     */
+
+    fun repeatLastBet(): Boolean {
+        val ok = bettingManager.repeatLastBet()
+        if (ok) uiStateManager.clearError()
+        return ok
+    }
+
+    // ===== PREFERENCES =====
+
+    fun loadUserPreferences() {
+        preferencesManager.load { prefs ->
+            bettingManager.restoreFromPreferences(prefs.lastBetAmount)
+        }
+    }
+
+    fun updateUserPreferences(newPreferences: UserPreferences) {
+        preferencesManager.update(newPreferences)
+        bettingManager.restoreFromPreferences(newPreferences.lastBetAmount)
+    }
+
+    // ===== ROUND HISTORY =====
+
+    fun loadRecentRounds() {
+        coroutineScope.launch {
+            _recentRounds = persistenceService.getRecentRounds()
+        }
+    }
+
+    fun refreshAllData() { loadRecentRounds() }
+
+    fun refreshRoundHistory() {
+        dataLoader.invalidate("recent_rounds")
+        loadRecentRounds()
+    }
+
+    // ===== RULES =====
+
+    fun handleRuleChange(newRules: GameRules) {
+        val currentGame = game ?: return
+        uiStateManager.handleRuleChangeNotification(
+            currentRules = currentGame.rules,
+            newRules = newRules,
+            sessionStats = sessionStats
+        )
+        gameStateManager.handleRuleChange(newRules)
+    }
+
+    // ===== UI HELPERS =====
+
+    fun clearError() { uiStateManager.clearError() }
+    fun clearFeedback() { feedbackManager.clearFeedback() }
+
     fun clearAllLearningData() {
         coroutineScope.launch {
             persistenceService.clearAllLearningData()
             loadRecentRounds()
         }
     }
-    
-    val currentGameRules: GameRules? get() = game?.rules
-    
-    fun handleRuleChange(newRules: GameRules) {
-        val currentGame = game ?: return
-        
-        uiStateManager.handleRuleChangeNotification(
-            currentRules = currentGame.rules,
-            newRules = newRules,
-            sessionStats = sessionStats
+
+    // ===== PRIVATE =====
+
+    private fun initializeRoundContext() {
+        val g = game ?: return
+        analyticsManager.startRound(
+            RoundStartContext(
+                sessionId = analyticsManager.currentSessionId,
+                gameRules = g.rules,
+                betAmount = g.betState.amount,
+                initialPlayerHands = g.playerHands,
+                dealerVisibleCard = g.dealer.upCard ?: Card.UNKNOWN_CARD,
+                startTimestamp = roundStartTime
+            )
         )
-        
-        gameStateManager.handleRuleChange(newRules)
     }
-    
-    // ===== UI STATE MANAGEMENT =====
-    
-    fun clearError() {
-        uiStateManager.clearError()
-    }
-    
-    fun clearFeedback() {
-        feedbackManager.clearFeedback()
-    }
-    
-    // ===== BETTING MEMORY =====
-    
-    private fun rememberLastBet() {
-        _lastBetAmount = game?.betState?.amount?.takeIf { it > 0 }
-    }
-    
-    fun repeatLastBet(): Boolean {
-        val lastAmount = _lastBetAmount ?: return false
-        val currentGame = game ?: return false
-        
-        if (_userClearedBet) return false
-        if (currentGame.player?.chips ?: 0 < lastAmount) return false
-        if (currentGame.phase != GamePhase.WAITING_FOR_BETS) return false
-        if (currentGame.betState.amount > 0) return false
-        
-        var remainingAmount = lastAmount
-        val chipValues = ChipValue.values().sortedByDescending { it.value }
-        
-        for (chipValue in chipValues) {
-            val chipsNeeded = remainingAmount / chipValue.value
-            repeat(chipsNeeded) {
-                val result = gameStateManager.addChipToBet(chipValue)
-                if (result is GameStateResult.Error) {
-                    return false
-                }
-                remainingAmount -= chipValue.value
-            }
-            if (remainingAmount == 0) break
+
+    private fun completeRoundWithHistory() {
+        val g = game ?: return
+        val duration = if (roundStartTime > 0) TimeProvider.currentTimeMillis() - roundStartTime else 0
+        val netChip = when (g.getRoundOutcome()) {
+            RoundOutcome.WIN -> g.betState.amount
+            RoundOutcome.LOSS -> -g.betState.amount
+            RoundOutcome.PUSH, RoundOutcome.UNKNOWN -> 0
         }
-        
-        uiStateManager.clearError()
-        return remainingAmount == 0
-    }
-    
-    // ===== USER PREFERENCES =====
-    
-    /**
-     * Load user preferences from persistence layer.
-     * Updates UI state with cached settings.
-     */
-    fun loadUserPreferences() {
-        coroutineScope.launch {
-            _userPreferences = persistenceService.loadUserPreferences()
-            // Restore last bet amount for UX continuity
-            _lastBetAmount = if (_userPreferences.lastBetAmount > 0) _userPreferences.lastBetAmount else null
+        g.dealer.hand?.let { dealerHand ->
+            analyticsManager.completeRound(
+                finalPlayerHands = g.playerHands,
+                dealerFinalHand = dealerHand,
+                roundResult = g.getRoundOutcome().toRoundResult(),
+                netChipChange = netChip,
+                roundDurationMs = duration
+            )
         }
+        refreshRoundHistory()
     }
-    
-    fun updateUserPreferences(newPreferences: UserPreferences) {
-        _userPreferences = newPreferences
-        _lastBetAmount = if (newPreferences.lastBetAmount > 0) newPreferences.lastBetAmount else null
-        
-        // Apply audio settings
-        applyAudioPreferences()
-        
-        // 使緩存失效，確保下次載入時獲取最新數據
-        dataLoader.invalidate("user_preferences")
-        
-        kotlinx.coroutines.MainScope().launch {
-            try {
-                persistenceService.saveUserPreferences(newPreferences)
-            } catch (e: Exception) {
-                println("Warning: Failed to save user preferences")
-            }
+
+    private fun executePlayerAction(action: Action) {
+        val result = gameStateManager.executePlayerAction(action)
+        if (result != null) {
+            feedbackManager.evaluatePlayerAction(
+                handBeforeAction = result.handBeforeAction,
+                dealerUpCard = game!!.dealer.upCard!!,
+                playerAction = action,
+                rules = game!!.rules
+            )
+            uiStateManager.clearError()
+        } else {
+            uiStateManager.setError("Failed to execute player action")
         }
     }
 
+    private fun recordDecision(
+        action: Action, hand: PlayerHand, dealerUp: Card,
+        rules: GameRules, actionResult: ActionResult
+    ) {
+        val fb = feedback ?: return
+        analyticsManager.recordPlayerAction(
+            handBeforeAction = hand, dealerUpCard = dealerUp,
+            playerAction = action, isCorrect = fb.isCorrect,
+            gameRules = rules, actionResult = actionResult
+        )
+    }
+
+    private fun handleAutoTransitions() {
+        val g = game ?: return
+        if (g.shouldAutoAdvance() && g.phase == GamePhase.DEALER_TURN) dealerTurn()
+    }
 }
 
-/**
- * Extension function to convert RoundOutcome to RoundResult
- */
 private fun RoundOutcome.toRoundResult(): RoundResult = when (this) {
     RoundOutcome.WIN -> RoundResult.PLAYER_WIN
     RoundOutcome.LOSS -> RoundResult.DEALER_WIN
     RoundOutcome.PUSH -> RoundResult.PUSH
-    RoundOutcome.UNKNOWN -> RoundResult.DEALER_WIN // Default to dealer win for unknown outcomes
+    RoundOutcome.UNKNOWN -> RoundResult.DEALER_WIN
 }
