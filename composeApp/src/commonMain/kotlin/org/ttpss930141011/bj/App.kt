@@ -91,6 +91,8 @@ fun App(
                         Header(
                             balance = currentPlayer.chips,
                             currentPage = currentPage,
+                            sessionCorrect = viewModel.sessionStats.correctDecisions,
+                            sessionTotal = viewModel.sessionStats.totalDecisions,
                             onBackClick = if (currentPage != NavigationPage.HOME) {
                                 { 
                                     if (onNavigationChange != null) {
