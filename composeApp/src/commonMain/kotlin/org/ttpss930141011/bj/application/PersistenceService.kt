@@ -122,10 +122,7 @@ class PersistenceService(
             .take(limit)
     }
     
-    // ===== ANALYTICS CALCULATIONS (Simplified) =====
-    // Complex statistics removed - keeping only essential session data
-    
-    // Statistics conversion methods removed
+    // ===== ANALYTICS CALCULATIONS =====
     
     /**
      * Calculate current session statistics.
@@ -182,5 +179,4 @@ class PersistenceService(
         repository.clear(DecisionRecord::class)
     }
     
-    // Legacy methods removed - use the direct methods above
 }
