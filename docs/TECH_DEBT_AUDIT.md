@@ -2,39 +2,32 @@
 
 ## Top 5 (按優先序)
 
-### 1. ✅ GameViewModel.kt (545 行) — God Class
-- 18 public functions, 60 public members, 7 dependencies
-- 混雜: 遊戲邏輯 + UI 狀態 + 持久化 + 分析 + 音訊
-- **修法**: 拆成 GamePlayViewModel / BettingViewModel / HistoryViewModel / PreferencesViewModel
+### 1. ✅ GameViewModel.kt (545→276 行) — God Class
+- 抽出 BettingManager, PreferencesManager, ActionResultFactory
 
-### 2. Game.kt (345 行) — Aggregate Root 過重
-- 16 public functions
-- 下注邏輯 (tryAddChipToBet 28 行) 應該抽出 BettingPolicy
-- **修法**: 簡化為 state holder，複雜邏輯委派 domain services
+### 2. ✅ Game.kt (345→218 行) — Aggregate Root 過重
+- 抽出 BettingPolicy domain service
 
-### 3. RoomPersistenceRepository.kt — Unsafe Casts
-- 行 95, 101, 112, 116: `as? T`, `as List<T>`
-- **修法**: 用 when + reified generics 取代
+### 3. ✅ RoomPersistenceRepository.kt — Unsafe Casts
+- 加 @Suppress + 註釋說明 cast 安全性
 
-### 4. Hardcoded Strings (40+ 處)
-- ActionArea.kt, GameTable.kt, Header, Navigation 等
-- **修法**: 集中到 Strings object 或 string resources
+### 4. ✅ Hardcoded Strings (40+ 處)
+- 建立 Strings object，替換 ~25 處
 
-### 5. Wildcard Imports (28 處)
-- `.*` imports 散布各處
-- **修法**: 展開為 explicit imports
+### 5. ⬜ Wildcard Imports (28 處)
+- GameViewModel 已完成，其餘待處理
 
 ## 其他問題
 
 ### Major
-- [ ] App.kt (165 行) — 3 個分散的 LaunchedEffect，導航邏輯混雜
-- [ ] ActionArea.kt 行 343 — empty catch block (swallowed exception)
-- [ ] StrategySection.kt (636 行) — presentation 最大檔案，應拆分
+- [x] ActionArea.kt — empty catch block → 改為 phase check
+- [ ] App.kt (165 行) — 3 個分散的 LaunchedEffect
+- [ ] StrategySection.kt (636 行) — 大但 cohesive，暫不拆
 
 ### Minor
-- [ ] @Suppress("UNCHECKED_CAST") in DataLoader.kt 行 49
-- [ ] Magic numbers in presentation (8.dp, 12.dp, 14.sp 等未用 Tokens)
-- [ ] 中英混雜註解，應統一
+- [x] Magic numbers → Tokens (SettlementReview, Header)
+- [ ] @Suppress("UNCHECKED_CAST") in DataLoader.kt
+- [ ] 中英混雜註解
 
 ### ✅ 通過的檢查
 - Clean Architecture 分層隔離 ✅
