@@ -1,5 +1,7 @@
 package org.ttpss930141011.bj.presentation.components.game
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -256,65 +258,55 @@ private fun ActionButton(
         Action.SPLIT -> CasinoTheme.CasinoAccentPrimary to "⁝⁝"
     }
     
-    // Show hint only (no color changes)
+    // Flash animation: briefly change button color after player's choice
+    val isChosen = feedback?.playerAction == action
     val isOptimal = feedback?.optimalAction == action
-    val showHint = feedback != null && !feedback.isCorrect && isOptimal
+    
+    // Animate flash: chosen button flashes green (correct) or red (wrong)
+    // Optimal button gets green border if player was wrong
+    var flashActive by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(feedback) {
+        if (feedback != null && (isChosen || (isOptimal && !feedback.isCorrect))) {
+            flashActive = true
+            kotlinx.coroutines.delay(700)
+            flashActive = false
+        }
+    }
+    
+    val flashColor = when {
+        !flashActive -> baseColor
+        isChosen && feedback?.isCorrect == true -> Color(0xFF4CAF50) // green
+        isChosen && feedback?.isCorrect == false -> Color(0xFFF44336) // red
+        isOptimal && feedback?.isCorrect == false -> Color(0xFF4CAF50) // green hint
+        else -> baseColor
+    }
+    
+    val animatedColor by animateColorAsState(
+        targetValue = flashColor,
+        animationSpec = tween(durationMillis = if (flashActive) 150 else 400)
+    )
     
     Button(
         onClick = { onAction(action) },
         colors = ButtonDefaults.buttonColors(
-            containerColor = baseColor,
+            containerColor = animatedColor,
             contentColor = Color.White
         ),
         shape = RoundedCornerShape(Tokens.Space.m),
         modifier = modifier.height(Tokens.Size.buttonHeight),
-        contentPadding = PaddingValues(horizontal = Tokens.Space.xs, vertical = Tokens.Space.xs) // 减少内边距以提供更多文本空间
+        contentPadding = PaddingValues(horizontal = Tokens.Space.xs, vertical = Tokens.Space.xs)
     ) {
         BreakpointLayout(
             compact = {
-                // Compact: Show icon + hint, 对Double按钮特殊处理
-                if (action == Action.DOUBLE) {
-                    // Double按钮使用紧凑布局，避免×2分离
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = icon,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = Tokens.Typography.actionButtonIconCompact,
-                            maxLines = 1
-                        )
-                        if (showHint) {
-                            Text(
-                                text = "💡",
-                                fontSize = Tokens.Typography.actionButtonHintCompact
-                            )
-                        }
-                    }
-                } else {
-                    // 其他按钮使用垂直布局优化空间利用
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = icon,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = Tokens.Typography.actionButtonIconExpanded,
-                            maxLines = 1
-                        )
-                        if (showHint) {
-                            Text(
-                                text = "💡",
-                                fontSize = Tokens.Typography.actionButtonHintCompact
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = icon,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = Tokens.Typography.actionButtonIconCompact,
+                    maxLines = 1
+                )
             },
             expanded = {
-                // Expanded: Show icon + text + hint
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs),
                     verticalAlignment = Alignment.CenterVertically
@@ -331,12 +323,6 @@ private fun ActionButton(
                         fontSize = Tokens.Typography.actionButtonTextExpanded,
                         maxLines = 1
                     )
-                    if (showHint) {
-                        Text(
-                            text = "💡",
-                            fontSize = Tokens.Typography.actionButtonHintExpanded
-                        )
-                    }
                 }
             }
         )
