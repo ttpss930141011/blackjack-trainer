@@ -84,37 +84,29 @@ class RoomPersistenceRepository(
         }
     }
     
+    // Casts below are safe: the `when` branch guarantees the type matches T.
+    // A type-safe redesign would require abandoning the generic PersistenceRepository
+    // interface, which isn't worth the churn for this project size.
+    @Suppress("UNCHECKED_CAST")
     override suspend fun <T : Any> load(key: String, type: KClass<T>): T? {
         return when (type) {
             RoundHistory::class -> {
-                // 按照 key 載入單個 RoundHistory
-                // key 格式: "round_${roundId}"
                 val roundId = key.removePrefix("round_")
-                val entities = database.roundHistoryDao().getRecentRounds(InfrastructureConstants.CACHE_CLEANUP_THRESHOLD_SIZE) // 取大範圍然後過濾
-                val entity = entities.find { it.roundId == roundId }
-                entity?.let { convertEntityToDomain(it) } as? T
+                val entities = database.roundHistoryDao().getRecentRounds(InfrastructureConstants.CACHE_CLEANUP_THRESHOLD_SIZE)
+                entities.find { it.roundId == roundId }?.let { convertEntityToDomain(it) } as? T
             }
-            
             UserPreferences::class -> {
-                // Load from database following same pattern as other entities
-                val entity = database.userPreferencesDao().getPreferences()
-                entity?.let { convertEntityToDomain(it) } as? T
+                database.userPreferencesDao().getPreferences()?.let { convertEntityToDomain(it) } as? T
             }
-            
             else -> null
         }
     }
-    
+
+    @Suppress("UNCHECKED_CAST")
     override suspend fun <T : Any> query(type: KClass<T>, criteria: Map<String, Any>): List<T> {
         return when (type) {
-            RoundHistory::class -> {
-                val entities = queryRoundHistoryEntities(criteria)
-                entities.map { convertEntityToDomain(it) } as List<T>
-            }
-            DecisionRecord::class -> {
-                val entities = queryDecisionRecordEntities(criteria)
-                entities.map { convertDecisionEntityToDomain(it) } as List<T>
-            }
+            RoundHistory::class -> queryRoundHistoryEntities(criteria).map { convertEntityToDomain(it) } as List<T>
+            DecisionRecord::class -> queryDecisionRecordEntities(criteria).map { convertDecisionEntityToDomain(it) } as List<T>
             else -> emptyList()
         }
     }
