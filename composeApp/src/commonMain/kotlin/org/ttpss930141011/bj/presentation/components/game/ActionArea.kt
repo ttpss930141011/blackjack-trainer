@@ -293,9 +293,9 @@ fun SettlementCard(
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.1f)
+            containerColor = Color(0xFF1A1A2E).copy(alpha = 0.95f)
         ),
-        modifier = modifier.fillMaxWidth().padding(horizontal = Tokens.Space.s)
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier.padding(Tokens.Space.m).fillMaxWidth(),

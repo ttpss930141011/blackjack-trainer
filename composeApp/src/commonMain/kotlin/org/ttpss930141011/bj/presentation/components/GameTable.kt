@@ -1,5 +1,10 @@
 package org.ttpss930141011.bj.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,101 +45,115 @@ fun GameTable(
         // Main game table - responsive layout based on screen width
         BreakpointLayout(
             compact = {
-                // Compact: Action buttons fixed in middle (thumb zone)
-                // Settlement card floats in upper spacer, never pushes buttons
-                Column(
+                // Compact: buttons fixed in thumb zone, settlement card overlays table center
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(CasinoTheme.CardTableBackground)
-                        .padding(Tokens.Space.m),
-                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
                 ) {
-                    // Phase title
-                    PhaseHeader(game.phase)
-                    
-                    // Dealer area - consistent across all phases
-                    DealerArea(
-                        game = game,
-                        screenWidth = screenWidth,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    // Upper spacer — settlement card lives here
-                    Box(
-                        modifier = Modifier.weight(0.5f).fillMaxWidth(),
-                        contentAlignment = Alignment.BottomCenter
+                    // Base layout — never changes structure across phases
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(Tokens.Space.m),
+                        verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
                     ) {
-                        if (game.phase == GamePhase.SETTLEMENT) {
-                            SettlementCard(
-                                game = game,
-                                roundDecisions = viewModel.roundDecisions
-                            )
-                        }
+                        PhaseHeader(game.phase)
+
+                        DealerArea(
+                            game = game,
+                            screenWidth = screenWidth,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.weight(0.5f))
+
+                        // Action area — fixed position, only buttons
+                        ActionArea(
+                            game = game,
+                            viewModel = viewModel,
+                            feedback = feedback,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.weight(0.5f))
+
+                        PlayerArea(
+                            game = game,
+                            viewModel = viewModel,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
-                    
-                    // Action area — fixed position, only buttons
-                    ActionArea(
-                        game = game,
-                        viewModel = viewModel,
-                        feedback = feedback,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    Spacer(modifier = Modifier.weight(0.5f))
-                    
-                    // Player area - bottom for chip visibility
-                    PlayerArea(
-                        game = game,
-                        viewModel = viewModel,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            medium = {
-                // Medium/Expanded: Action buttons at bottom
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(CasinoTheme.CardTableBackground)
-                        .padding(Tokens.Space.m),
-                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
-                ) {
-                    // Phase title
-                    PhaseHeader(game.phase)
-                    
-                    // Dealer area
-                    DealerArea(
-                        game = game,
-                        screenWidth = screenWidth,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    Spacer(modifier = Modifier.weight(1f))
-                    
-                    // Player area
-                    PlayerArea(
-                        game = game,
-                        viewModel = viewModel,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    // Settlement card above buttons
-                    if (game.phase == GamePhase.SETTLEMENT) {
+
+                    // Settlement card — overlays table center, doesn't affect layout
+                    AnimatedVisibility(
+                        visible = game.phase == GamePhase.SETTLEMENT,
+                        enter = slideInVertically(initialOffsetY = { -it / 2 }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { -it / 2 }) + fadeOut(),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = Tokens.Space.l)
+                    ) {
                         SettlementCard(
                             game = game,
                             roundDecisions = viewModel.roundDecisions
                         )
                     }
-                    
-                    Spacer(modifier = Modifier.weight(1f))
-                    
-                    // Action area — only buttons
-                    ActionArea(
-                        game = game,
-                        viewModel = viewModel,
-                        feedback = feedback,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                }
+            },
+            medium = {
+                // Medium/Expanded: same concept, buttons at bottom
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(CasinoTheme.CardTableBackground)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(Tokens.Space.m),
+                        verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
+                    ) {
+                        PhaseHeader(game.phase)
+
+                        DealerArea(
+                            game = game,
+                            screenWidth = screenWidth,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        PlayerArea(
+                            game = game,
+                            viewModel = viewModel,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        ActionArea(
+                            game = game,
+                            viewModel = viewModel,
+                            feedback = feedback,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    // Settlement card overlay
+                    AnimatedVisibility(
+                        visible = game.phase == GamePhase.SETTLEMENT,
+                        enter = slideInVertically(initialOffsetY = { -it / 2 }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { -it / 2 }) + fadeOut(),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = Tokens.Space.l)
+                    ) {
+                        SettlementCard(
+                            game = game,
+                            roundDecisions = viewModel.roundDecisions
+                        )
+                    }
                 }
             }
         )
