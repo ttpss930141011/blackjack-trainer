@@ -71,10 +71,10 @@ class PersistenceService(
      * Clean old round history data.
      * Keeps History page responsive by limiting data volume.
      */
-    fun cleanOldRoundHistory(olderThanDays: Int = InfrastructureConstants.DATA_CLEANUP_DAYS_THRESHOLD) {
+    suspend fun cleanOldRoundHistory(olderThanDays: Int = InfrastructureConstants.DATA_CLEANUP_DAYS_THRESHOLD) {
         val cutoffTime = TimeProvider.currentTimeMillis() - (olderThanDays.days.inWholeMilliseconds)
-        // Implementation depends on repository capabilities
-        // TODO: Add repository.deleteWhere() method
+        repository.deleteWhere(RoundHistory::class, mapOf("timestampBefore" to cutoffTime))
+        repository.deleteWhere(DecisionRecord::class, mapOf("timestampBefore" to cutoffTime))
     }
     
     // ===== DECISION ANALYTICS OPERATIONS (Stats Page) =====
@@ -122,34 +122,7 @@ class PersistenceService(
             .take(limit)
     }
     
-    // ===== ANALYTICS CALCULATIONS (Simplified) =====
-    // Complex statistics removed - keeping only essential session data
-    
-    /**
-     * Calculate mistake records with original card data.
-     * Preserves original card information instead of parsed strings.
-     */
-    suspend fun calculateMistakeRecords(minSamples: Int = InfrastructureConstants.MIN_SAMPLES_FOR_STATISTICS): List<MistakeRecord> {
-        val decisions = getAllDecisions()
-        
-        return decisions
-            .filter { !it.isCorrect } // Only errors
-            .groupBy { it.baseScenarioKey }
-            .filter { (_, decisionList) -> decisionList.size >= minSamples }
-            .map { (scenario, errorDecisions) ->
-                // Take the first error as representative of this scenario
-                val firstError = errorDecisions.first()
-                MistakeRecord(
-                    handCards = firstError.handCards,
-                    dealerUpCard = firstError.dealerUpCard,
-                    errorCount = errorDecisions.size,
-                    baseScenarioKey = scenario
-                )
-            }
-            .sortedByDescending { it.errorCount }
-    }
-    
-    // Statistics conversion methods removed
+    // ===== ANALYTICS CALCULATIONS =====
     
     /**
      * Calculate current session statistics.
@@ -177,24 +150,6 @@ class PersistenceService(
         }
     }
     
-    /**
-     * Calculate performance by rule set.
-     * Enables rule-specific improvement tracking.
-     */
-    suspend fun calculateRuleSetPerformance(): Map<String, Double> {
-        val decisions = getAllDecisions()
-        
-        return decisions
-            .groupBy { it.ruleHash }
-            .mapValues { (_, ruleDecisions) ->
-                if (ruleDecisions.isEmpty()) {
-                    0.0
-                } else {
-                    ruleDecisions.count { it.isCorrect }.toDouble() / ruleDecisions.size
-                }
-            }
-    }
-    
     // ===== USER PREFERENCES =====
     
     /**
@@ -219,55 +174,9 @@ class PersistenceService(
      * Clear all learning data for reset functionality.
      * Clears both RoundHistory and DecisionRecord streams.
      */
-    fun clearAllLearningData() {
-        // Clear both data streams
-        // TODO: Implement repository.clear() methods
-        // repository.clear(RoundHistory::class)
-        // repository.clear(DecisionRecord::class)
+    suspend fun clearAllLearningData() {
+        repository.clear(RoundHistory::class)
+        repository.clear(DecisionRecord::class)
     }
     
-    /**
-     * Get data volume statistics for management.
-     * Helps users understand storage usage.
-     */
-    suspend fun getDataVolumeStats(): DataVolumeStats {
-        val rounds = repository.query(RoundHistory::class)
-        val decisions = repository.query(DecisionRecord::class)
-        
-        return DataVolumeStats(
-            totalRounds = rounds.size,
-            totalDecisions = decisions.size,
-            oldestRoundTimestamp = rounds.minOfOrNull { it.timestamp },
-            newestRoundTimestamp = rounds.maxOfOrNull { it.timestamp }
-        )
-    }
-
-    // Legacy methods removed - use the direct methods above
 }
-
-/**
- * Data volume statistics for user information
- */
-data class DataVolumeStats(
-    val totalRounds: Int,
-    val totalDecisions: Int,
-    val oldestRoundTimestamp: Long?,
-    val newestRoundTimestamp: Long?
-) {
-    val hasData: Boolean = totalRounds > 0 || totalDecisions > 0
-    
-    val dataSpanDays: Int? = if (oldestRoundTimestamp != null && newestRoundTimestamp != null) {
-        ((newestRoundTimestamp - oldestRoundTimestamp) / (24 * 60 * 60 * 1000)).toInt()
-    } else null
-}
-
-/**
- * BREAKING CHANGE: Removed legacy extension functions
- * 
- * The following functions have been removed:
- * - saveDecisionAndUpdateStats() - Use saveDecision() + calculateSessionStats()
- * - getRecentIncorrectDecisions() - Use getAllDecisions().filter { !it.isCorrect }.take(limit)
- * 
- * Rationale: These convenience functions created tight coupling and encouraged
- * inefficient query patterns. Client code should compose operations explicitly.
- */

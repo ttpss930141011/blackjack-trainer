@@ -48,6 +48,22 @@ class InMemoryPersistenceRepository : PersistenceRepository {
         }
     }
     
+    override suspend fun <T : Any> deleteWhere(type: KClass<T>, criteria: Map<String, Any>) {
+        val typeName = type.simpleName ?: return
+        val store = storage[typeName] ?: return
+        val toRemove = store.entries.filter { (_, obj) ->
+            criteria.all { (fieldName, expectedValue) ->
+                getFieldValue(obj, fieldName) == expectedValue
+            }
+        }.map { it.key }
+        toRemove.forEach { store.remove(it) }
+    }
+
+    override suspend fun <T : Any> clear(type: KClass<T>) {
+        val typeName = type.simpleName ?: return
+        storage.remove(typeName)
+    }
+
     /**
      * Generate storage key for any object.
      * DecisionRecord uses timestamp, RoundHistory uses roundId, UserPreferences uses constant key.
@@ -87,59 +103,5 @@ class InMemoryPersistenceRepository : PersistenceRepository {
             }
             else -> null
         }
-    }
-}
-
-/**
- * Simple statistics calculation functions.
- * These show how to use the simple repository for complex queries.
- */
-object PersistenceStats {
-    
-    /**
-     * Calculate error rate for scenarios.
-     * Simple session stats calculation.
-     */
-    suspend fun calculateScenarioErrors(
-        repository: PersistenceRepository,
-        minSamples: Int = InfrastructureConstants.MIN_SAMPLES_FOR_STATISTICS
-    ): Map<String, Double> {
-        val decisions = repository.query(DecisionRecord::class)
-        
-        return decisions
-            .groupBy { it.baseScenarioKey }
-            .filter { (_, decisionList) -> decisionList.size >= minSamples }
-            .mapValues { (_, decisionList) ->
-                val errorCount = decisionList.count { !it.isCorrect }
-                errorCount.toDouble() / decisionList.size
-            }
-    }
-    
-    /**
-     * Get recent decisions.
-     * This replaces the getRecentDecisions() method.
-     */
-    suspend fun getRecentDecisions(
-        repository: PersistenceRepository,
-        limit: Int = InfrastructureConstants.DEFAULT_RECENT_DECISIONS_LIMIT
-    ): List<DecisionRecord> {
-        return repository.query(DecisionRecord::class)
-            .sortedByDescending { it.timestamp }
-            .take(limit)
-    }
-    
-    /**
-     * Get worst performing scenarios.
-     * This replaces multiple "worst scenario" methods.
-     */
-    suspend fun getWorstScenarios(
-        repository: PersistenceRepository,
-        minSamples: Int = InfrastructureConstants.MIN_SAMPLES_FOR_STATISTICS,
-        limit: Int = InfrastructureConstants.WORST_SCENARIOS_LIMIT
-    ): List<Pair<String, Double>> {
-        return calculateScenarioErrors(repository, minSamples)
-            .toList()
-            .sortedByDescending { (_, errorRate) -> errorRate }
-            .take(limit)
     }
 }

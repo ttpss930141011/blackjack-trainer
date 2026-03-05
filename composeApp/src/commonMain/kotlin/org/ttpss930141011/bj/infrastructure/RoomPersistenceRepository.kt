@@ -119,6 +119,30 @@ class RoomPersistenceRepository(
         }
     }
     
+    override suspend fun <T : Any> deleteWhere(type: KClass<T>, criteria: Map<String, Any>) {
+        when (type) {
+            RoundHistory::class -> {
+                val cutoffTime = criteria["timestampBefore"] as? Long
+                if (cutoffTime != null) {
+                    database.roundHistoryDao().deleteOldRounds(cutoffTime)
+                }
+            }
+            DecisionRecord::class -> {
+                val cutoffTime = criteria["timestampBefore"] as? Long
+                if (cutoffTime != null) {
+                    database.decisionRecordDao().deleteOldDecisions(cutoffTime)
+                }
+            }
+        }
+    }
+
+    override suspend fun <T : Any> clear(type: KClass<T>) {
+        when (type) {
+            RoundHistory::class -> database.roundHistoryDao().deleteAllRounds()
+            DecisionRecord::class -> database.decisionRecordDao().deleteAllDecisions()
+        }
+    }
+
     /**
      * Centralized query logic for RoundHistory entities.
      * Eliminates code duplication and provides clear criteria handling.

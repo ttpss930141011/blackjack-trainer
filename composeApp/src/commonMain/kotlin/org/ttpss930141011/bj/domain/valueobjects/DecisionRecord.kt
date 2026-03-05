@@ -4,16 +4,15 @@ import kotlinx.serialization.Serializable
 import org.ttpss930141011.bj.domain.enums.Action
 
 /**
- * HandDecision - Complete decision record with accurate history tracking
+ * DecisionRecord - Complete decision record with accurate history tracking
  * 
- * Replaces the old DecisionRecord with a clean design that solves the split display problem.
  * Core principle: Decision = Before + Action + After
  * 
  * This captures exactly what the player saw, what they did, and what happened.
  * Split decisions show the actual 4-4 pair they decided on, not the 4-5 result.
  */
 @Serializable
-data class HandDecision(
+data class DecisionRecord(
     // What the player saw when making the decision
     val beforeAction: HandSnapshot,
     // What action they took
@@ -33,7 +32,7 @@ data class HandDecision(
      * Uses DomainConstants for consistent hash generation.
      */
     val ruleHash: String by lazy {
-        DomainConstants.generateRuleHash(beforeAction.gameRules)
+        ScenarioKeyGenerator.generateRuleHash(beforeAction.gameRules)
     }
     
     /**
@@ -43,9 +42,9 @@ data class HandDecision(
      */
     val baseScenarioKey: String by lazy {
         val hand = Hand(beforeAction.cards)
-        val handType = DomainConstants.generateHandType(hand)
-        val dealerRank = DomainConstants.getShortRankSymbol(beforeAction.dealerUpCard.rank)
-        DomainConstants.generateScenarioKey(handType, dealerRank)
+        val handType = ScenarioKeyGenerator.generateHandType(hand)
+        val dealerRank = ScenarioKeyGenerator.getShortRankSymbol(beforeAction.dealerUpCard.rank)
+        ScenarioKeyGenerator.generateScenarioKey(handType, dealerRank)
     }
     
     /**
@@ -60,14 +59,14 @@ data class HandDecision(
     /**
      * Check if this decision was made under the same rule set as another decision.
      */
-    fun hasSameRules(other: HandDecision): Boolean {
+    fun hasSameRules(other: DecisionRecord): Boolean {
         return this.ruleHash == other.ruleHash
     }
     
     /**
      * Check if this decision involves the same scenario (ignoring rules) as another decision.
      */
-    fun hasSameBaseScenario(other: HandDecision): Boolean {
+    fun hasSameBaseScenario(other: DecisionRecord): Boolean {
         return this.baseScenarioKey == other.baseScenarioKey
     }
     
@@ -146,5 +145,3 @@ sealed class ActionResult {
     ) : ActionResult()
 }
 
-// Legacy type alias for compatibility
-typealias DecisionRecord = HandDecision

@@ -92,9 +92,6 @@ fun App(
         }
     )
 
-    // Note: FeedbackSystem removed to prevent race condition with PersistentFeedbackToast
-    // PersistentFeedbackToast now handles all feedback timing and cleanup
-
     val game = viewModel.game
     val currentPlayer = game?.player ?: Player(
         id = AppConstants.Defaults.PLAYER_ID,
