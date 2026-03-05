@@ -8,11 +8,9 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import org.ttpss930141011.bj.infrastructure.database.dao.DecisionRecordDao
-import org.ttpss930141011.bj.infrastructure.database.dao.GameSessionDao
 import org.ttpss930141011.bj.infrastructure.database.dao.RoundHistoryDao
 import org.ttpss930141011.bj.infrastructure.database.dao.UserPreferencesDao
 import org.ttpss930141011.bj.infrastructure.database.entities.DecisionRecordEntity
-import org.ttpss930141011.bj.infrastructure.database.entities.GameSessionEntity
 import org.ttpss930141011.bj.infrastructure.database.entities.RoundHistoryEntity
 import org.ttpss930141011.bj.infrastructure.database.entities.UserPreferencesEntity
 
@@ -24,17 +22,15 @@ import org.ttpss930141011.bj.infrastructure.database.entities.UserPreferencesEnt
  */
 @Database(
     entities = [
-        GameSessionEntity::class,
         RoundHistoryEntity::class,
         DecisionRecordEntity::class,
         UserPreferencesEntity::class
     ], 
-    version = 4, 
+    version = 5, 
     exportSchema = true
 )
 @ConstructedBy(BlackjackDatabaseConstructor::class)
 abstract class BlackjackDatabase : RoomDatabase() {
-    abstract fun gameSessionDao(): GameSessionDao
     abstract fun roundHistoryDao(): RoundHistoryDao
     abstract fun decisionRecordDao(): DecisionRecordDao
     abstract fun userPreferencesDao(): UserPreferencesDao
