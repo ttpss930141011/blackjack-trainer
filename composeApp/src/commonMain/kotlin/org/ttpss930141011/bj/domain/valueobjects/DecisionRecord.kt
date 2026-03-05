@@ -33,7 +33,7 @@ data class HandDecision(
      * Uses DomainConstants for consistent hash generation.
      */
     val ruleHash: String by lazy {
-        DomainConstants.generateRuleHash(beforeAction.gameRules)
+        ScenarioKeyGenerator.generateRuleHash(beforeAction.gameRules)
     }
     
     /**
@@ -43,9 +43,9 @@ data class HandDecision(
      */
     val baseScenarioKey: String by lazy {
         val hand = Hand(beforeAction.cards)
-        val handType = DomainConstants.generateHandType(hand)
-        val dealerRank = DomainConstants.getShortRankSymbol(beforeAction.dealerUpCard.rank)
-        DomainConstants.generateScenarioKey(handType, dealerRank)
+        val handType = ScenarioKeyGenerator.generateHandType(hand)
+        val dealerRank = ScenarioKeyGenerator.getShortRankSymbol(beforeAction.dealerUpCard.rank)
+        ScenarioKeyGenerator.generateScenarioKey(handType, dealerRank)
     }
     
     /**

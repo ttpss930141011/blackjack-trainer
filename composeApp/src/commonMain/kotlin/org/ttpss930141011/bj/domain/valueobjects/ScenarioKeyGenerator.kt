@@ -1,7 +1,7 @@
 package org.ttpss930141011.bj.domain.valueobjects
 
 /**
- * DomainConstants - Pure domain constants for scenario generation and card representation
+ * ScenarioKeyGenerator - Pure domain functions for scenario generation and card representation
  * 
  * Centralizes all magic string generation and card symbol mapping logic.
  * Eliminates scattered string construction and provides consistent domain vocabulary.
@@ -12,7 +12,7 @@ package org.ttpss930141011.bj.domain.valueobjects
  * - Clear separation of concerns
  * - Easy to test and maintain
  */
-object DomainConstants {
+object ScenarioKeyGenerator {
     
     /**
      * Generate hand type description for scenario keys.

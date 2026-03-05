@@ -3,7 +3,7 @@ package org.ttpss930141011.bj.domain.valueobjects
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DomainConstantsTest {
+class ScenarioKeyGeneratorTest {
 
     @Test
     fun `given hard hand when generating hand type then should return H prefix with value`() {
@@ -15,7 +15,7 @@ class DomainConstantsTest {
         val hand = Hand(cards)
         
         // When
-        val handType = DomainConstants.generateHandType(hand)
+        val handType = ScenarioKeyGenerator.generateHandType(hand)
         
         // Then
         assertEquals("H16", handType)
@@ -31,7 +31,7 @@ class DomainConstantsTest {
         val hand = Hand(cards)
         
         // When
-        val handType = DomainConstants.generateHandType(hand)
+        val handType = ScenarioKeyGenerator.generateHandType(hand)
         
         // Then
         assertEquals("S17", handType)
@@ -47,7 +47,7 @@ class DomainConstantsTest {
         val hand = Hand(cards)
         
         // When
-        val handType = DomainConstants.generateHandType(hand)
+        val handType = ScenarioKeyGenerator.generateHandType(hand)
         
         // Then
         assertEquals("Pair 8s", handType)
@@ -63,7 +63,7 @@ class DomainConstantsTest {
         val hand = Hand(cards)
         
         // When
-        val handType = DomainConstants.generateHandType(hand)
+        val handType = ScenarioKeyGenerator.generateHandType(hand)
         
         // Then
         assertEquals("Pair As", handType)
@@ -79,7 +79,7 @@ class DomainConstantsTest {
         val hand = Hand(cards)
         
         // When
-        val handType = DomainConstants.generateHandType(hand)
+        val handType = ScenarioKeyGenerator.generateHandType(hand)
         
         // Then
         assertEquals("BJ", handType)
@@ -92,7 +92,7 @@ class DomainConstantsTest {
         val dealerRank = "10"
         
         // When
-        val scenarioKey = DomainConstants.generateScenarioKey(handType, dealerRank)
+        val scenarioKey = ScenarioKeyGenerator.generateScenarioKey(handType, dealerRank)
         
         // Then
         assertEquals("H16 vs 10", scenarioKey)
@@ -101,16 +101,16 @@ class DomainConstantsTest {
     @Test
     fun `given all ranks when getting short symbols then should return correct mappings`() {
         // Test number cards
-        assertEquals("2", DomainConstants.getShortRankSymbol(Rank.TWO))
-        assertEquals("3", DomainConstants.getShortRankSymbol(Rank.THREE))
-        assertEquals("9", DomainConstants.getShortRankSymbol(Rank.NINE))
-        assertEquals("10", DomainConstants.getShortRankSymbol(Rank.TEN))
+        assertEquals("2", ScenarioKeyGenerator.getShortRankSymbol(Rank.TWO))
+        assertEquals("3", ScenarioKeyGenerator.getShortRankSymbol(Rank.THREE))
+        assertEquals("9", ScenarioKeyGenerator.getShortRankSymbol(Rank.NINE))
+        assertEquals("10", ScenarioKeyGenerator.getShortRankSymbol(Rank.TEN))
         
         // Test face cards
-        assertEquals("J", DomainConstants.getShortRankSymbol(Rank.JACK))
-        assertEquals("Q", DomainConstants.getShortRankSymbol(Rank.QUEEN))
-        assertEquals("K", DomainConstants.getShortRankSymbol(Rank.KING))
-        assertEquals("A", DomainConstants.getShortRankSymbol(Rank.ACE))
+        assertEquals("J", ScenarioKeyGenerator.getShortRankSymbol(Rank.JACK))
+        assertEquals("Q", ScenarioKeyGenerator.getShortRankSymbol(Rank.QUEEN))
+        assertEquals("K", ScenarioKeyGenerator.getShortRankSymbol(Rank.KING))
+        assertEquals("A", ScenarioKeyGenerator.getShortRankSymbol(Rank.ACE))
     }
 
     @Test
@@ -123,7 +123,7 @@ class DomainConstantsTest {
         )
         
         // When
-        val ruleHash = DomainConstants.generateRuleHash(gameRules)
+        val ruleHash = ScenarioKeyGenerator.generateRuleHash(gameRules)
         
         // Then
         assertEquals(6, ruleHash.length)
@@ -139,8 +139,8 @@ class DomainConstantsTest {
         val rules2 = GameRules(dealerHitsOnSoft17 = false)
         
         // When
-        val hash1 = DomainConstants.generateRuleHash(rules1)
-        val hash2 = DomainConstants.generateRuleHash(rules2)
+        val hash1 = ScenarioKeyGenerator.generateRuleHash(rules1)
+        val hash2 = ScenarioKeyGenerator.generateRuleHash(rules2)
         
         // Then
         kotlin.test.assertNotEquals(hash1, hash2)
@@ -153,8 +153,8 @@ class DomainConstantsTest {
         val rules2 = GameRules(dealerHitsOnSoft17 = true, doubleAfterSplitAllowed = false)
         
         // When
-        val hash1 = DomainConstants.generateRuleHash(rules1)
-        val hash2 = DomainConstants.generateRuleHash(rules2)
+        val hash1 = ScenarioKeyGenerator.generateRuleHash(rules1)
+        val hash2 = ScenarioKeyGenerator.generateRuleHash(rules2)
         
         // Then
         assertEquals(hash1, hash2)
@@ -162,8 +162,8 @@ class DomainConstantsTest {
 
     @Test
     fun `domain constraints should have expected values`() {
-        assertEquals(3, DomainConstants.Constraints.MIN_SCENARIO_SAMPLES)
-        assertEquals(6, DomainConstants.Constraints.RULE_HASH_LENGTH)
-        assertEquals(1000, DomainConstants.Constraints.MAX_DECISION_HISTORY)
+        assertEquals(3, ScenarioKeyGenerator.Constraints.MIN_SCENARIO_SAMPLES)
+        assertEquals(6, ScenarioKeyGenerator.Constraints.RULE_HASH_LENGTH)
+        assertEquals(1000, ScenarioKeyGenerator.Constraints.MAX_DECISION_HISTORY)
     }
 }
