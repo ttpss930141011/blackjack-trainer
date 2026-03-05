@@ -18,7 +18,6 @@ import org.ttpss930141011.bj.domain.valueobjects.*
 import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.domain.services.*
 import org.ttpss930141011.bj.presentation.components.game.*
-import org.ttpss930141011.bj.presentation.components.feedback.GameOverOverlay
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import org.ttpss930141011.bj.presentation.design.AppConstants
 import org.ttpss930141011.bj.presentation.design.Strings
@@ -120,26 +119,38 @@ fun GameTable(
             }
         )
         
-        // Game over overlay - following StatusOverlay pattern
+        // Game over overlay
         if (viewModel.isGameOver) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f)),
+                    .background(Color.Black.copy(alpha = 0.6f)),
                 contentAlignment = Alignment.Center
             ) {
-                GameOverOverlay(
-                    onNewGame = {
-                        // Reset to new game with starting chips
-                        viewModel.initializeGame(
-                            game.rules, 
-                            Player(
-                                id = game.player?.id ?: "player1",
-                                chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
+                ) {
+                    Text(
+                        text = "Out of Chips",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Button(
+                        onClick = {
+                            viewModel.initializeGame(
+                                game.rules,
+                                Player(
+                                    id = game.player?.id ?: "player1",
+                                    chips = AppConstants.Defaults.PLAYER_STARTING_CHIPS
+                                )
                             )
-                        )
+                        }
+                    ) {
+                        Text("New Game")
                     }
-                )
+                }
             }
         }
     }
