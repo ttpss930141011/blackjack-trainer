@@ -46,6 +46,8 @@ class CachingDataLoader : DataLoader {
     private val cache = mutableMapOf<String, Any?>()
     private val mutex = kotlinx.coroutines.sync.Mutex()
     
+    // Cast is safe: cache stores the value returned by loader() under the same key,
+    // so the type at retrieval always matches the type at insertion.
     @Suppress("UNCHECKED_CAST")
     override suspend fun <T> load(key: String, loader: suspend () -> T): T {
         mutex.withLock {
