@@ -23,6 +23,8 @@ import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 
 /**
@@ -75,7 +77,9 @@ fun ActionArea(
             )
         }
         GamePhase.SETTLEMENT -> {
-            NextRoundButton(
+            SettlementReview(
+                game = game,
+                roundDecisions = viewModel.roundDecisions,
                 onNextRound = { viewModel.nextRound() },
                 modifier = modifier
             )
@@ -330,6 +334,94 @@ private fun ActionButton(
 }
 
 @Composable
+private fun SettlementReview(
+    game: Game,
+    roundDecisions: List<PlayerDecision>,
+    onNextRound: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val outcome = try { game.getRoundOutcome() } catch (_: Exception) { RoundOutcome.UNKNOWN }
+    val totalDecisions = roundDecisions.size
+    val correctDecisions = roundDecisions.count { it.isCorrect }
+    val allCorrect = totalDecisions > 0 && correctDecisions == totalDecisions
+    
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Tokens.Space.m),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Round result + strategy summary card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.1f)
+            ),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Strategy line
+                if (totalDecisions > 0) {
+                    val strategyEmoji = if (allCorrect) "✅" else "📊"
+                    val strategyText = if (allCorrect) {
+                        "Perfect strategy!"
+                    } else {
+                        "$correctDecisions/$totalDecisions correct"
+                    }
+                    
+                    Text(
+                        text = "$strategyEmoji $strategyText",
+                        color = if (allCorrect) Color(0xFF4CAF50) else Color(0xFFFFB74D),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    
+                    // Encouragement message: separate luck from skill
+                    val message = when {
+                        allCorrect && outcome == RoundOutcome.WIN -> "Skill + luck 🎯"
+                        allCorrect && outcome == RoundOutcome.LOSS -> "Right call — just unlucky"
+                        allCorrect && outcome == RoundOutcome.PUSH -> "Played it right"
+                        !allCorrect && outcome == RoundOutcome.WIN -> "Won, but review your play"
+                        !allCorrect && outcome == RoundOutcome.LOSS -> "Check strategy guide ←"
+                        else -> ""
+                    }
+                    if (message.isNotEmpty()) {
+                        Text(
+                            text = message,
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+        
+        // Next round button
+        Button(
+            onClick = onNextRound,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = CasinoTheme.ButtonPrimary,
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(Tokens.Space.m),
+            modifier = Modifier
+                .height(Tokens.Size.buttonHeight)
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+        ) {
+            Text(
+                text = "Next Round",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+        }
+    }
+}
+
+@Composable
 private fun DealerTurnButton(
     onPlayDealerTurn: () -> Unit,
     modifier: Modifier = Modifier
@@ -359,31 +451,3 @@ private fun DealerTurnButton(
     }
 }
 
-@Composable
-private fun NextRoundButton(
-    onNextRound: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Button(
-            onClick = onNextRound,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = CasinoTheme.ButtonPrimary,
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(Tokens.Space.m),
-            modifier = Modifier
-                .height(Tokens.Size.buttonHeight)
-                .fillMaxWidth()
-        ) {
-            Text(
-                text = "Next Round",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-        }
-    }
-}
