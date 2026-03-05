@@ -6,7 +6,6 @@ import kotlinx.coroutines.launch
 import org.ttpss930141011.bj.domain.services.AudioManager
 import org.ttpss930141011.bj.domain.valueobjects.UserPreferences
 import org.ttpss930141011.bj.infrastructure.DataLoader
-import org.ttpss930141011.bj.infrastructure.audio.AudioManagerImpl
 
 /**
  * PreferencesManager - Loads, saves, and applies user preferences.
@@ -46,8 +45,6 @@ internal class PreferencesManager(
 
     private fun applyAudio() {
         audioManager.setEnabled(_userPreferences.displaySettings.soundEnabled)
-        if (audioManager is AudioManagerImpl) {
-            audioManager.setVolume(_userPreferences.displaySettings.soundVolume)
-        }
+        audioManager.setVolume(_userPreferences.displaySettings.soundVolume)
     }
 }

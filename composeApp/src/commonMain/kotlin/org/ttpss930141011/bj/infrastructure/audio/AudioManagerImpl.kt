@@ -66,7 +66,7 @@ class AudioManagerImpl : AudioManager {
      * 
      * @param volume Volume between 0.0 and 1.0
      */
-    fun setVolume(volume: Float) {
+    override fun setVolume(volume: Float) {
         val clampedVolume = volume.coerceIn(0.0f, 1.0f)
         try {
             platformPlayer.setVolume(clampedVolume)
