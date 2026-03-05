@@ -21,6 +21,7 @@ import org.ttpss930141011.bj.presentation.components.game.*
 import org.ttpss930141011.bj.presentation.components.feedback.GameOverOverlay
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import org.ttpss930141011.bj.presentation.design.AppConstants
+import org.ttpss930141011.bj.presentation.design.Strings
 import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 
@@ -147,10 +148,10 @@ fun GameTable(
 @Composable
 private fun PhaseHeader(phase: GamePhase) {
     val title = when (phase) {
-        GamePhase.WAITING_FOR_BETS -> "Place Your Bet"
-        GamePhase.PLAYER_TURN -> "Your Turn"
-        GamePhase.DEALER_TURN -> "Dealer's Turn"
-        GamePhase.SETTLEMENT -> "Round Results"
+        GamePhase.WAITING_FOR_BETS -> Strings.Game.PLACE_YOUR_BET
+        GamePhase.PLAYER_TURN -> Strings.Game.YOUR_TURN
+        GamePhase.DEALER_TURN -> Strings.Game.DEALERS_TURN
+        GamePhase.SETTLEMENT -> Strings.Game.ROUND_RESULTS
         else -> "Casino Table"
     }
     

@@ -23,6 +23,7 @@ import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
+import org.ttpss930141011.bj.presentation.design.Strings
 import androidx.compose.ui.text.style.TextAlign
 import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 
@@ -85,7 +86,7 @@ fun ActionArea(
         }
         else -> {
             Text(
-                text = "Preparing...",
+                text = Strings.Game.PREPARING,
                 color = Color.White,
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = modifier
@@ -168,7 +169,7 @@ private fun ChipSelection(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = Tokens.Space.s)
             ) {
                 Text(
-                    text = if (currentBet > 0) "Deal Cards ($$currentBet)" else "Deal Cards",
+                    text = if (currentBet > 0) Strings.Game.dealCardsWithBet(currentBet) else Strings.Game.DEAL_CARDS,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -365,9 +366,9 @@ private fun SettlementReview(
                 if (totalDecisions > 0) {
                     val strategyEmoji = if (allCorrect) "✅" else "📊"
                     val strategyText = if (allCorrect) {
-                        "Perfect strategy!"
+                        Strings.Feedback.PERFECT_STRATEGY
                     } else {
-                        "$correctDecisions/$totalDecisions correct"
+                        Strings.Feedback.correctCount(correctDecisions, totalDecisions)
                     }
                     
                     Text(
@@ -379,11 +380,11 @@ private fun SettlementReview(
                     
                     // Encouragement message: separate luck from skill
                     val message = when {
-                        allCorrect && outcome == RoundOutcome.WIN -> "Skill + luck 🎯"
-                        allCorrect && outcome == RoundOutcome.LOSS -> "Right call — just unlucky"
-                        allCorrect && outcome == RoundOutcome.PUSH -> "Played it right"
-                        !allCorrect && outcome == RoundOutcome.WIN -> "Won, but review your play"
-                        !allCorrect && outcome == RoundOutcome.LOSS -> "Check strategy guide ←"
+                        allCorrect && outcome == RoundOutcome.WIN -> Strings.Feedback.SKILL_AND_LUCK
+                        allCorrect && outcome == RoundOutcome.LOSS -> Strings.Feedback.RIGHT_CALL_UNLUCKY
+                        allCorrect && outcome == RoundOutcome.PUSH -> Strings.Feedback.PLAYED_IT_RIGHT
+                        !allCorrect && outcome == RoundOutcome.WIN -> Strings.Feedback.WON_BUT_REVIEW
+                        !allCorrect && outcome == RoundOutcome.LOSS -> Strings.Feedback.CHECK_STRATEGY
                         else -> ""
                     }
                     if (message.isNotEmpty()) {
@@ -412,7 +413,7 @@ private fun SettlementReview(
                 .padding(horizontal = Tokens.Space.s)
         ) {
             Text(
-                text = "Next Round",
+                text = Strings.Game.NEXT_ROUND,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
@@ -442,7 +443,7 @@ private fun DealerTurnButton(
             elevation = ButtonDefaults.buttonElevation(defaultElevation = Tokens.Space.s)
         ) {
             Text(
-                text = "Play Dealer Turn",
+                text = Strings.Game.PLAY_DEALER_TURN,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )

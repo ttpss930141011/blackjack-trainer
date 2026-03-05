@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 import org.ttpss930141011.bj.presentation.layout.Layout
+import org.ttpss930141011.bj.presentation.design.Strings
 import org.ttpss930141011.bj.presentation.design.Tokens
 import org.ttpss930141011.bj.presentation.design.CasinoSemanticColors
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
@@ -183,9 +184,9 @@ private fun SubPageHeader(
 
 private fun getPageTitle(page: NavigationPage?): String {
     return when (page) {
-        NavigationPage.STRATEGY -> "Strategy Guide"
-        NavigationPage.HISTORY -> "Game History"
-        NavigationPage.SETTINGS -> "Settings"
+        NavigationPage.STRATEGY -> Strings.Nav.STRATEGY_GUIDE
+        NavigationPage.HISTORY -> Strings.Nav.GAME_HISTORY
+        NavigationPage.SETTINGS -> Strings.Nav.SETTINGS
         else -> ""
     }
 }
