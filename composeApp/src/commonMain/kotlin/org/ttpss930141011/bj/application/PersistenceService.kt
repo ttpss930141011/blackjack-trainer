@@ -153,24 +153,6 @@ class PersistenceService(
         }
     }
     
-    /**
-     * Calculate performance by rule set.
-     * Enables rule-specific improvement tracking.
-     */
-    suspend fun calculateRuleSetPerformance(): Map<String, Double> {
-        val decisions = getAllDecisions()
-        
-        return decisions
-            .groupBy { it.ruleHash }
-            .mapValues { (_, ruleDecisions) ->
-                if (ruleDecisions.isEmpty()) {
-                    0.0
-                } else {
-                    ruleDecisions.count { it.isCorrect }.toDouble() / ruleDecisions.size
-                }
-            }
-    }
-    
     // ===== USER PREFERENCES =====
     
     /**
@@ -200,48 +182,5 @@ class PersistenceService(
         repository.clear(DecisionRecord::class)
     }
     
-    /**
-     * Get data volume statistics for management.
-     * Helps users understand storage usage.
-     */
-    suspend fun getDataVolumeStats(): DataVolumeStats {
-        val rounds = repository.query(RoundHistory::class)
-        val decisions = repository.query(DecisionRecord::class)
-        
-        return DataVolumeStats(
-            totalRounds = rounds.size,
-            totalDecisions = decisions.size,
-            oldestRoundTimestamp = rounds.minOfOrNull { it.timestamp },
-            newestRoundTimestamp = rounds.maxOfOrNull { it.timestamp }
-        )
-    }
-
     // Legacy methods removed - use the direct methods above
 }
-
-/**
- * Data volume statistics for user information
- */
-data class DataVolumeStats(
-    val totalRounds: Int,
-    val totalDecisions: Int,
-    val oldestRoundTimestamp: Long?,
-    val newestRoundTimestamp: Long?
-) {
-    val hasData: Boolean = totalRounds > 0 || totalDecisions > 0
-    
-    val dataSpanDays: Int? = if (oldestRoundTimestamp != null && newestRoundTimestamp != null) {
-        ((newestRoundTimestamp - oldestRoundTimestamp) / (24 * 60 * 60 * 1000)).toInt()
-    } else null
-}
-
-/**
- * BREAKING CHANGE: Removed legacy extension functions
- * 
- * The following functions have been removed:
- * - saveDecisionAndUpdateStats() - Use saveDecision() + calculateSessionStats()
- * - getRecentIncorrectDecisions() - Use getAllDecisions().filter { !it.isCorrect }.take(limit)
- * 
- * Rationale: These convenience functions created tight coupling and encouraged
- * inefficient query patterns. Client code should compose operations explicitly.
- */
