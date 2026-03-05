@@ -25,7 +25,7 @@ class AudioManagerImpl : AudioManager {
      * Should be called during app startup.
      * If initialization fails, audio will be silently disabled.
      */
-    suspend fun initialize() {
+    override suspend fun initialize() {
         try {
             isInitialized = platformPlayer.initialize()
         } catch (e: Exception) {

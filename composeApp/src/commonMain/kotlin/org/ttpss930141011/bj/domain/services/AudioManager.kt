@@ -14,9 +14,11 @@ package org.ttpss930141011.bj.domain.services
 interface AudioManager {
     
     /**
-     * Plays the card dealing sound effect.
-     * Used when cards are dealt to player or dealer.
+     * Initializes the audio system. Call once at app startup.
+     * No-op if already initialized.
      */
+    suspend fun initialize()
+
     suspend fun playCardSound()
     
     /**
