@@ -24,7 +24,6 @@ import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 
 /**
@@ -355,12 +354,12 @@ private fun SettlementReview(
             colors = CardDefaults.cardColors(
                 containerColor = Color.White.copy(alpha = 0.1f)
             ),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Tokens.Space.s)
         ) {
             Column(
-                modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                modifier = Modifier.padding(Tokens.Space.m).fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(Tokens.Space.xs)
             ) {
                 // Strategy line
                 if (totalDecisions > 0) {
@@ -374,7 +373,7 @@ private fun SettlementReview(
                     Text(
                         text = "$strategyEmoji $strategyText",
                         color = if (allCorrect) Color(0xFF4CAF50) else Color(0xFFFFB74D),
-                        fontSize = 14.sp,
+                        fontSize = Tokens.Typography.actionButtonTextExpanded,
                         fontWeight = FontWeight.Medium
                     )
                     
@@ -391,7 +390,7 @@ private fun SettlementReview(
                         Text(
                             text = message,
                             color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
+                            fontSize = Tokens.Typography.actionButtonIconCompact,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -410,7 +409,7 @@ private fun SettlementReview(
             modifier = Modifier
                 .height(Tokens.Size.buttonHeight)
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = Tokens.Space.s)
         ) {
             Text(
                 text = "Next Round",
