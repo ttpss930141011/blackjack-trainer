@@ -15,7 +15,7 @@ import org.ttpss930141011.bj.presentation.design.CasinoTheme
 import org.ttpss930141011.bj.presentation.layout.ScreenWidth
 import org.ttpss930141011.bj.presentation.components.dialogs.GamePhaseManager
 import org.ttpss930141011.bj.presentation.components.navigation.NavigationPage
-import org.ttpss930141011.bj.presentation.components.feedback.PersistentFeedbackToast
+
 
 /**
  * Main game page component that displays the blackjack game interface
@@ -31,8 +31,6 @@ fun GamePage(
     feedback: DecisionFeedback?,
     currentPage: NavigationPage?,
     screenWidth: ScreenWidth,
-    feedbackNotificationEnabled: Boolean = true,
-    feedbackDurationSeconds: Float = 2.5f,
     modifier: Modifier = Modifier
 ) {
     // Direct background without unnecessary gradients for better performance
@@ -71,15 +69,6 @@ fun GamePage(
                 }
             }
         }
-
-        // Persistent feedback toast overlay - shows feedback across phase transitions
-        PersistentFeedbackToast(
-            feedback = feedback,
-            durationSeconds = feedbackDurationSeconds,
-            enabled = feedbackNotificationEnabled,
-            onFeedbackConsumed = { viewModel.clearFeedback() },
-            modifier = Modifier.align(Alignment.TopCenter)
-        )
 
         // Rule change notification overlay
         viewModel.uiStateManager.ruleChangeNotification?.let { notification ->

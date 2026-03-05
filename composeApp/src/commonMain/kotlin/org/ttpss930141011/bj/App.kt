@@ -11,7 +11,6 @@ import org.ttpss930141011.bj.application.GameViewModel
 import org.ttpss930141011.bj.application.ApplicationService
 import org.ttpss930141011.bj.domain.entities.*
 import org.ttpss930141011.bj.presentation.layout.Layout
-import org.ttpss930141011.bj.presentation.components.feedback.*
 import org.ttpss930141011.bj.presentation.components.navigation.Header
 import org.ttpss930141011.bj.presentation.components.navigation.NavigationPage
 import org.ttpss930141011.bj.presentation.pages.*
@@ -35,7 +34,6 @@ fun App(
     onNavigationChange: ((NavigationPage?) -> Unit)? = null
 ) {
     val viewModel = remember { GameViewModel() }
-    val notificationState = rememberNotificationState()
 
     // Navigation state - use external control if provided, otherwise internal state
     var internalCurrentPage by remember { mutableStateOf<NavigationPage?>(NavigationPage.HOME) }
@@ -43,10 +41,6 @@ fun App(
     
     // Menu state
     var isMenuExpanded by remember { mutableStateOf(false) }
-
-    // Feedback notification settings
-    var feedbackNotificationEnabled by remember { mutableStateOf(true) }
-    var feedbackDurationSeconds by remember { mutableStateOf(2.5f) }
 
     // Get current game rules from user preferences (persistent storage)
     val currentGameRules = viewModel.userPreferences.preferredRules
@@ -74,23 +68,6 @@ fun App(
     LaunchedEffect(currentGameRules) {
         viewModel.handleRuleChange(currentGameRules)
     }
-
-    // Handle feedback - add to history and manage ambient feedback
-    LaunchedEffect(viewModel.feedback) {
-        viewModel.feedback?.let { feedback ->
-            notificationState.addNotification(feedback)
-            // 不立即清除 feedback，讓 ActionButton 可以顯示視覺反饋
-        }
-    }
-
-    // Delayed transition feedback - ensures ActionButton feedback is visible before phase changes
-    DelayedTransitionFeedback(
-        feedback = viewModel.feedback,
-        onFeedbackShown = {
-            // Allow time for ActionButton visual feedback, then proceed with phase transition
-            // This gives users time to see the feedback before transitioning to dealer turn
-        }
-    )
 
     val game = viewModel.game
     val currentPlayer = game?.player ?: Player(
@@ -176,9 +153,7 @@ fun App(
                                     currentPlayer = currentPlayer,
                                     feedback = viewModel.feedback,
                                     currentPage = currentPage,
-                                    screenWidth = screenWidth,
-                                    feedbackNotificationEnabled = feedbackNotificationEnabled,
-                                    feedbackDurationSeconds = feedbackDurationSeconds
+                                    screenWidth = screenWidth
                                 )
                             }
                         }
