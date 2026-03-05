@@ -1,5 +1,7 @@
 package org.ttpss930141011.bj.infrastructure
 
+import kotlinx.coroutines.sync.withLock
+
 /**
  * 數據載入器接口 - 統一管理延遲載入和緩存策略
  * 
@@ -42,41 +44,34 @@ interface DataLoader {
  */
 class CachingDataLoader : DataLoader {
     private val cache = mutableMapOf<String, Any?>()
-    private val loadingFlags = mutableMapOf<String, Boolean>()
+    private val mutex = kotlinx.coroutines.sync.Mutex()
     
     @Suppress("UNCHECKED_CAST")
     override suspend fun <T> load(key: String, loader: suspend () -> T): T {
-        // 如果已有緩存，直接返回
-        if (cache.containsKey(key)) {
-            return cache[key] as T
-        }
-        
-        // 防止重複載入：如果正在載入，等待完成
-        if (loadingFlags[key] == true) {
-            while (loadingFlags[key] == true) {
-                kotlinx.coroutines.delay(10)
+        mutex.withLock {
+            if (cache.containsKey(key)) {
+                return cache[key] as T
             }
-            return cache[key] as T
         }
         
-        // 執行載入
-        loadingFlags[key] = true
-        try {
-            val result = loader()
-            cache[key] = result
-            return result
-        } finally {
-            loadingFlags[key] = false
+        // Load outside lock to avoid holding mutex during I/O
+        val result = mutex.withLock {
+            // Double-check after acquiring lock
+            if (cache.containsKey(key)) {
+                return cache[key] as T
+            }
+            val loaded = loader()
+            cache[key] = loaded
+            loaded
         }
+        return result
     }
     
     override fun invalidate(key: String) {
         cache.remove(key)
-        loadingFlags.remove(key)
     }
     
     override fun clearAll() {
         cache.clear()
-        loadingFlags.clear()
     }
 }
