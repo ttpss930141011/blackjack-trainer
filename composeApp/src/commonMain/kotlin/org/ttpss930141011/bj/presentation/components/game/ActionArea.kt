@@ -64,9 +64,7 @@ fun ActionArea(
             )
         }
         GamePhase.SETTLEMENT -> {
-            SettlementReview(
-                game = game,
-                roundDecisions = viewModel.roundDecisions,
+            NextRoundButton(
                 onNextRound = { viewModel.nextRound() },
                 modifier = modifier
             )
@@ -275,90 +273,94 @@ private fun ActionButton(
     }
 }
 
+/**
+ * Settlement strategy feedback card.
+ * Extracted as a standalone composable so GameTable can place it
+ * independently from the action buttons (preventing layout shifts).
+ */
 @Composable
-private fun SettlementReview(
+fun SettlementCard(
     game: Game,
     roundDecisions: List<PlayerDecision>,
-    onNextRound: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val outcome = if (game.phase == GamePhase.SETTLEMENT) game.getRoundOutcome() else RoundOutcome.UNKNOWN
     val totalDecisions = roundDecisions.size
     val correctDecisions = roundDecisions.count { it.isCorrect }
     val allCorrect = totalDecisions > 0 && correctDecisions == totalDecisions
-    
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(Tokens.Space.m),
-        horizontalAlignment = Alignment.CenterHorizontally
+
+    if (totalDecisions == 0) return
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.1f)
+        ),
+        modifier = modifier.fillMaxWidth().padding(horizontal = Tokens.Space.s)
     ) {
-        // Round result + strategy summary card
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.1f)
-            ),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Tokens.Space.s)
+        Column(
+            modifier = Modifier.padding(Tokens.Space.m).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Tokens.Space.xs)
         ) {
-            Column(
-                modifier = Modifier.padding(Tokens.Space.m).fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Tokens.Space.xs)
-            ) {
-                // Strategy line
-                if (totalDecisions > 0) {
-                    val strategyEmoji = if (allCorrect) "✅" else "📊"
-                    val strategyText = if (allCorrect) {
-                        Strings.Feedback.PERFECT_STRATEGY
-                    } else {
-                        Strings.Feedback.correctCount(correctDecisions, totalDecisions)
-                    }
-                    
-                    Text(
-                        text = "$strategyEmoji $strategyText",
-                        color = if (allCorrect) Color(0xFF4CAF50) else Color(0xFFFFB74D),
-                        fontSize = Tokens.Typography.actionButtonTextExpanded,
-                        fontWeight = FontWeight.Medium
-                    )
-                    
-                    // Encouragement message: separate luck from skill
-                    val message = when {
-                        allCorrect && outcome == RoundOutcome.WIN -> Strings.Feedback.SKILL_AND_LUCK
-                        allCorrect && outcome == RoundOutcome.LOSS -> Strings.Feedback.RIGHT_CALL_UNLUCKY
-                        allCorrect && outcome == RoundOutcome.PUSH -> Strings.Feedback.PLAYED_IT_RIGHT
-                        !allCorrect && outcome == RoundOutcome.WIN -> Strings.Feedback.WON_BUT_REVIEW
-                        !allCorrect && outcome == RoundOutcome.LOSS -> Strings.Feedback.CHECK_STRATEGY
-                        else -> ""
-                    }
-                    if (message.isNotEmpty()) {
-                        Text(
-                            text = message,
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = Tokens.Typography.actionButtonIconCompact,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
+            val strategyEmoji = if (allCorrect) "✅" else "📊"
+            val strategyText = if (allCorrect) {
+                Strings.Feedback.PERFECT_STRATEGY
+            } else {
+                Strings.Feedback.correctCount(correctDecisions, totalDecisions)
+            }
+
+            Text(
+                text = "$strategyEmoji $strategyText",
+                color = if (allCorrect) Color(0xFF4CAF50) else Color(0xFFFFB74D),
+                fontSize = Tokens.Typography.actionButtonTextExpanded,
+                fontWeight = FontWeight.Medium
+            )
+
+            val message = when {
+                allCorrect && outcome == RoundOutcome.WIN -> Strings.Feedback.SKILL_AND_LUCK
+                allCorrect && outcome == RoundOutcome.LOSS -> Strings.Feedback.RIGHT_CALL_UNLUCKY
+                allCorrect && outcome == RoundOutcome.PUSH -> Strings.Feedback.PLAYED_IT_RIGHT
+                !allCorrect && outcome == RoundOutcome.WIN -> Strings.Feedback.WON_BUT_REVIEW
+                !allCorrect && outcome == RoundOutcome.LOSS -> Strings.Feedback.CHECK_STRATEGY
+                else -> ""
+            }
+            if (message.isNotEmpty()) {
+                Text(
+                    text = message,
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = Tokens.Typography.actionButtonIconCompact,
+                    textAlign = TextAlign.Center
+                )
             }
         }
-        
-        // Next round button
-        Button(
-            onClick = onNextRound,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = CasinoTheme.ButtonPrimary,
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(Tokens.Space.m),
-            modifier = Modifier
-                .height(Tokens.Size.buttonHeight)
-                .fillMaxWidth()
-        ) {
-            Text(
-                text = Strings.Game.NEXT_ROUND,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-        }
+    }
+}
+
+/**
+ * Next round button shown during settlement phase.
+ * Just the button — the feedback card is rendered separately.
+ */
+@Composable
+private fun NextRoundButton(
+    onNextRound: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onNextRound,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = CasinoTheme.ButtonPrimary,
+            contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(Tokens.Space.m),
+        modifier = modifier
+            .height(Tokens.Size.buttonHeight)
+            .fillMaxWidth()
+    ) {
+        Text(
+            text = Strings.Game.NEXT_ROUND,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        )
     }
 }
 

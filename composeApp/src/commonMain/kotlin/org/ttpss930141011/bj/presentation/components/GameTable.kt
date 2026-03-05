@@ -40,7 +40,8 @@ fun GameTable(
         // Main game table - responsive layout based on screen width
         BreakpointLayout(
             compact = {
-                // Compact: Action buttons in middle position for better mobile UX
+                // Compact: Action buttons fixed in middle (thumb zone)
+                // Settlement card floats in upper spacer, never pushes buttons
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -58,9 +59,20 @@ fun GameTable(
                         modifier = Modifier.fillMaxWidth()
                     )
                     
-                    Spacer(modifier = Modifier.weight(0.5f))
+                    // Upper spacer — settlement card lives here
+                    Box(
+                        modifier = Modifier.weight(0.5f).fillMaxWidth(),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        if (game.phase == GamePhase.SETTLEMENT) {
+                            SettlementCard(
+                                game = game,
+                                roundDecisions = viewModel.roundDecisions
+                            )
+                        }
+                    }
                     
-                    // Action area - moved to middle for compact layout
+                    // Action area — fixed position, only buttons
                     ActionArea(
                         game = game,
                         viewModel = viewModel,
@@ -70,7 +82,7 @@ fun GameTable(
                     
                     Spacer(modifier = Modifier.weight(0.5f))
                     
-                    // Player area - moved to bottom for chip visibility
+                    // Player area - bottom for chip visibility
                     PlayerArea(
                         game = game,
                         viewModel = viewModel,
@@ -79,7 +91,7 @@ fun GameTable(
                 }
             },
             medium = {
-                // Medium/Expanded: Keep original bottom action button layout
+                // Medium/Expanded: Action buttons at bottom
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -90,7 +102,7 @@ fun GameTable(
                     // Phase title
                     PhaseHeader(game.phase)
                     
-                    // Dealer area - consistent across all phases
+                    // Dealer area
                     DealerArea(
                         game = game,
                         screenWidth = screenWidth,
@@ -99,16 +111,24 @@ fun GameTable(
                     
                     Spacer(modifier = Modifier.weight(1f))
                     
-                    // Player area - adapts based on phase
+                    // Player area
                     PlayerArea(
                         game = game,
                         viewModel = viewModel,
                         modifier = Modifier.fillMaxWidth()
                     )
                     
+                    // Settlement card above buttons
+                    if (game.phase == GamePhase.SETTLEMENT) {
+                        SettlementCard(
+                            game = game,
+                            roundDecisions = viewModel.roundDecisions
+                        )
+                    }
+                    
                     Spacer(modifier = Modifier.weight(1f))
                     
-                    // Action area - kept at bottom for larger screens
+                    // Action area — only buttons
                     ActionArea(
                         game = game,
                         viewModel = viewModel,
