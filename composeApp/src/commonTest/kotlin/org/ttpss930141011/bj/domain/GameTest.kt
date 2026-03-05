@@ -82,7 +82,7 @@ class GameTest {
             .addToPendingBet(200)
         
         // When
-        val clearedGame = game.clearPendingBet()
+        val clearedGame = game.clearBet()
         
         // Then - Using BetState
         assertEquals(0, clearedGame.betState.amount)
@@ -232,7 +232,7 @@ class GameTest {
             .addToPendingBet(200)
         
         // When
-        val clearedGame = game.clearPendingBet()
+        val clearedGame = game.clearBet()
         
         // Then
         assertEquals(0, clearedGame.betState.amount)

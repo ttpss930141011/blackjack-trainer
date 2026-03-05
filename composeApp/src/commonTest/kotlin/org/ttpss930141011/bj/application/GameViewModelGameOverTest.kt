@@ -87,16 +87,12 @@ class GameViewModelGameOverTest {
         val poorPlayer = Player(id = "poor-player", chips = 3)
         viewModel.initializeGame(testRules, poorPlayer)
         
-        // When - attempt to start round
-        viewModel.startRound(5)
+        // When - attempt to deal (player can't afford minimum bet)
+        viewModel.dealCards()
         
-        // Then
-        assertNotNull(viewModel.errorMessage, "Should show error message")
-        assertTrue(
-            viewModel.errorMessage!!.contains("Game Over") || 
-            viewModel.errorMessage!!.contains("Insufficient chips"),
-            "Error message should indicate game over, actual: ${viewModel.errorMessage}"
-        )
+        // Then - isGameOver should be true, and dealCards should produce an error
+        assertTrue(viewModel.isGameOver, "Game should be over with insufficient chips")
+        assertNotNull(viewModel.errorMessage, "Should show error message when dealing is not possible")
     }
     
     @Test

@@ -24,7 +24,7 @@ import org.ttpss930141011.bj.domain.enums.GamePhase
 import org.ttpss930141011.bj.domain.enums.RoundResult
 import org.ttpss930141011.bj.domain.services.AudioManager
 import org.ttpss930141011.bj.domain.services.ChipCompositionService
-import org.ttpss930141011.bj.domain.services.GameService
+import org.ttpss930141011.bj.application.GameService
 import org.ttpss930141011.bj.infrastructure.DataLoader
 import org.ttpss930141011.bj.infrastructure.CachingDataLoader
 import org.ttpss930141011.bj.infrastructure.audio.AudioModule
