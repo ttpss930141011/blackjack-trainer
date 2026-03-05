@@ -39,11 +39,12 @@ fun Header(
     isMenuExpanded: Boolean = false,
     onMenuExpandedChange: (Boolean) -> Unit = {},
     onNavigate: (NavigationPage) -> Unit = {},
+    sessionCorrect: Int = 0,
+    sessionTotal: Int = 0,
 ) {
     when (currentPage) {
         NavigationPage.HOME -> {
-            // Home header: Balance (center) + Menu (right)
-            HomeHeader(balance, isMenuExpanded, onMenuExpandedChange, onNavigate)
+            HomeHeader(balance, isMenuExpanded, onMenuExpandedChange, onNavigate, sessionCorrect, sessionTotal)
         }
         else -> {
             // Sub-page header: Back (left) + Title (center) + Menu (right)
@@ -57,7 +58,9 @@ private fun HomeHeader(
     balance: Int,
     isMenuExpanded: Boolean,
     onMenuExpandedChange: (Boolean) -> Unit,
-    onNavigate: (NavigationPage) -> Unit
+    onNavigate: (NavigationPage) -> Unit,
+    sessionCorrect: Int,
+    sessionTotal: Int
 ) {
     Box(
         modifier = Modifier
@@ -65,6 +68,33 @@ private fun HomeHeader(
             .background(CasinoTheme.HeaderBackground)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
+        // Accuracy badge on the left
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (sessionTotal > 0) {
+                val pct = (sessionCorrect * 100) / sessionTotal
+                val color = when {
+                    pct >= 80 -> Color(0xFF4CAF50)
+                    pct >= 60 -> Color(0xFFFFB74D)
+                    else -> Color(0xFFF44336)
+                }
+                Text(
+                    text = "$pct%",
+                    color = color,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = " ($sessionCorrect/$sessionTotal)",
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 11.sp
+                )
+            }
+        }
+
         // Balance badge in center
         Box(
             modifier = Modifier.fillMaxWidth(),

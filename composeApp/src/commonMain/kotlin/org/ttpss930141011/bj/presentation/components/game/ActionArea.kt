@@ -1,5 +1,7 @@
 package org.ttpss930141011.bj.presentation.components.game
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -21,6 +23,8 @@ import org.ttpss930141011.bj.domain.enums.*
 import org.ttpss930141011.bj.presentation.components.displays.ChipImageDisplay
 import org.ttpss930141011.bj.presentation.mappers.ChipImageMapper
 import org.ttpss930141011.bj.presentation.design.CasinoTheme
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import org.ttpss930141011.bj.presentation.layout.BreakpointLayout
 
 /**
@@ -73,7 +77,9 @@ fun ActionArea(
             )
         }
         GamePhase.SETTLEMENT -> {
-            NextRoundButton(
+            SettlementReview(
+                game = game,
+                roundDecisions = viewModel.roundDecisions,
                 onNextRound = { viewModel.nextRound() },
                 modifier = modifier
             )
@@ -256,65 +262,55 @@ private fun ActionButton(
         Action.SPLIT -> CasinoTheme.CasinoAccentPrimary to "⁝⁝"
     }
     
-    // Show hint only (no color changes)
+    // Flash animation: briefly change button color after player's choice
+    val isChosen = feedback?.playerAction == action
     val isOptimal = feedback?.optimalAction == action
-    val showHint = feedback != null && !feedback.isCorrect && isOptimal
+    
+    // Animate flash: chosen button flashes green (correct) or red (wrong)
+    // Optimal button gets green border if player was wrong
+    var flashActive by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(feedback) {
+        if (feedback != null && (isChosen || (isOptimal && !feedback.isCorrect))) {
+            flashActive = true
+            kotlinx.coroutines.delay(700)
+            flashActive = false
+        }
+    }
+    
+    val flashColor = when {
+        !flashActive -> baseColor
+        isChosen && feedback?.isCorrect == true -> Color(0xFF4CAF50) // green
+        isChosen && feedback?.isCorrect == false -> Color(0xFFF44336) // red
+        isOptimal && feedback?.isCorrect == false -> Color(0xFF4CAF50) // green hint
+        else -> baseColor
+    }
+    
+    val animatedColor by animateColorAsState(
+        targetValue = flashColor,
+        animationSpec = tween(durationMillis = if (flashActive) 150 else 400)
+    )
     
     Button(
         onClick = { onAction(action) },
         colors = ButtonDefaults.buttonColors(
-            containerColor = baseColor,
+            containerColor = animatedColor,
             contentColor = Color.White
         ),
         shape = RoundedCornerShape(Tokens.Space.m),
         modifier = modifier.height(Tokens.Size.buttonHeight),
-        contentPadding = PaddingValues(horizontal = Tokens.Space.xs, vertical = Tokens.Space.xs) // 减少内边距以提供更多文本空间
+        contentPadding = PaddingValues(horizontal = Tokens.Space.xs, vertical = Tokens.Space.xs)
     ) {
         BreakpointLayout(
             compact = {
-                // Compact: Show icon + hint, 对Double按钮特殊处理
-                if (action == Action.DOUBLE) {
-                    // Double按钮使用紧凑布局，避免×2分离
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = icon,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = Tokens.Typography.actionButtonIconCompact,
-                            maxLines = 1
-                        )
-                        if (showHint) {
-                            Text(
-                                text = "💡",
-                                fontSize = Tokens.Typography.actionButtonHintCompact
-                            )
-                        }
-                    }
-                } else {
-                    // 其他按钮使用垂直布局优化空间利用
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = icon,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = Tokens.Typography.actionButtonIconExpanded,
-                            maxLines = 1
-                        )
-                        if (showHint) {
-                            Text(
-                                text = "💡",
-                                fontSize = Tokens.Typography.actionButtonHintCompact
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = icon,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = Tokens.Typography.actionButtonIconCompact,
+                    maxLines = 1
+                )
             },
             expanded = {
-                // Expanded: Show icon + text + hint
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Tokens.Space.xs),
                     verticalAlignment = Alignment.CenterVertically
@@ -331,15 +327,97 @@ private fun ActionButton(
                         fontSize = Tokens.Typography.actionButtonTextExpanded,
                         maxLines = 1
                     )
-                    if (showHint) {
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun SettlementReview(
+    game: Game,
+    roundDecisions: List<PlayerDecision>,
+    onNextRound: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val outcome = try { game.getRoundOutcome() } catch (_: Exception) { RoundOutcome.UNKNOWN }
+    val totalDecisions = roundDecisions.size
+    val correctDecisions = roundDecisions.count { it.isCorrect }
+    val allCorrect = totalDecisions > 0 && correctDecisions == totalDecisions
+    
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Tokens.Space.m),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Round result + strategy summary card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.1f)
+            ),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Strategy line
+                if (totalDecisions > 0) {
+                    val strategyEmoji = if (allCorrect) "✅" else "📊"
+                    val strategyText = if (allCorrect) {
+                        "Perfect strategy!"
+                    } else {
+                        "$correctDecisions/$totalDecisions correct"
+                    }
+                    
+                    Text(
+                        text = "$strategyEmoji $strategyText",
+                        color = if (allCorrect) Color(0xFF4CAF50) else Color(0xFFFFB74D),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    
+                    // Encouragement message: separate luck from skill
+                    val message = when {
+                        allCorrect && outcome == RoundOutcome.WIN -> "Skill + luck 🎯"
+                        allCorrect && outcome == RoundOutcome.LOSS -> "Right call — just unlucky"
+                        allCorrect && outcome == RoundOutcome.PUSH -> "Played it right"
+                        !allCorrect && outcome == RoundOutcome.WIN -> "Won, but review your play"
+                        !allCorrect && outcome == RoundOutcome.LOSS -> "Check strategy guide ←"
+                        else -> ""
+                    }
+                    if (message.isNotEmpty()) {
                         Text(
-                            text = "💡",
-                            fontSize = Tokens.Typography.actionButtonHintExpanded
+                            text = message,
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
             }
-        )
+        }
+        
+        // Next round button
+        Button(
+            onClick = onNextRound,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = CasinoTheme.ButtonPrimary,
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(Tokens.Space.m),
+            modifier = Modifier
+                .height(Tokens.Size.buttonHeight)
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+        ) {
+            Text(
+                text = "Next Round",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+        }
     }
 }
 
@@ -373,31 +451,3 @@ private fun DealerTurnButton(
     }
 }
 
-@Composable
-private fun NextRoundButton(
-    onNextRound: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Button(
-            onClick = onNextRound,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = CasinoTheme.ButtonPrimary,
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(Tokens.Space.m),
-            modifier = Modifier
-                .height(Tokens.Size.buttonHeight)
-                .fillMaxWidth()
-        ) {
-            Text(
-                text = "Next Round",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-        }
-    }
-}
