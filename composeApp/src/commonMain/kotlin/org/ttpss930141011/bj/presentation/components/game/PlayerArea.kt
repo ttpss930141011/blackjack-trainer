@@ -50,14 +50,7 @@ fun PlayerArea(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(Tokens.Space.m)
                     ) {
-                        // Betting circle
-                        BettingCircle(
-                            currentBet = currentBet,
-                            chipComposition = viewModel.chipComposition,
-                            onClearBet = { viewModel.clearBet() }
-                        )
-
-                        // Chip selection row — below the circle
+                        // Chip selection row — above the circle
                         val mobileContentWidth = Tokens.Size.chipDiameter * 8
                         Box(
                             modifier = Modifier.fillMaxWidth(),
@@ -84,6 +77,13 @@ fun PlayerArea(
                                 }
                             }
                         }
+
+                        // Betting circle
+                        BettingCircle(
+                            currentBet = currentBet,
+                            chipComposition = viewModel.chipComposition,
+                            onClearBet = { viewModel.clearBet() }
+                        )
                     }
                 }
                 else -> {
