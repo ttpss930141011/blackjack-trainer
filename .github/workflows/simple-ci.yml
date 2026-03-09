@@ -32,7 +32,7 @@ jobs:
       run: ./gradlew build
 
     - name: Upload test reports (on failure)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: failure()
       with:
         name: build-failure-logs
@@ -64,7 +64,7 @@ jobs:
       run: ./gradlew :composeApp:assembleDebug
 
     - name: Upload APK
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: debug-apk
         path: composeApp/build/outputs/apk/debug/*.apk
